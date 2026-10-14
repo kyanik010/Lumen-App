@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../device_profile.dart';
 import '../downloads.dart';
 import '../library.dart';
-import '../legal.dart';
 import '../models.dart';
 import '../playback_mode.dart';
 import '../refresh.dart';
@@ -12,17 +10,13 @@ import '../responsive.dart';
 import '../store.dart';
 import '../viewing_profiles.dart';
 import '../theme.dart';
-import '../updater.dart';
 import '../widgets.dart';
 import '../xtream.dart';
 import 'downloads_screen.dart';
 import 'catalog_organization_screen.dart';
-import 'diagnostics_screen.dart';
 import 'epg_settings_screen.dart';
 import 'login_screen.dart';
 import 'device_pairing_screen.dart';
-import 'legal_screen.dart';
-import 'update_dialog.dart';
 import 'stats_screen.dart';
 import 'viewer_picker_screen.dart';
 
@@ -36,7 +30,6 @@ enum ProfilePage {
   appearance('Appearance'),
   playback('Playback'),
   library('Library & downloads'),
-  support('Help & about');
 
   const ProfilePage(this.title);
   final String title;
@@ -92,10 +85,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _guideSettingsFocus = FocusNode(debugLabel: 'TV guide setup');
   final _pairingFocus = FocusNode(debugLabel: 'Set up a TV');
   final _historyFocus = FocusNode(debugLabel: 'Clear watch history');
-  final _diagnosticsFocus = FocusNode(debugLabel: 'Diagnostics & feedback');
-  final _communityFocus = FocusNode(debugLabel: 'Lumen community');
-  final _legalFocus = FocusNode(debugLabel: 'Legal & privacy');
-  final _updateFocus = FocusNode(debugLabel: 'Check for updates');
   final _signOutFocus = FocusNode(debugLabel: 'Sign out of Lumen');
   final _currentEditFocus = FocusNode(debugLabel: 'Edit current service');
   final Map<String, FocusNode> _profileSwitchFocus = {};
@@ -330,9 +319,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    Updater.instance.initialize().then((_) {
-      if (mounted) setState(() {});
-    });
     _entryFocusNode.onKeyEvent = (_, event) => _moveVertically(
       event,
       up: _viewerManageFocus,
@@ -528,23 +514,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _openCommunity() async {
-    final opened = await launchUrl(
-      Uri.parse(communityUrl),
-      mode: LaunchMode.externalApplication,
-    );
-    if (!opened && mounted) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(
-            content: Text('Could not open the Lumen community link.'),
-            duration: Duration(seconds: 3),
-          ),
-        );
-    }
-  }
-
   Future<void> _requestLogout() async {
     if (_signingOut) return;
     final confirmed = await showDialog<bool>(
@@ -594,56 +563,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  bool _checkingUpdate = false;
-  Future<void> _checkForUpdates() async {
-    if (_checkingUpdate) return;
-    setState(() => _checkingUpdate = true);
-    await Updater.instance.initialize();
-    if (Updater.instance.distribution == AppDistribution.playStore) {
-      final opened = await Updater.instance.openStorePage();
-      if (!mounted) return;
-      setState(() => _checkingUpdate = false);
-      if (!opened) {
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            const SnackBar(
-              content: Text('Could not open Lumen in Google Play.'),
-              duration: Duration(seconds: 3),
-            ),
-          );
-      }
-      return;
-    }
-    final result = await Updater.instance.check();
-    if (!mounted) return;
-    setState(() => _checkingUpdate = false);
-    switch (result.status) {
-      case UpdateCheckStatus.available:
-        showUpdateFlow(context, result.info!);
-      case UpdateCheckStatus.upToDate:
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(
-              content: Text(
-                'You’re on the latest (${Updater.instance.currentLabel}).',
-              ),
-              duration: const Duration(seconds: 2),
-            ),
-          );
-      case UpdateCheckStatus.failed:
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(
-              content: Text(result.error ?? 'Could not check for updates.'),
-              duration: const Duration(seconds: 3),
-            ),
-          );
-    }
-  }
-
   String _expiry() {
     if (widget.client.creds.isDemo) return 'Not applicable';
     if (_info == null) return _accountInfoLoading ? 'Checking' : '—';
@@ -679,10 +598,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _guideSettingsFocus.dispose();
     _pairingFocus.dispose();
     _historyFocus.dispose();
-    _diagnosticsFocus.dispose();
-    _communityFocus.dispose();
-    _legalFocus.dispose();
-    _updateFocus.dispose();
     _signOutFocus.dispose();
     _currentEditFocus.dispose();
     for (final node in _profileSwitchFocus.values) {
@@ -736,7 +651,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ProfilePage.appearance => [_personalizationCard()],
                   ProfilePage.playback => [_playbackCard()],
                   ProfilePage.library => [_libraryCard()],
-                  ProfilePage.support => [_privacyCard()],
                 },
               ),
             ),
@@ -858,16 +772,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ProfilePage.library,
             Icons.video_library_outlined,
             'Downloads, organization, and history',
-          ),
-        ],
-      ),
-      (
-        'Support',
-        [
-          (
-            ProfilePage.support,
-            Icons.help_outline_rounded,
-            'Diagnostics, updates, and privacy',
           ),
         ],
       ),
@@ -1542,80 +1446,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         danger: true,
         showChevron: false,
       ),
-    ],
-  );
-
-  Widget _privacyCard() => _profileSection(
-    eyebrow: 'LUMEN',
-    icon: Icons.shield_outlined,
-    title: 'App & support',
-    subtitle: 'Get help, review policies, and keep Lumen current.',
-    body: [
-      _actionRow(
-        focusNode: _diagnosticsFocus,
-        onKeyEvent: (_, event) =>
-            _moveVertically(event, up: _backFocus, down: _communityFocus),
-        icon: Icons.bug_report_outlined,
-        title: 'Diagnostics & feedback',
-        subtitle: 'Review a private, redacted support report',
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => DiagnosticsScreen(credentials: widget.client.creds),
-          ),
-        ),
-      ),
-      _divider(),
-      _actionRow(
-        focusNode: _communityFocus,
-        onKeyEvent: (_, event) =>
-            _moveVertically(event, up: _diagnosticsFocus, down: _legalFocus),
-        icon: Icons.forum_outlined,
-        title: 'Join the Lumen community',
-        subtitle: 'Chat with other users and share feedback on Discord',
-        onTap: _openCommunity,
-      ),
-      _divider(),
-      _actionRow(
-        focusNode: _legalFocus,
-        onKeyEvent: (_, event) => _moveVertically(
-          event,
-          up: _communityFocus,
-          down: Updater.instance.isEnabled ? _updateFocus : _backFocus,
-        ),
-        icon: Icons.privacy_tip_outlined,
-        title: 'Legal & privacy',
-        subtitle: privacyPolicyUrl.contains('github.io')
-            ? 'Privacy policy and terms'
-            : 'App policies and details',
-        onTap: () => Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => const LegalScreen())),
-      ),
-      if (Updater.instance.isEnabled) ...[
-        _divider(),
-        _actionRow(
-          focusNode: _updateFocus,
-          onKeyEvent: (_, event) =>
-              _moveVertically(event, up: _legalFocus, down: _backFocus),
-          icon: Icons.system_update_rounded,
-          title: 'App version & updates',
-          subtitle: _checkingUpdate
-              ? 'Checking…'
-              : '${Updater.instance.currentLabel} · '
-                    '${Updater.instance.distributionLabel}',
-          onTap: _checkingUpdate ? null : _checkForUpdates,
-          trailing: _checkingUpdate
-              ? SizedBox(
-                  width: 17,
-                  height: 17,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: accentInk,
-                  ),
-                )
-              : null,
-        ),
-      ],
     ],
   );
 
