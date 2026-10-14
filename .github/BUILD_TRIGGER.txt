@@ -1,3 +1,3 @@
 Build trigger marker.
 
-This file exists only to trigger the repository's push-based GitHub Actions workflow.
+The Android release workflow supports manual runs with an explicit build number. Use a number greater than the latest published build.
