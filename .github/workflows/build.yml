@@ -21,26 +21,42 @@ env:
   FLUTTER_VERSION: 3.38.9 # matches local dev SDK (Dart 3.10.x)
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      build_number: ${{ steps.number.outputs.build_number }}
+    steps:
+      - name: Calculate a build number above the upstream release
+        id: number
+        env:
+          REQUESTED_BUILD_NUMBER: ${{ inputs.build_number }}
+          RUN_NUMBER: ${{ github.run_number }}
+        shell: bash
+        run: |
+          current="$(curl --fail --silent --show-error \
+            https://api.github.com/repos/Talha-Ashraf420/Lumen-App/releases/latest \
+            | jq -er '.body | capture("build: (?<number>[0-9]+)").number')"
+          if [ -n "$REQUESTED_BUILD_NUMBER" ]; then
+            build="$REQUESTED_BUILD_NUMBER"
+          else
+            build=$((current + RUN_NUMBER))
+          fi
+          case "$build" in
+            ''|*[!0-9]*|0) echo "A positive build number is required."; exit 1 ;;
+          esac
+          if [ "$build" -le "$current" ]; then
+            echo "Build $build must exceed current upstream release $current"
+            exit 1
+          fi
+          echo "Using build number $build (upstream latest: $current)"
+          echo "build_number=$build" >> "$GITHUB_OUTPUT"
+
   quality:
+    needs: prepare
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
-      - name: Check build number against rolling release
-        env:
-          BUILD_NUMBER: ${{ inputs.build_number || github.run_number }}
-        shell: bash
-        run: |
-          case "$BUILD_NUMBER" in
-            ''|*[!0-9]*) echo 'A positive build number is required.'; exit 1 ;;
-          esac
-          current="$(curl --fail --silent --show-error \
-            https://api.github.com/repos/Talha-Ashraf420/Lumen-App/releases/latest \
-            | jq -r '.body | capture("build: (?<number>[0-9]+)").number')"
-          if [ "$BUILD_NUMBER" -le "$current" ]; then
-            echo "Build $BUILD_NUMBER must exceed current release $current"
-            exit 1
-          fi
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
@@ -52,7 +68,7 @@ jobs:
       - run: flutter test
 
   android:
-    needs: quality
+    needs: [quality, prepare]
     runs-on: ubuntu-latest
     env:
       ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_COMMUNITY_KEYSTORE_BASE64 }}
@@ -90,7 +106,7 @@ jobs:
             printf 'storePassword=%s\n' "$ANDROID_STORE_PASSWORD"
           } > android/key.properties
           chmod 600 android/app/community-release.p12 android/key.properties
-      - run: flutter build apk --release --build-number=${{ inputs.build_number || github.run_number }} --dart-define=APP_BUILD=${{ inputs.build_number || github.run_number }}
+      - run: flutter build apk --release --build-number=${{ needs.prepare.outputs.build_number }} --dart-define=APP_BUILD=${{ needs.prepare.outputs.build_number }}
       - name: Verify signed, installable Community APK
         shell: bash
         run: |
@@ -113,7 +129,7 @@ jobs:
   # key. The bundle remains a private workflow artifact until it is submitted to
   # the closed-testing track; it is never attached to the public GitHub release.
   android-play:
-    needs: quality
+    needs: [quality, prepare]
     runs-on: ubuntu-latest
     env:
       ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_PLAY_KEYSTORE_BASE64 }}
@@ -151,7 +167,7 @@ jobs:
             printf 'storePassword=%s\n' "$ANDROID_STORE_PASSWORD"
           } > android/key.properties
           chmod 600 android/app/play-upload.p12 android/key.properties
-      - run: flutter build appbundle --release --build-number=${{ inputs.build_number || github.run_number }} --dart-define=APP_BUILD=${{ inputs.build_number || github.run_number }}
+      - run: flutter build appbundle --release --build-number=${{ needs.prepare.outputs.build_number }} --dart-define=APP_BUILD=${{ needs.prepare.outputs.build_number }}
       - name: Verify signed Google Play bundle
         shell: bash
         run: |
@@ -165,7 +181,7 @@ jobs:
           if-no-files-found: error
 
   windows:
-    needs: quality
+    needs: [quality, prepare]
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -217,7 +233,7 @@ jobs:
             }
             if (-not $verified) { throw "Could not obtain a verified $($archive.name) archive" }
           }
-      - run: flutter build windows --release --dart-define=APP_BUILD=${{ inputs.build_number || github.run_number }}
+      - run: flutter build windows --release --dart-define=APP_BUILD=${{ needs.prepare.outputs.build_number }}
       - name: Package portable zip
         run: Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath Lumen-Windows.zip
       - uses: actions/upload-artifact@v4
@@ -227,7 +243,7 @@ jobs:
           if-no-files-found: error
 
   macos:
-    needs: quality
+    needs: [quality, prepare]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -238,7 +254,7 @@ jobs:
           cache: true
       - run: flutter config --enable-macos-desktop
       - run: flutter pub get
-      - run: flutter build macos --release --dart-define=APP_BUILD=${{ inputs.build_number || github.run_number }}
+      - run: flutter build macos --release --dart-define=APP_BUILD=${{ needs.prepare.outputs.build_number }}
       - name: Zip .app
         run: |
           APP_PATH="build/macos/Build/Products/Release/Lumen.app"
@@ -251,7 +267,7 @@ jobs:
           if-no-files-found: error
 
   linux:
-    needs: quality
+    needs: [quality, prepare]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -266,7 +282,7 @@ jobs:
           cache: true
       - run: flutter config --enable-linux-desktop
       - run: flutter pub get
-      - run: flutter build linux --release --dart-define=APP_BUILD=${{ inputs.build_number || github.run_number }}
+      - run: flutter build linux --release --dart-define=APP_BUILD=${{ needs.prepare.outputs.build_number }}
       - name: Package tarball
         run: tar -czf Lumen-Linux-x64.tar.gz -C build/linux/x64/release/bundle .
       - uses: actions/upload-artifact@v4
@@ -276,7 +292,7 @@ jobs:
           if-no-files-found: error
 
   ios:
-    needs: quality
+    needs: [quality, prepare]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -294,7 +310,7 @@ jobs:
       - run: flutter pub get
       # Unsigned build (CI has no signing certs). Produces Runner.app that must
       # be re-signed / sideloaded (e.g. with AltStore or Sideloadly) to install.
-      - run: flutter build ios --release --no-codesign --dart-define=APP_BUILD=${{ inputs.build_number || github.run_number }}
+      - run: flutter build ios --release --no-codesign --dart-define=APP_BUILD=${{ needs.prepare.outputs.build_number }}
       - name: Zip unsigned .app
         run: ditto -c -k --sequesterRsrc --keepParent build/ios/iphoneos/Runner.app Lumen-iOS-unsigned.zip
       - uses: actions/upload-artifact@v4
@@ -306,7 +322,7 @@ jobs:
   # Publish installable packages to the rolling "latest" release. The Google
   # Play AAB remains a private Actions artifact and is intentionally omitted.
   release:
-    needs: [android, android-play, windows, macos, linux, ios]
+    needs: [prepare, android, android-play, windows, macos, linux, ios]
     if: >-
       ${{
         always() &&
@@ -362,10 +378,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          name: Build ${{ inputs.build_number || github.run_number }}
+          name: Build ${{ needs.prepare.outputs.build_number }}
           # The app reads this 'build:' line to detect newer builds for in-app update.
           body: |
-            build: ${{ inputs.build_number || github.run_number }}
+            build: ${{ needs.prepare.outputs.build_number }}
 
             Lumen automatic build for Android, Android TV, Windows, macOS,
             Linux and iOS. Install links are below.
@@ -379,7 +395,7 @@ jobs:
       - name: Announce the Android build on Discord
         if: ${{ env.DISCORD_RELEASE_WEBHOOK != '' }}
         env:
-          BUILD_NUMBER: ${{ inputs.build_number || github.run_number }}
+          BUILD_NUMBER: ${{ needs.prepare.outputs.build_number }}
           DOWNLOADER_URL: https://aftv.news/4560142
           DOWNLOADER_CODE: "4560142"
         run: |
