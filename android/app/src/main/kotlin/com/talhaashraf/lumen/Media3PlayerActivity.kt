@@ -2278,6 +2278,12 @@ class Media3PlayerActivity : Activity() {
         panel.addView(queryInput, LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
         ))
+        panel.addView(TextView(this).apply {
+            text = "SRT, VTT, SSA, ASS or TTML · no sign-up needed"
+            textSize = 12f
+            setTextColor(0xFF9AA397.toInt())
+            setPadding(0, 6, 0, 0)
+        })
 
         val languageLabels = listOf("Hindi", "Urdu", "Arabic", "English", "All")
         val languageCodes = listOf("hin", "urd", "ara", "eng", "all")
@@ -2288,6 +2294,7 @@ class Media3PlayerActivity : Activity() {
             setPadding(0, 16, 0, 8)
         }
         val languageButtons = mutableListOf<TextView>()
+        var runSearch: (() -> Unit)? = null
         fun refreshLanguageButtons() {
             languageButtons.forEachIndexed { index, button ->
                 val selected = languageCodes[index] == selectedLanguage
@@ -2311,6 +2318,7 @@ class Media3PlayerActivity : Activity() {
                 setOnClickListener {
                     selectedLanguage = languageCodes[index]
                     refreshLanguageButtons()
+                    runSearch?.invoke()
                 }
             }
             languageButtons.add(button)
@@ -2338,7 +2346,8 @@ class Media3PlayerActivity : Activity() {
             .create()
         dialog.setOnShowListener {
             dialog.window?.setBackgroundDrawable(roundedRect(0xFF111511.toInt(), 0xFF596157.toInt(), 1))
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            val searchButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            searchButton.setOnClickListener {
                 val query = queryInput.text?.toString()?.trim().orEmpty()
                 if (query.isBlank()) {
                     queryInput.error = "Enter a movie or series title"
@@ -2387,6 +2396,7 @@ class Media3PlayerActivity : Activity() {
                     }
                 }.start()
             }
+            runSearch = { searchButton.performClick() }
         }
         dialog.setOnDismissListener {
             showControls()
