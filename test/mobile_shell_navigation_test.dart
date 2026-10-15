@@ -51,8 +51,8 @@ void main() {
       }
 
       // Establish a previous Home focus before opening the search keyboard.
-      await tab('Movies');
-      await tab('Home');
+      await tab('الأفلام');
+      await tab('الرئيسية');
       await tab('Search');
       await tester.enterText(find.byType(TextField), 'Aerial Night');
       await tester.pump(const Duration(milliseconds: 500));
@@ -102,7 +102,7 @@ void main() {
       final homeFocus = tester
           .widget<RemoteTap>(
             find.descendant(
-              of: find.byTooltip('Home'),
+              of: find.byTooltip('الرئيسية'),
               matching: find.byType(RemoteTap),
             ),
           )
@@ -155,11 +155,11 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     for (final (label, page) in [
-      ('Movies', 4),
-      ('Series', 5),
+      ('الأفلام', 4),
+      ('المسلسلات', 5),
       ('Live', 6),
       ('Search', 1),
-      ('Home', 0),
+      ('الرئيسية', 0),
     ]) {
       await tester.tap(find.byTooltip(label));
       await tester.pump();
@@ -218,7 +218,7 @@ void main() {
     final home = tester.widget<FocusableActionDetector>(
       find
           .descendant(
-            of: find.byTooltip('Home'),
+            of: find.byTooltip('الرئيسية'),
             matching: find.byType(FocusableActionDetector),
           )
           .first,
