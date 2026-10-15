@@ -170,7 +170,14 @@ void main() {
 
     expect(find.text('Explore offline demo'), findsNothing);
     expect(find.text('EAGLE X'), findsOneWidget);
-    expect(find.byType(TextField), findsNWidgets(2));
+    expect(find.text('لديك فترة تجريبية 30 يوم'), findsOneWidget);
+    expect(find.text('اضغط هنا لتبدأ'), findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('login-submit')));
+    await tester.pump();
+    expect(find.text('إضافة الاشتراك'), findsOneWidget);
+    expect(find.byType(TextField), findsNWidgets(3));
+    expect(find.text('Explore offline demo'), findsNothing);
     expect(loggedIn, isNull);
     expect(tester.takeException(), isNull);
   });
