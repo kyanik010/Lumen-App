@@ -460,9 +460,9 @@ class _CatalogOrganizationScreenState extends State<CatalogOrganizationScreen> {
                 Text(
                   [
                     if (category.sourceLabel.isNotEmpty) category.sourceLabel,
-                    if (renamed) 'Renamed',
-                    if (group != null) 'Combined group',
-                    if (hidden) 'Hidden',
+                    if (renamed) 'تمت إعادة التسمية',
+                    if (group != null) 'مجموعة مدمجة',
+                    if (hidden) 'مخفي',
                   ].join(' · '),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -478,24 +478,24 @@ class _CatalogOrganizationScreenState extends State<CatalogOrganizationScreen> {
               icon: const Icon(Icons.keyboard_arrow_up_rounded),
             ),
             IconButton(
-              tooltip: 'Move down',
+              tooltip: 'تحريك للأسفل',
               onPressed: index == count - 1 ? null : () => _move(category, 1),
               icon: const Icon(Icons.keyboard_arrow_down_rounded),
             ),
             IconButton(
-              tooltip: 'Rename',
+              tooltip: 'إعادة التسمية',
               onPressed: () => _rename(category),
               icon: const Icon(Icons.edit_outlined),
             ),
           ],
           PopupMenuButton<_CategoryAction>(
-            tooltip: 'Category actions',
+            tooltip: 'إجراءات التصنيف',
             onSelected: (action) => _act(category, action),
             itemBuilder: (_) => [
               if (compact)
                 const PopupMenuItem(
                   value: _CategoryAction.rename,
-                  child: Text('Rename'),
+                  child: Text('إعادة التسمية'),
                 ),
               if (compact && index > 0)
                 const PopupMenuItem(
@@ -505,16 +505,16 @@ class _CatalogOrganizationScreenState extends State<CatalogOrganizationScreen> {
               if (compact && index < count - 1)
                 const PopupMenuItem(
                   value: _CategoryAction.moveDown,
-                  child: Text('Move down'),
+                  child: Text('تحريك للأسفل'),
                 ),
               const PopupMenuItem(
                 value: _CategoryAction.merge,
-                child: Text('Combine with…'),
+                child: Text('دمج مع…'),
               ),
               if (group != null)
                 const PopupMenuItem(
                   value: _CategoryAction.unmerge,
-                  child: Text('Remove from combined group'),
+                  child: Text('إزالة من المجموعة المدمجة'),
                 ),
             ],
           ),

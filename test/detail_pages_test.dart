@@ -1267,7 +1267,7 @@ void main() {
 
     await pumpAt(tester, SearchScreen(client: client), const Size(1280, 800));
 
-    final selectedAllLabel = tester.widget<Text>(find.text('All'));
+    final selectedAllLabel = tester.widget<Text>(find.text('الكل'));
     expect(selectedAllLabel.style?.color, onAccent);
     expect(
       contrastRatio(selectedAllLabel.style!.color!, accent),
@@ -1340,7 +1340,7 @@ void main() {
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
     await tester.pump();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'التصنيف');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'البحث في التصنيفات');
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
     await tester.pump();
     expect(

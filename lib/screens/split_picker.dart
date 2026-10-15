@@ -473,7 +473,7 @@ class _SplitPickerState extends State<SplitPicker> {
                     _loadCats();
                   }
                 },
-                child: Text('Try again', style: TextStyle(color: accent)),
+                child: Text('حاول مرة أخرى', style: TextStyle(color: accent)),
               ),
             ],
           ),

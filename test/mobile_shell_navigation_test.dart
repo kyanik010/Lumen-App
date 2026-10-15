@@ -59,7 +59,7 @@ void main() {
       await tab('مباشر');
       expect(find.byKey(const ValueKey('shell-page-6')), findsOneWidget);
       expect(tester.testTextInput.isVisible, isFalse);
-      await tester.tap(find.byTooltip('Category'));
+      await tester.tap(find.byTooltip('التصنيف'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       await tester.tap(find.text('Culture').last);
@@ -83,7 +83,7 @@ void main() {
       );
 
       // Canceling a popup also must not restore an old destination.
-      await tester.tap(find.byTooltip('Category'));
+      await tester.tap(find.byTooltip('التصنيف'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       await tester.binding.handlePopRoute();

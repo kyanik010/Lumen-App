@@ -522,8 +522,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: surface,
         title: const Text('تسجيل الخروج من Eagle X؟'),
         content: const Text(
-          'This account stays saved on this device, but playback and its '
-          'library will close now.',
+          'سيبقى هذا الحساب محفوظًا على هذا الجهاز، لكن سيتم إيقاف التشغيل '
+          'وإغلاق مكتبته الآن.',
         ),
         actions: [
           TextButton(
@@ -1312,8 +1312,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _playbackCard() => _profileSection(
     eyebrow: 'البث',
     icon: Icons.play_circle_outline_rounded,
-    title: 'Playback preferences',
-    subtitle: 'Choose a balance between startup speed and buffering tolerance.',
+    title: 'تفضيلات التشغيل',
+    subtitle: 'اختر التوازن بين سرعة بدء التشغيل وتحمل التخزين المؤقت.',
     body: [
       ValueListenableBuilder<PlaybackMode>(
         valueListenable: PlaybackModeController.instance.mode,
@@ -1396,8 +1396,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           down: DeviceProfile.isMobileApp ? _pairingFocus : _guideSettingsFocus,
         ),
         icon: Icons.tune_rounded,
-        title: 'Organize library',
-        subtitle: 'Rename, hide, reorder, and combine provider categories',
+        title: 'تنظيم المكتبة',
+        subtitle: 'أعد تسمية تصنيفات المزوّد أو أخفها أو أعد ترتيبها أو ادمجها',
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => CatalogOrganizationScreen(client: widget.client),
@@ -1613,7 +1613,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     onKeyEvent: (_, event) =>
         _moveVertically(event, up: _lastProfileSwitchFocus ?? _entryFocusNode),
     onTap: _signingOut ? null : _requestLogout,
-    semanticLabel: 'Sign out of Lumen',
+    semanticLabel: 'تسجيل الخروج',
     focusRadius: 18,
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
@@ -1640,7 +1640,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(width: 11),
           Expanded(
             child: Text(
-              _signingOut ? 'Signing out…' : 'Sign out of Lumen',
+              _signingOut ? 'جارٍ تسجيل الخروج…' : 'تسجيل الخروج',
               style: TextStyle(color: dangerInk, fontWeight: FontWeight.w600),
             ),
           ),

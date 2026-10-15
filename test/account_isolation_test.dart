@@ -1005,12 +1005,12 @@ void main() {
     await tester.tap(find.byTooltip('الأفلام'));
     await tester.pump();
     expect(find.byKey(const ValueKey('shell-page-4')), findsOneWidget);
-    expect(find.text('Movies'), findsOneWidget);
+    expect(find.text('الأفلام'), findsOneWidget);
 
     await tester.tap(find.byTooltip('المسلسلات'));
     await tester.pump();
     expect(find.byKey(const ValueKey('shell-page-5')), findsOneWidget);
-    expect(find.text('Series'), findsOneWidget);
+    expect(find.text('المسلسلات'), findsOneWidget);
 
     await tester.binding.handlePopRoute();
     await tester.pump();
@@ -1022,13 +1022,13 @@ void main() {
 
     final homeBack = tester.binding.handlePopRoute();
     await tester.pump();
-    expect(find.text('Exit Lumen?'), findsOneWidget);
+    expect(find.text('هل تريد الخروج من Eagle X؟'), findsOneWidget);
     expect(find.widgetWithText(TextButton, 'No'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'Yes'), findsOneWidget);
     await tester.tap(find.widgetWithText(TextButton, 'No'));
     await tester.pump();
     await homeBack;
-    expect(find.text('Exit Lumen?'), findsNothing);
+    expect(find.text('هل تريد الخروج من Eagle X؟'), findsNothing);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 1));
@@ -1065,10 +1065,10 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
 
-    expect(find.text('Home'), findsOneWidget);
-    expect(find.text('Movies'), findsOneWidget);
-    expect(find.text('Series'), findsOneWidget);
-    expect(find.text('Live'), findsOneWidget);
+    expect(find.text('الرئيسية'), findsOneWidget);
+    expect(find.text('الأفلام'), findsOneWidget);
+    expect(find.text('المسلسلات'), findsOneWidget);
+    expect(find.text('مباشر'), findsOneWidget);
     expect(find.byTooltip('الدليل'), findsNothing);
     expect(find.text('Search'), findsOneWidget);
     expect(find.text('My List'), findsNothing);

@@ -50,7 +50,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('مسح رمز التلفاز'));
+      await tester.tap(find.text('مسح رمز QR للتلفاز'));
       await tester.pumpAndSettle();
       expect(find.text('Demo profile'), findsNothing);
       expect(find.textContaining('viewer'), findsOneWidget);
@@ -124,10 +124,10 @@ void main() {
       await tester.pump();
       expect(find.byType(QrImageView), findsNothing);
       final reject = tester.widget<OutlinedButton>(
-        find.widgetWithText(OutlinedButton, 'Reject'),
+        find.widgetWithText(OutlinedButton, 'رفض'),
       );
       final approve = tester.widget<FilledButton>(
-        find.widgetWithText(FilledButton, 'Approve and connect'),
+        find.widgetWithText(FilledButton, 'الموافقة والاتصال'),
       );
       expect(reject.focusNode!.hasFocus, isTrue);
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);

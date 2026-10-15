@@ -61,14 +61,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Organize library'), findsOneWidget);
+    expect(find.text('تنظيم المكتبة'), findsOneWidget);
     expect(find.text('Cinema'), findsOneWidget);
     expect(find.text('Documentaries'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
-    await tester.tap(find.byTooltip('Hide category').first);
+    await tester.tap(find.byTooltip('إخفاء التصنيف').first);
     await tester.pumpAndSettle();
-    expect(find.textContaining('Hidden'), findsOneWidget);
+    expect(find.textContaining('مخفي'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

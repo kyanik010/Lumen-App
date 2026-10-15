@@ -108,7 +108,7 @@ void main() {
     expect(find.text('الإعدادات'), findsOneWidget);
     expect(find.text('CURRENT ACCOUNT'), findsNothing);
     expect(find.text('المظهر'), findsOneWidget);
-    expect(find.text('Playback'), findsOneWidget);
+    expect(find.text('التشغيل'), findsOneWidget);
     expect(find.text('Help & about'), findsNothing);
     expect(find.text('Your Lumen'), findsNothing);
     expect(find.byType(LumenAvatar), findsOneWidget);
@@ -173,14 +173,14 @@ void main() {
         if (page != ProfilePage.appearance) {
           expect(find.text('Color mode'), findsNothing);
         }
-        await tester.tap(find.byTooltip('Back to Settings'));
+        await tester.tap(find.byTooltip('العودة إلى الإعدادات'));
         await tester.pumpAndSettle();
         expect(find.text('الإعدادات'), findsOneWidget);
         expect(
           FocusManager.instance.primaryFocus?.debugLabel,
           page == ProfilePage.accounts
               ? 'Profile add account'
-              : 'الإعدادات ${page.title}',
+              : 'Settings ${page.title}',
         );
         expect(tester.takeException(), isNull);
       }
@@ -206,7 +206,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         FocusManager.instance.primaryFocus?.debugLabel,
-        'الإعدادات ملفات المشاهدة',
+        'Settings ملفات المشاهدة',
       );
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pumpAndSettle();
@@ -472,7 +472,7 @@ void main() {
     expect(find.text('تسجيل الخروج من Eagle X؟'), findsOneWidget);
     expect(calls, 0);
 
-    await tester.tap(find.text('Sign out'));
+    await tester.tap(find.text('Sign out of Lumen'));
     await tester.pump();
     expect(calls, 1);
     expect(find.text('Signing out…'), findsOneWidget);
@@ -657,7 +657,7 @@ void main() {
         .firstWhere((node) => node.debugLabel == 'Dark appearance')
         .requestFocus();
     await tester.pump();
-    await move(LogicalKeyboardKey.arrowRight, 'المظهر الفاتح');
+    await move(LogicalKeyboardKey.arrowRight, 'فاتح appearance');
     await move(LogicalKeyboardKey.arrowRight, 'System appearance');
     await move(LogicalKeyboardKey.arrowDown, 'Lumen font');
     await move(LogicalKeyboardKey.arrowRight, 'Inter font');

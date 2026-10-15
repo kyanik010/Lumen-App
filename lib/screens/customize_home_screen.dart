@@ -140,7 +140,7 @@ class _CustomizeHomeScreenState extends State<CustomizeHomeScreen> {
     children: [
       if (showSelectedStrip) ...[_selectedStrip(), const SizedBox(height: 12)],
       SearchField(
-        hint: 'Find a collection…',
+        hint: 'ابحث عن مجموعة…',
         onChanged: (value) => setState(() => _q = value),
       ),
       const SizedBox(height: 12),
@@ -187,7 +187,7 @@ class _CustomizeHomeScreenState extends State<CustomizeHomeScreen> {
         child: TextButton.icon(
           onPressed: () => _loadType(_type),
           icon: const Icon(Icons.refresh_rounded),
-          label: const Text('Could not load collections. Try again'),
+          label: const Text('تعذّر تحميل المجموعات. حاول مرة أخرى'),
         ),
       );
     }
@@ -197,10 +197,10 @@ class _CustomizeHomeScreenState extends State<CustomizeHomeScreen> {
     if (cats.isEmpty) {
       return LumenEmptyState(
         icon: Icons.search_off_rounded,
-        eyebrow: 'No collection found',
-        title: 'Try a broader search',
+        eyebrow: 'لم يتم العثور على مجموعة',
+        title: 'جرّب بحثًا أوسع',
         message:
-            'No ${_type == 'live' ? 'live' : _type} collection matches “$_q”.',
+            'لا توجد مجموعة ${_type == 'live' ? 'مباشرة' : _type == 'series' ? 'مسلسلات' : 'أفلام'} تطابق “$_q”.',
       );
     }
     return AnimatedBuilder(

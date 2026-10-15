@@ -185,12 +185,12 @@ void main() {
     await tester.tap(find.text('الحسابات والخدمات'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
-    await tester.ensureVisible(find.text('Sign out of Lumen'));
+    await tester.ensureVisible(find.text('تسجيل الخروج'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Sign out of Lumen'));
+    await tester.tap(find.text('تسجيل الخروج'));
     await tester.pump();
     expect(find.byType(AlertDialog), findsOneWidget);
-    await tester.tap(find.text('Sign out').last);
+    await tester.tap(find.text('تسجيل الخروج').last);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
     await tester.pump(const Duration(milliseconds: 400));
