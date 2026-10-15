@@ -565,8 +565,8 @@ class _LoginScreenState extends State<LoginScreen> {
         Center(
           child: Image.asset(
             'assets/eagle_x_logo.png',
-            width: 94,
-            height: 94,
+            width: 184,
+            height: 112,
             fit: BoxFit.contain,
             errorBuilder: (_, __, ___) => const Icon(
               Icons.image_not_supported_outlined,
@@ -704,21 +704,32 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: 16),
         Center(
           child: Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFC8A45A), width: 1.5),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x26000000),
+                  blurRadius: 12,
+                  offset: Offset(0, 4),
+                ),
+              ],
             ),
-            child: Image.asset(
-              'assets/eagle_x_qr.png',
-              width: 220,
-              height: 220,
-              fit: BoxFit.contain,
-              filterQuality: FilterQuality.high,
-              errorBuilder: (_, __, ___) => const Icon(
-                Icons.qr_code_2_rounded,
-                size: 220,
-                color: Colors.black,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.asset(
+                'assets/eagle_x_qr.png',
+                width: 112,
+                height: 112,
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.high,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.qr_code_2_rounded,
+                  size: 112,
+                  color: Colors.black,
+                ),
               ),
             ),
           ),
