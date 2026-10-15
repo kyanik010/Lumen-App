@@ -143,7 +143,7 @@ void main() {
     }
   });
 
-  testWidgets('login enters Demo Mode without provider credentials', (
+  testWidgets('branded login does not expose the removed demo entry point', (
     tester,
   ) async {
     tester.view.devicePixelRatio = 1;
@@ -155,23 +155,15 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: buildTheme(darkPalette),
-        home: LoginScreen(
-          onLogin: (credentials) => loggedIn = credentials,
-          credentialSaver: (_) async {},
-        ),
+        home: LoginScreen(onLogin: (credentials) => loggedIn = credentials),
       ),
     );
     await tester.pump();
 
-    expect(find.text('Explore offline demo'), findsOneWidget);
-    await tester.tap(find.text('Explore offline demo'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 50));
-
-    expect(loggedIn?.isDemo, isTrue);
-    expect(loggedIn?.password, isEmpty);
-    expect(find.text('Opening your library…'), findsNothing);
-    expect(find.text('Explore offline demo'), findsOneWidget);
+    expect(find.text('Explore offline demo'), findsNothing);
+    expect(find.text('EAGLE X'), findsOneWidget);
+    expect(find.byType(TextField), findsNWidgets(2));
+    expect(loggedIn, isNull);
     expect(tester.takeException(), isNull);
   });
 }
