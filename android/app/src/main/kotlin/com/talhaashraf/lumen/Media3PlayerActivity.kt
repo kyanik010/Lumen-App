@@ -193,7 +193,10 @@ class Media3PlayerActivity : Activity() {
     private var keyboardMuted = false
     private var volumeBeforeMute = 1f
     private var externalSubtitleUri: Uri? = null
+    private var externalSubtitleSourceUri: Uri? = null
     private var externalSubtitleName = ""
+    private var externalSubtitleExtension = ""
+    private var externalSubtitleActive = false
     private var heldSeekKeyCode = KeyEvent.KEYCODE_UNKNOWN
     private var heldSeekAnchorMs = 0L
     private var pendingBufferMessage = ""
@@ -2366,7 +2369,11 @@ class Media3PlayerActivity : Activity() {
         AlertDialog.Builder(this).setTitle("Subtitle sync")
             .setMessage("The offset is applied to external SRT/VTT files (local and online). Embedded tracks and other formats may not support it.")
             .setSingleChoiceItems(labels, values.indexOfFirst { it == subtitleSyncMs }.coerceAtLeast(0)) { d, index ->
-                subtitleSyncMs = values[index]; saveSubtitleSettings(); d.dismiss(); showSubtitleAppearanceDialog()
+                subtitleSyncMs = values[index]
+                saveSubtitleSettings()
+                refreshExternalSubtitleSync()
+                d.dismiss()
+                showSubtitleAppearanceDialog()
             }.setNegativeButton("Back") { d, _ -> d.dismiss(); showSubtitleAppearanceDialog() }.show()
     }
 
@@ -2951,9 +2958,8 @@ class Media3PlayerActivity : Activity() {
                     val target = File(cacheDir, "online_subtitle_" + System.currentTimeMillis() + "." + extension)
                     target.outputStream().use { output -> input.copyTo(output) }
                     if (target.length() == 0L) throw IllegalStateException("The subtitle file was empty.")
-                    if (extension == "srt" || extension == "vtt") {
-                        applyOnlineSubtitleDelay(target)
-                    }
+                    // Keep the downloaded source untouched so the More > Subtitle sync
+                    // setting can be changed later without accumulating offsets.
                     downloaded = target
                 }
                 connection.disconnect()
@@ -2972,8 +2978,15 @@ class Media3PlayerActivity : Activity() {
                         .show()
                     return@runOnUiThread
                 }
-                externalSubtitleUri = Uri.fromFile(file)
+                externalSubtitleSourceUri = Uri.fromFile(file)
                 externalSubtitleName = subtitle.label
+                externalSubtitleExtension = file.extension.lowercase()
+                externalSubtitleActive = true
+                externalSubtitleUri = prepareExternalSubtitleWithSync(
+                    externalSubtitleSourceUri!!,
+                    externalSubtitleName,
+                    externalSubtitleExtension
+                )
                 val position = player.currentPosition.coerceAtLeast(0L)
                 val shouldPlay = player.playWhenReady
                 player.setMediaItem(buildMediaItem(), position)
@@ -3065,7 +3078,10 @@ class Media3PlayerActivity : Activity() {
                     }
                     itemIndex == 0 -> {
                         externalSubtitleUri = null
+                        externalSubtitleSourceUri = null
                         externalSubtitleName = ""
+                        externalSubtitleExtension = ""
+                        externalSubtitleActive = false
                         player.trackSelectionParameters =
                             player.trackSelectionParameters
                                 .buildUpon()
@@ -3077,6 +3093,9 @@ class Media3PlayerActivity : Activity() {
                     }
                     else -> {
                         val choice = choices[itemIndex - 1]
+                        externalSubtitleActive =
+                            externalSubtitleSourceUri != null &&
+                                choice.label == externalSubtitleName
                         player.trackSelectionParameters =
                             player.trackSelectionParameters
                                 .buildUpon()
@@ -3161,7 +3180,14 @@ class Media3PlayerActivity : Activity() {
             // The activity grant still remains valid for this playback.
         }
         externalSubtitleName = subtitleDisplayName(uri)
-        externalSubtitleUri = prepareExternalSubtitleWithSync(uri, externalSubtitleName)
+        externalSubtitleSourceUri = uri
+        externalSubtitleExtension = externalSubtitleName.substringAfterLast('.', "").lowercase()
+        externalSubtitleActive = true
+        externalSubtitleUri = prepareExternalSubtitleWithSync(
+            uri,
+            externalSubtitleName,
+            externalSubtitleExtension
+        )
         val position = player.currentPosition.coerceAtLeast(0L)
         val shouldPlay = player.playWhenReady
         player.setMediaItem(buildMediaItem(), position)
@@ -3186,9 +3212,13 @@ class Media3PlayerActivity : Activity() {
      * Other formats are passed through untouched because their timestamp syntax
      * differs and must not be rewritten blindly.
      */
-    private fun prepareExternalSubtitleWithSync(uri: Uri, displayName: String): Uri {
+    private fun prepareExternalSubtitleWithSync(
+        uri: Uri,
+        displayName: String,
+        extensionOverride: String = displayName.substringAfterLast('.', "").lowercase()
+    ): Uri {
         if (subtitleSyncMs == 0L) return uri
-        val extension = displayName.substringAfterLast('.', "").lowercase()
+        val extension = extensionOverride
         if (extension != "srt" && extension != "vtt") return uri
         return runCatching {
             val target = File(cacheDir, "local_subtitle_${System.currentTimeMillis()}.$extension")
@@ -3208,6 +3238,26 @@ class Media3PlayerActivity : Activity() {
                 Toast.LENGTH_LONG
             ).show()
         }.getOrDefault(uri)
+    }
+
+    private fun refreshExternalSubtitleSync() {
+        val source = externalSubtitleSourceUri ?: return
+        if (!externalSubtitleActive || !::player.isInitialized) return
+        val position = player.currentPosition.coerceAtLeast(0L)
+        val shouldPlay = player.playWhenReady
+        externalSubtitleUri = prepareExternalSubtitleWithSync(
+            source,
+            externalSubtitleName,
+            externalSubtitleExtension
+        )
+        player.setMediaItem(buildMediaItem(), position)
+        player.trackSelectionParameters = player.trackSelectionParameters
+            .buildUpon()
+            .clearOverridesOfType(C.TRACK_TYPE_TEXT)
+            .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+            .build()
+        player.prepare()
+        player.playWhenReady = shouldPlay
     }
 
     private fun subtitleDisplayName(uri: Uri): String {
