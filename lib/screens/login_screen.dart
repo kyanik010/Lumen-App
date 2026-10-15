@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../activation_api.dart';
 import '../device_profile.dart';
 import '../models.dart';
 import '../distribution.dart';
@@ -17,6 +18,10 @@ import 'device_pairing_screen.dart';
 
 typedef LoginClientFactory = XtreamClient Function(XtreamCredentials);
 typedef LoginCredentialSaver = Future<void> Function(XtreamCredentials);
+typedef LoginActivationResolver = Future<XtreamCredentials> Function(
+  String username,
+  String password,
+);
 
 class _LoginCancelled implements Exception {
   const _LoginCancelled();
@@ -26,6 +31,7 @@ class LoginScreen extends StatefulWidget {
   final void Function(XtreamCredentials) onLogin;
   final LoginClientFactory? clientFactory;
   final LoginCredentialSaver? credentialSaver;
+  final LoginActivationResolver? activationResolver;
   final Duration connectionTimeout;
   final Duration storageTimeout;
 
@@ -34,6 +40,7 @@ class LoginScreen extends StatefulWidget {
     required this.onLogin,
     this.clientFactory,
     this.credentialSaver,
+    this.activationResolver,
     this.connectionTimeout = const Duration(seconds: 18),
     this.storageTimeout = const Duration(seconds: 6),
   });
@@ -354,6 +361,40 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
+  Future<void> _submitActivation() async {
+    if (_busy) return;
+    final username = _user.text.trim();
+    final password = _pass.text;
+    if (username.isEmpty || password.isEmpty) {
+      setState(() => _error = 'أدخل اسم المستخدم وكلمة المرور.');
+      return;
+    }
+
+    setState(() {
+      _busy = true;
+      _error = null;
+      _status = 'جارٍ التحقق من الاشتراك والهوست...';
+    });
+
+    try {
+      final resolve = widget.activationResolver ?? ActivationApi.activate;
+      final credentials = await resolve(username, password).timeout(
+        const Duration(seconds: 50),
+      );
+      if (!mounted) return;
+      await _connect(credentials);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e is ActivationApiException
+            ? e.message
+            : 'تعذر التحقق من الاشتراك. تحقق من الإنترنت وحاول مرة أخرى.';
+        _busy = false;
+        _status = null;
+      });
+    }
+  }
+
   Future<void> _startDemo() => _connect(XtreamCredentials.demoProfile);
 
   Future<void> _pairDevice() async {
@@ -604,6 +645,16 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ],
+        if (_status != null && _error == null) ...[
+          const SizedBox(height: 12),
+          Center(
+            child: Text(
+              _status!,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: muted, fontSize: 12.5),
+            ),
+          ),
+        ],
         const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,
@@ -614,13 +665,7 @@ class _LoginScreenState extends State<LoginScreen> {
             semanticLabel: 'تسجيل الدخول',
             focusRadius: 14,
             focusRingColor: Colors.white,
-            onTap: () {
-              setState(() {
-                _error = _user.text.trim().isEmpty || _pass.text.isEmpty
-                    ? 'أدخل اسم المستخدم وكلمة المرور.'
-                    : 'سيتم تفعيل تسجيل الدخول بعد ربط لوحة التفعيلات.';
-              });
-            },
+            onTap: _submitActivation,
             child: AnimatedContainer(
               key: const ValueKey('login-submit-surface'),
               duration: lumenMotionFast,
@@ -632,10 +677,10 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.login_rounded, size: 19, color: onAccent),
+                  Icon(_busy ? Icons.sync_rounded : Icons.login_rounded, size: 19, color: onAccent),
                   const SizedBox(width: 8),
                   Text(
-                    'تسجيل الدخول',
+                    _busy ? 'جارٍ التحقق...' : 'تسجيل الدخول',
                     style: TextStyle(color: onAccent, fontWeight: FontWeight.w800),
                   ),
                 ],
