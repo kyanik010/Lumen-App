@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lumen_tv/activation_api.dart';
 import 'package:lumen_tv/models.dart';
 import 'package:lumen_tv/screens/login_screen.dart';
 import 'package:lumen_tv/theme.dart';
@@ -77,7 +78,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('login button validates empty fields and does not fake login', (
+  testWidgets('login button validates fields and calls activation resolver', (
     tester,
   ) async {
     XtreamCredentials? loggedIn;
@@ -97,7 +98,12 @@ void main() {
           data: MediaQuery.of(context).copyWith(disableAnimations: true),
           child: child!,
         ),
-        home: LoginScreen(onLogin: (credentials) => loggedIn = credentials),
+        home: LoginScreen(
+          onLogin: (credentials) => loggedIn = credentials,
+          activationResolver: (_, __) async => throw const ActivationApiException(
+            'بيانات الاشتراك غير صحيحة أو غير مفعّلة على الهوستات.',
+          ),
+        ),
       ),
     );
     await tester.pump();
@@ -112,8 +118,9 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('login-submit')));
     await tester.pump();
 
+    await tester.pumpAndSettle();
     expect(
-      find.text('سيتم تفعيل تسجيل الدخول بعد ربط لوحة التفعيلات.'),
+      find.text('بيانات الاشتراك غير صحيحة أو غير مفعّلة على الهوستات.'),
       findsOneWidget,
     );
     expect(loggedIn, isNull);
