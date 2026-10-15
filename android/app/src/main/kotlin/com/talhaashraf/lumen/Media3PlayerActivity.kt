@@ -2356,7 +2356,7 @@ class Media3PlayerActivity : Activity() {
         val labels = values.map { if (it > 0) "+${it} ms" else "${it} ms" }.toTypedArray()
         AlertDialog.Builder(this).setTitle("Subtitle sync")
             .setMessage("Select a timing offset. This setting is stored; native embedded subtitle tracks may not apply it.")
-            .setSingleChoiceItems(labels, values.indexOf(subtitleSyncMs).coerceAtLeast(0)) { d, index ->
+            .setSingleChoiceItems(labels, values.indexOfFirst { it == subtitleSyncMs }.coerceAtLeast(0)) { d, index ->
                 subtitleSyncMs = values[index]; saveSubtitleSettings(); d.dismiss(); showSubtitleAppearanceDialog()
             }.setNegativeButton("Back") { d, _ -> d.dismiss(); showSubtitleAppearanceDialog() }.show()
     }
