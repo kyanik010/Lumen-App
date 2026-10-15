@@ -18,6 +18,10 @@ void main() {
     tester.view.physicalSize = const Size(1280, 900);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 1));
+    });
     await tester.pumpWidget(
       MaterialApp(
         theme: buildTheme(darkPalette),
@@ -35,8 +39,8 @@ void main() {
     expect(find.text('ترفيهك، في مكان واحد'), findsOneWidget);
     expect(find.text('تسجيل الدخول'), findsNWidgets(2));
     expect(find.text('أدخل بيانات حسابك للمتابعة إلى التطبيق.'), findsOneWidget);
-    expect(find.text('اسم المستخدم'), findsOneWidget);
-    expect(find.text('كلمة المرور'), findsOneWidget);
+    expect(find.text('اسم المستخدم'), findsNWidgets(2));
+    expect(find.text('كلمة المرور'), findsNWidgets(2));
     expect(find.text('لتفعيل التطبيق أو الحصول على اشتراك IPTV،'), findsOneWidget);
     expect(find.text('تواصل مع الدعم عبر مسح رمز QR.'), findsOneWidget);
     expect(find.text('امسح الرمز للتواصل مع الدعم'), findsOneWidget);
@@ -50,6 +54,7 @@ void main() {
       ),
       findsOneWidget,
     );
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('password visibility control toggles obscuring', (tester) async {
@@ -65,6 +70,7 @@ void main() {
     await tester.tap(find.byTooltip('إخفاء كلمة المرور'));
     await tester.pump();
     expect(tester.widget<TextField>(password).obscureText, isTrue);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('login button validates empty fields and does not fake login', (
@@ -75,6 +81,10 @@ void main() {
     tester.view.physicalSize = const Size(1280, 900);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 1));
+    });
 
     await tester.pumpWidget(
       MaterialApp(
