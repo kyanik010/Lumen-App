@@ -36,6 +36,11 @@ import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
 import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -2232,6 +2237,265 @@ class Media3PlayerActivity : Activity() {
         }
     }
 
+
+    private data class OnlineSubtitleChoice(
+        val label: String,
+        val url: String,
+        val addon: String
+    )
+
+    private data class OnlineSubtitleIdentity(
+        val type: String,
+        val id: String,
+        val season: Int?,
+        val episode: Int?
+    )
+
+    private fun showOnlineSubtitleSearch() {
+        val title = playlistTitles.getOrNull(playlistIndex).orEmpty().ifBlank { titleText.text.toString() }
+        val progress = AlertDialog.Builder(this)
+            .setTitle("Search online")
+            .setMessage("Searching subtitle sources…")
+            .setNegativeButton("Cancel", null)
+            .create()
+        progress.show()
+        Thread {
+            var failure: String? = null
+            val results = try {
+                findOnlineSubtitles(title)
+            } catch (error: Exception) {
+                failure = error.message ?: "Unable to search subtitle sources."
+                emptyList()
+            }
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                progress.dismiss()
+                if (results.isEmpty()) {
+                    AlertDialog.Builder(this)
+                        .setTitle("Search online")
+                        .setMessage(failure ?: "No online subtitles found for this title.")
+                        .setPositiveButton("OK", null)
+                        .show()
+                    subtitleButton.post { subtitleButton.requestFocus() }
+                    return@runOnUiThread
+                }
+                val labels = results.map { it.label }.toTypedArray()
+                AlertDialog.Builder(this)
+                    .setTitle("Online subtitles (" + results.size + ")")
+                    .setItems(labels) { dialog, index ->
+                        dialog.dismiss()
+                        if (index in results.indices) downloadAndApplyOnlineSubtitle(results[index])
+                    }
+                    .setNegativeButton("Cancel", null)
+                    .setOnCancelListener { subtitleButton.post { subtitleButton.requestFocus() } }
+                    .show()
+            }
+        }.start()
+    }
+
+    private fun findOnlineSubtitles(title: String): List<OnlineSubtitleChoice> {
+        val episode = Regex("""(?:S(\d{1,2})E(\d{1,3})|(\d{1,2})x(\d{1,3}))""", RegexOption.IGNORE_CASE).find(title)
+        val season = episode?.groupValues?.getOrNull(1)?.takeIf { it.isNotBlank() }?.toIntOrNull()
+            ?: episode?.groupValues?.getOrNull(3)?.takeIf { it.isNotBlank() }?.toIntOrNull()
+        val episodeNumber = episode?.groupValues?.getOrNull(2)?.takeIf { it.isNotBlank() }?.toIntOrNull()
+            ?: episode?.groupValues?.getOrNull(4)?.takeIf { it.isNotBlank() }?.toIntOrNull()
+        val cleanTitle = title
+            .replace(Regex("""\b(19|20)\d{2}\b"""), "")
+            .replace(Regex("""\bS\d{1,2}E\d{1,3}\b|\b\d{1,2}x\d{1,3}\b""", RegexOption.IGNORE_CASE), "")
+            .replace(Regex("""[._]+"""), " ")
+            .replace(Regex("""\s+"""), " ")
+            .trim()
+        if (cleanTitle.isBlank()) return emptyList()
+
+        val types = if (season != null && episodeNumber != null) listOf("series") else listOf("movie", "series")
+        val candidates = mutableListOf<JSONObject>()
+        for (type in types) {
+            val response = getOnlineJson(
+                "https://v3-cinemeta.strem.io/catalog/" + type + "/top/search=" +
+                    java.net.URLEncoder.encode(cleanTitle, "UTF-8").replace("+", "%20") + ".json"
+            ) ?: continue
+            val metas = response.optJSONArray("metas") ?: continue
+            for (index in 0 until metas.length()) {
+                val meta = metas.optJSONObject(index) ?: continue
+                val id = meta.optString("imdb_id").ifBlank { meta.optString("id") }
+                if (Regex("""^tt\d+$""").matches(id)) candidates.add(meta)
+            }
+            if (candidates.isNotEmpty()) break
+        }
+        if (candidates.isEmpty()) return emptyList()
+        val queryKey = normaliseOnlineTitle(cleanTitle)
+        candidates.sortBy { meta ->
+            val name = meta.optString("name").ifBlank { meta.optString("title") }
+            val key = normaliseOnlineTitle(name)
+            when {
+                key == queryKey -> 0
+                key.contains(queryKey) || queryKey.contains(key) -> 1
+                else -> 2
+            }
+        }
+        val selected = candidates.first()
+        val identityType = selected.optString("type").ifBlank {
+            if (season != null && episodeNumber != null) "series" else "movie"
+        }
+        val identityId = selected.optString("imdb_id").ifBlank { selected.optString("id") }
+        if (identityType !in listOf("movie", "series") || identityId.isBlank()) return emptyList()
+        val resourceId = if (identityType == "series" && season != null && episodeNumber != null) {
+            identityId + ":" + season + ":" + episodeNumber
+        } else identityId
+
+        val storedAddons = mutableListOf<JSONObject>()
+        val raw = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+            .getString("flutter.eagle_x_stremio_addons_v1", null)
+        if (!raw.isNullOrBlank()) {
+            try {
+                val saved = JSONArray(raw)
+                for (index in 0 until saved.length()) saved.optJSONObject(index)?.let { storedAddons.add(it) }
+            } catch (_: Exception) {
+                // Ignore invalid older preferences and continue with built-in subtitle sources.
+            }
+        }
+        val defaults = listOf(
+            JSONObject().put("id", "org.stremio.opensubtitlesv3")
+                .put("name", "OpenSubtitles V3")
+                .put("version", "1.0.0")
+                .put("url", "https://opensubtitles-v3.strem.io/manifest.json")
+                .put("resources", JSONArray().put("subtitles")).put("enabled", true),
+            JSONObject().put("id", "opensubtitles-pro")
+                .put("name", "OpenSubtitles PRO")
+                .put("version", "0.1.0")
+                .put("url", "https://opensubtitlesv3-pro.dexter21767.com/manifest.json")
+                .put("resources", JSONArray().put("subtitles")).put("enabled", true)
+        )
+        for (seed in defaults) {
+            val seedId = seed.optString("id")
+            val seedUrl = seed.optString("url")
+            if (storedAddons.none { it.optString("id") == seedId || it.optString("url") == seedUrl }) {
+                storedAddons.add(seed)
+            }
+        }
+
+        val results = mutableListOf<OnlineSubtitleChoice>()
+        val seen = mutableSetOf<String>()
+        for (addon in storedAddons) {
+            if (!addon.optBoolean("enabled", true)) continue
+            val resourceList = addon.optJSONArray("resources")
+            val hasSubtitleResource = resourceList == null || (0 until resourceList.length()).any { index ->
+                val item = resourceList.opt(index)
+                if (item is JSONObject) item.optString("name") == "subtitles" else item.toString() == "subtitles"
+            }
+            if (!hasSubtitleResource) continue
+            val rawUrl = addon.optString("url").ifBlank {
+                addon.optString("manifestUrl").ifBlank { addon.optString("transportUrl") }
+            }.trim()
+            if (!rawUrl.startsWith("https://") && !rawUrl.startsWith("http://")) continue
+            val parsed = Uri.parse(rawUrl)
+            var basePath = parsed.encodedPath.orEmpty()
+            if (basePath.endsWith("/manifest.json")) {
+                basePath = basePath.removeSuffix("/manifest.json")
+            } else {
+                basePath = basePath.trimEnd('/')
+            }
+            val base = parsed.buildUpon().encodedPath(basePath).clearQuery().fragment(null).build().toString().trimEnd('/')
+            val subtitlesUrl = base + "/subtitles/" + identityType + "/" +
+                Uri.encode(resourceId) + ".json"
+            val body = getOnlineJson(subtitlesUrl) ?: continue
+            val rows = body.optJSONArray("subtitles") ?: continue
+            val addonName = addon.optString("name").ifBlank { "Stremio addon" }
+            for (index in 0 until rows.length()) {
+                val row = rows.optJSONObject(index) ?: continue
+                val subtitleUrl = row.optString("url").trim()
+                if ((!subtitleUrl.startsWith("https://") && !subtitleUrl.startsWith("http://")) ||
+                    !seen.add(subtitleUrl)) continue
+                val language = row.optString("lang").ifBlank { "Unknown language" }
+                val label = row.optString("label").ifBlank { language }
+                results.add(OnlineSubtitleChoice(label + " · " + language + " · " + addonName, subtitleUrl, addonName))
+            }
+        }
+        return results
+    }
+
+    private fun getOnlineJson(address: String): JSONObject? {
+        var connection: HttpURLConnection? = null
+        return try {
+            connection = URL(address).openConnection() as HttpURLConnection
+            connection.connectTimeout = 9_000
+            connection.readTimeout = 12_000
+            connection.requestMethod = "GET"
+            connection.setRequestProperty("Accept", "application/json")
+            connection.setRequestProperty("User-Agent", "EagleX/1.0")
+            if (connection.responseCode !in 200..299) return null
+            val text = connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+            JSONObject(text)
+        } catch (_: Exception) {
+            null
+        } finally {
+            connection?.disconnect()
+        }
+    }
+
+    private fun normaliseOnlineTitle(value: String): String =
+        value.lowercase().replace(Regex("""[^a-z0-9]"""), "")
+
+    private fun downloadAndApplyOnlineSubtitle(subtitle: OnlineSubtitleChoice) {
+        val progress = AlertDialog.Builder(this)
+            .setTitle("Downloading subtitle")
+            .setMessage(subtitle.label)
+            .setNegativeButton("Cancel", null)
+            .create()
+        progress.show()
+        Thread {
+            var downloaded: File? = null
+            var failure: String? = null
+            try {
+                val connection = URL(subtitle.url).openConnection() as HttpURLConnection
+                connection.connectTimeout = 9_000
+                connection.readTimeout = 20_000
+                connection.setRequestProperty("User-Agent", "EagleX/1.0")
+                connection.setRequestProperty("Accept-Encoding", "identity")
+                connection.inputStream.use { input ->
+                    val path = Uri.parse(subtitle.url).lastPathSegment.orEmpty().lowercase()
+                    val extension = listOf("srt", "vtt", "ass", "ssa", "ttml", "xml")
+                        .firstOrNull { path.endsWith("." + it) } ?: "srt"
+                    val target = File(cacheDir, "online_subtitle_" + System.currentTimeMillis() + "." + extension)
+                    target.outputStream().use { output -> input.copyTo(output) }
+                    if (target.length() == 0L) throw IllegalStateException("The subtitle file was empty.")
+                    downloaded = target
+                }
+                connection.disconnect()
+            } catch (error: Exception) {
+                failure = error.message ?: "Unable to download this subtitle."
+            }
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                progress.dismiss()
+                val file = downloaded
+                if (file == null) {
+                    AlertDialog.Builder(this)
+                        .setTitle("Subtitle download failed")
+                        .setMessage(failure ?: "Unable to download this subtitle.")
+                        .setPositiveButton("OK", null)
+                        .show()
+                    return@runOnUiThread
+                }
+                externalSubtitleUri = Uri.fromFile(file)
+                externalSubtitleName = subtitle.label
+                val position = player.currentPosition.coerceAtLeast(0L)
+                val shouldPlay = player.playWhenReady
+                player.setMediaItem(buildMediaItem(), position)
+                player.trackSelectionParameters = player.trackSelectionParameters
+                    .buildUpon()
+                    .clearOverridesOfType(C.TRACK_TYPE_TEXT)
+                    .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+                    .build()
+                player.prepare()
+                player.playWhenReady = shouldPlay
+                Toast.makeText(this, "Added online subtitle", Toast.LENGTH_SHORT).show()
+                showControls()
+                subtitleButton.requestFocus()
+            }
+        }.start()
+    }
+
     private fun showSubtitleDialog() {
         val choices = trackChoices(player.currentTracks, C.TRACK_TYPE_TEXT)
         val canAddFile = !isLive
@@ -2240,6 +2504,7 @@ class Media3PlayerActivity : Activity() {
         val labels = buildList {
             add("Off")
             addAll(choices.map { it.label })
+            if (canAddFile) add("Search online…")
             if (canAddFile) add("＋  Add subtitle file…")
         }.toTypedArray()
         val typeDisabled = player.trackSelectionParameters.disabledTrackTypes
@@ -2259,6 +2524,10 @@ class Media3PlayerActivity : Activity() {
                     canAddFile && itemIndex == labels.lastIndex -> {
                         activeDialog.dismiss()
                         openSubtitlePicker()
+                    }
+                    canAddFile && itemIndex == choices.size + 1 -> {
+                        activeDialog.dismiss()
+                        showOnlineSubtitleSearch()
                     }
                     itemIndex == 0 -> {
                         externalSubtitleUri = null
