@@ -3,7 +3,9 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:media_kit/media_kit.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:window_manager/window_manager.dart';
@@ -264,9 +266,32 @@ class _PlayerHostState extends State<PlayerHost> {
   // sheets since the player isn't inside a Navigator.
   String? _panelKind;
 
-  // subtitle appearance + sync
+  // Subtitle appearance + sync. These values are saved on this device.
+  static const List<String> _subtitleFonts = [
+    'Reem Kufi',
+    'Aref Ruqaa',
+    'Amiri',
+    'Lalezar',
+    'Marhey',
+    'Rakkas',
+    'Changa',
+    'Noto Naskh Arabic',
+    'Lemonada',
+    'Noto Kufi Arabic',
+  ];
+  static const List<String> _subtitleColorLabels = ['أبيض', 'أصفر', 'سماوي', 'أخضر'];
+  static const List<Color> _subtitleColors = [
+    Colors.white,
+    Colors.yellow,
+    Colors.cyanAccent,
+    Colors.greenAccent,
+  ];
   double _subScale = 1.0;
-  bool _subBg = false;
+  int _subFontIndex = 0;
+  int _subColorIndex = 0;
+  int _subBackground = 0; // off, translucent black, solid black
+  int _subOutline = 1; // off, soft shadow, strong outline-like shadow
+  int _subPosition = 0; // bottom, raised, middle
   double _subDelay = 0;
   bool _subtitlesDisabled = false;
 
@@ -304,6 +329,7 @@ class _PlayerHostState extends State<PlayerHost> {
     sc.addListener(_onSplit);
     Pip.instance.init();
     Pip.instance.active.addListener(_onPip);
+    unawaited(_loadSubtitlePreferences());
     ScreenBrightness.instance.application
         .then((b) => _curBri = b)
         .catchError((_) => _curBri = 0.5);
@@ -1195,19 +1221,31 @@ class _PlayerHostState extends State<PlayerHost> {
                               minimized: mini,
                               subtitlesDisabled: _subtitlesDisabled,
                             ),
-                            style: TextStyle(
-                              height: 1.4,
-                              fontSize: 32.0 * _subScale,
-                              color: Colors.white,
-                              backgroundColor: _subBg
-                                  ? Colors.black54
-                                  : Colors.transparent,
-                              fontWeight: FontWeight.w600,
-                              shadows: const [
-                                Shadow(color: Colors.black, blurRadius: 6),
-                              ],
+                            style: GoogleFonts.getFont(
+                              _subtitleFonts[_subFontIndex],
+                              textStyle: TextStyle(
+                                height: 1.4,
+                                fontSize: 32.0 * _subScale,
+                                color: _subtitleColors[_subColorIndex],
+                                backgroundColor: switch (_subBackground) {
+                                  1 => Colors.black54,
+                                  2 => Colors.black,
+                                  _ => Colors.transparent,
+                                },
+                                fontWeight: FontWeight.w600,
+                                shadows: _subtitleShadows,
+                              ),
                             ),
-                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                            padding: EdgeInsets.fromLTRB(
+                              16,
+                              0,
+                              16,
+                              switch (_subPosition) {
+                                1 => 88,
+                                2 => 240,
+                                _ => 24,
+                              },
+                            ),
                           ),
                         ),
                       ),
@@ -1757,16 +1795,152 @@ class _PlayerHostState extends State<PlayerHost> {
     _hideHud();
   }
 
-  Future<void> _setSubDelay(double v) async {
-    _subDelay = double.parse(v.toStringAsFixed(1));
-    try {
-      await (pc.player!.platform as dynamic)?.setProperty(
-        'sub-delay',
-        '$_subDelay',
-      );
-    } catch (_) {}
-    setState(() {});
+  List<Shadow> get _subtitleShadows {
+    if (_subOutline == 0) return const [];
+    if (_subOutline == 1) {
+      return const [Shadow(color: Colors.black, blurRadius: 6)];
+    }
+    return const [
+      Shadow(color: Colors.black, offset: Offset(-1.5, -1.5), blurRadius: 1),
+      Shadow(color: Colors.black, offset: Offset(0, -1.5), blurRadius: 1),
+      Shadow(color: Colors.black, offset: Offset(1.5, -1.5), blurRadius: 1),
+      Shadow(color: Colors.black, offset: Offset(-1.5, 0), blurRadius: 1),
+      Shadow(color: Colors.black, offset: Offset(1.5, 0), blurRadius: 1),
+      Shadow(color: Colors.black, offset: Offset(-1.5, 1.5), blurRadius: 1),
+      Shadow(color: Colors.black, offset: Offset(0, 1.5), blurRadius: 1),
+      Shadow(color: Colors.black, offset: Offset(1.5, 1.5), blurRadius: 1),
+    ];
   }
+
+  Future<void> _loadSubtitlePreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (!mounted) return;
+      setState(() {
+        _subScale = prefs.getDouble('subtitle.scale') ?? 1.0;
+        _subFontIndex = (prefs.getInt('subtitle.font') ?? 0)
+            .clamp(0, _subtitleFonts.length - 1).toInt();
+        _subColorIndex = (prefs.getInt('subtitle.color') ?? 0)
+            .clamp(0, _subtitleColors.length - 1).toInt();
+        _subBackground = (prefs.getInt('subtitle.background') ?? 0)
+            .clamp(0, 2).toInt();
+        _subOutline = (prefs.getInt('subtitle.outline') ?? 1).clamp(0, 2).toInt();
+        _subPosition = (prefs.getInt('subtitle.position') ?? 0).clamp(0, 2).toInt();
+        _subDelay = prefs.getDouble('subtitle.delay') ?? 0;
+      });
+      if (_subDelay != 0) await _applySubtitleDelay(_subDelay);
+    } catch (_) {
+      // Playback must remain usable if local preferences are unavailable.
+    }
+  }
+
+  Future<void> _saveSubtitlePreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble('subtitle.scale', _subScale);
+      await prefs.setInt('subtitle.font', _subFontIndex);
+      await prefs.setInt('subtitle.color', _subColorIndex);
+      await prefs.setInt('subtitle.background', _subBackground);
+      await prefs.setInt('subtitle.outline', _subOutline);
+      await prefs.setInt('subtitle.position', _subPosition);
+      await prefs.setDouble('subtitle.delay', _subDelay);
+    } catch (_) {
+      // Do not interrupt playback if preferences cannot be persisted.
+    }
+  }
+
+  void _changeSubtitlePreferences(VoidCallback change) {
+    setState(change);
+    unawaited(_saveSubtitlePreferences());
+  }
+
+  Future<void> _applySubtitleDelay(double delay) async {
+    try {
+      final player = pc.player;
+      if (player != null) {
+        await (player.platform as dynamic)?.setProperty(
+          'sub-delay',
+          '$delay',
+        );
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _setSubDelay(double v) async {
+    _subDelay = double.parse(v.clamp(-30.0, 30.0).toStringAsFixed(1));
+    await _applySubtitleDelay(_subDelay);
+    if (mounted) setState(() {});
+    unawaited(_saveSubtitlePreferences());
+  }
+
+  Future<void> _resetSubtitlePreferences() async {
+    setState(() {
+      _subScale = 1.0;
+      _subFontIndex = 0;
+      _subColorIndex = 0;
+      _subBackground = 0;
+      _subOutline = 1;
+      _subPosition = 0;
+      _subDelay = 0;
+    });
+    await _applySubtitleDelay(0);
+    await _saveSubtitlePreferences();
+  }
+
+  Widget _subtitleFontChoices() => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16),
+    child: Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (var i = 0; i < _subtitleFonts.length; i++)
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: RemoteTap(
+              onTap: () => _changeSubtitlePreferences(() => _subFontIndex = i),
+              child: Container(
+                width: 132,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+                decoration: BoxDecoration(
+                  color: _subFontIndex == i
+                      ? accent
+                      : Colors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(lumenCorner(12)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'أهلاً وسهلاً',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.getFont(
+                        _subtitleFonts[i],
+                        textStyle: TextStyle(
+                          color: _subFontIndex == i ? onAccent : Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _subtitleFonts[i],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _subFontIndex == i ? onAccent : Colors.white60,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
+    ),
+  );
 
   void _flashHud(
     String text,
@@ -3754,38 +3928,80 @@ class _PlayerHostState extends State<PlayerHost> {
             },
           );
         }),
+        _settingLabel('نوع الخط العربي'),
+        _subtitleFontChoices(),
+        _settingLabel('لون الترجمة'),
+        _chipRow([
+          for (var i = 0; i < _subtitleColorLabels.length; i++)
+            (
+              _subtitleColorLabels[i],
+              _subColorIndex == i,
+              () => _changeSubtitlePreferences(() => _subColorIndex = i),
+            ),
+        ]),
+        _settingLabel('خلفية الترجمة'),
+        _chipRow([
+          ('إيقاف', _subBackground == 0,
+              () => _changeSubtitlePreferences(() => _subBackground = 0)),
+          ('شفافة', _subBackground == 1,
+              () => _changeSubtitlePreferences(() => _subBackground = 1)),
+          ('سوداء', _subBackground == 2,
+              () => _changeSubtitlePreferences(() => _subBackground = 2)),
+        ]),
+        _settingLabel('حدود النص والظل'),
+        _chipRow([
+          ('بدون', _subOutline == 0,
+              () => _changeSubtitlePreferences(() => _subOutline = 0)),
+          ('ظل ناعم', _subOutline == 1,
+              () => _changeSubtitlePreferences(() => _subOutline = 1)),
+          ('حدود قوية', _subOutline == 2,
+              () => _changeSubtitlePreferences(() => _subOutline = 2)),
+        ]),
+        _settingLabel('موضع الترجمة'),
+        _chipRow([
+          ('أسفل', _subPosition == 0,
+              () => _changeSubtitlePreferences(() => _subPosition = 0)),
+          ('مرتفعة', _subPosition == 1,
+              () => _changeSubtitlePreferences(() => _subPosition = 1)),
+          ('منتصف الشاشة', _subPosition == 2,
+              () => _changeSubtitlePreferences(() => _subPosition = 2)),
+        ]),
         _settingLabel('حجم الترجمة'),
         _chipRow([
-          ('S', _subScale == 0.8, () => setState(() => _subScale = 0.8)),
-          ('M', _subScale == 1.0, () => setState(() => _subScale = 1.0)),
-          ('L', _subScale == 1.25, () => setState(() => _subScale = 1.25)),
-          ('XL', _subScale == 1.6, () => setState(() => _subScale = 1.6)),
-          (
-            'Box ${_subBg ? 'on' : 'off'}',
-            _subBg,
-            () => setState(() => _subBg = !_subBg),
-          ),
+          ('S', _subScale == 0.8,
+              () => _changeSubtitlePreferences(() => _subScale = 0.8)),
+          ('M', _subScale == 1.0,
+              () => _changeSubtitlePreferences(() => _subScale = 1.0)),
+          ('L', _subScale == 1.25,
+              () => _changeSubtitlePreferences(() => _subScale = 1.25)),
+          ('XL', _subScale == 1.6,
+              () => _changeSubtitlePreferences(() => _subScale = 1.6)),
         ]),
-        _settingLabel('Subtitle sync'),
+        _settingLabel('مزامنة الترجمة'),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
-              _stepBtn(
-                Icons.remove_rounded,
-                () => _setSubDelay(_subDelay - 0.5),
-              ),
+              _stepBtn(Icons.remove_rounded, () => _setSubDelay(_subDelay - 0.25)),
               Expanded(
                 child: Text(
                   _subDelay == 0
-                      ? 'In sync'
-                      : '${_subDelay > 0 ? '+' : ''}${_subDelay.toStringAsFixed(1)}s',
+                      ? 'متزامنة'
+                      : '${_subDelay > 0 ? '+' : ''}${_subDelay.toStringAsFixed(2)}s',
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
-              _stepBtn(Icons.add_rounded, () => _setSubDelay(_subDelay + 0.5)),
+              _stepBtn(Icons.add_rounded, () => _setSubDelay(_subDelay + 0.25)),
             ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+          child: OutlinedButton.icon(
+            onPressed: _resetSubtitlePreferences,
+            icon: const Icon(Icons.restart_alt_rounded),
+            label: const Text('إعادة ضبط إعدادات الترجمة'),
           ),
         ),
         const SizedBox(height: 16),
