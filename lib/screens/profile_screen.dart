@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../app_locale.dart';
 import 'package:flutter/services.dart';
 import '../device_profile.dart';
 import '../downloads.dart';
