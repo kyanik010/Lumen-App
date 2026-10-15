@@ -6,7 +6,7 @@ import 'package:http/testing.dart';
 import 'package:lumen_tv/device_trial_api.dart';
 
 void main() {
-  const deviceId = 'EX-${'A' * 64}';
+  const deviceId = 'EX-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
 
   test('device trial check accepts an active trial from the server', () async {
     final client = MockClient((request) async {
