@@ -694,9 +694,11 @@ class _LoginScreenState extends State<LoginScreen> {
     bool autofocus = false,
     Widget? suffixIcon,
   }) {
-    return RemoteTextInput(
-      child: TextField(
-        controller: c,
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: RemoteTextInput(
+        child: TextField(
+          controller: c,
         focusNode: focusNode,
         autofocus: autofocus,
         obscureText: obscure,
@@ -709,7 +711,8 @@ class _LoginScreenState extends State<LoginScreen> {
         textAlign: TextAlign.right,
         onChanged: (_) => setState(() => _error = null),
         onSubmitted: (_) => nextFocus.requestFocus(),
-        decoration: InputDecoration(labelText: label, hintText: hint, suffixIcon: suffixIcon),
+          decoration: InputDecoration(labelText: label, hintText: hint, suffixIcon: suffixIcon),
+        ),
       ),
     );
   }
