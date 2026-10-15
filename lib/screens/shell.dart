@@ -378,8 +378,13 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       return KeyEventResult.ignored;
     }
     final key = event.logicalKey;
-    if (key != LogicalKeyboardKey.arrowLeft &&
-        key != LogicalKeyboardKey.arrowUp) {
+    final focusedForDirection = FocusManager.instance.primaryFocus?.context;
+    final isRtl = focusedForDirection != null &&
+        Directionality.maybeOf(focusedForDirection) == TextDirection.rtl;
+    final boundaryKey = isRtl
+        ? LogicalKeyboardKey.arrowRight
+        : LogicalKeyboardKey.arrowLeft;
+    if (key != boundaryKey && key != LogicalKeyboardKey.arrowUp) {
       return KeyEventResult.ignored;
     }
     final rail = _dockFocusNodes[page];
@@ -404,8 +409,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     final focusedCenter = focusedBox.localToGlobal(
       focusedBox.size.center(Offset.zero),
     );
-    if (key == LogicalKeyboardKey.arrowLeft) {
-      final pageLeft = pageBox.localToGlobal(Offset.zero).dx;
+    if (key == boundaryKey) {
+      final pageRect =
+          pageBox.localToGlobal(Offset.zero) & pageBox.size;
       final focusedRect =
           focusedBox.localToGlobal(Offset.zero) & focusedBox.size;
       // Focus key handlers run before geometry traversal. A control can sit in
@@ -425,7 +431,11 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         final box = nodeContext.findRenderObject();
         if (box is! RenderBox) return false;
         final rect = box.localToGlobal(Offset.zero) & box.size;
-        if (rect.center.dx >= focusedRect.center.dx - 8) return false;
+        if (isRtl
+            ? rect.center.dx <= focusedRect.center.dx + 8
+            : rect.center.dx >= focusedRect.center.dx - 8) {
+          return false;
+        }
         final overlapTop = rect.top > focusedRect.top
             ? rect.top
             : focusedRect.top;
@@ -439,9 +449,14 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       });
       if (hasFocusableLeftInLane) return KeyEventResult.ignored;
 
-      // With no same-row neighbour, a control in the page's left zone has
-      // genuinely reached the stable shell rail boundary.
-      if (focusedCenter.dx <= pageLeft + pageBox.size.width * .28) {
+      // With no same-row neighbour, a control at the rail-facing edge
+      // has genuinely reached the stable shell rail boundary.
+      final reachedRailEdge = isRtl
+          ? focusedCenter.dx >=
+                pageRect.right - pageBox.size.width * .28
+          : focusedCenter.dx <=
+                pageRect.left + pageBox.size.width * .28;
+      if (reachedRailEdge) {
         rail.requestFocus();
         return KeyEventResult.handled;
       }
@@ -1229,12 +1244,19 @@ class _SignalDock extends StatelessWidget {
       }
       final current = ordered.indexWhere((nav) => nav.page == page);
       if (current < 0) return KeyEventResult.ignored;
-      if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+      final isRtl = Directionality.of(context) == TextDirection.rtl;
+      final towardContent = isRtl
+          ? LogicalKeyboardKey.arrowLeft
+          : LogicalKeyboardKey.arrowRight;
+      final towardOutside = isRtl
+          ? LogicalKeyboardKey.arrowRight
+          : LogicalKeyboardKey.arrowLeft;
+      if (event.logicalKey == towardContent) {
         onSelect(page);
         return KeyEventResult.handled;
       }
-      if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-        // The rail is the left edge of the app. Keep its focus visible.
+      if (event.logicalKey == towardOutside) {
+        // Keep focus on the rail's physical outer edge.
         return KeyEventResult.handled;
       }
       final delta = event.logicalKey == LogicalKeyboardKey.arrowUp
@@ -1481,6 +1503,9 @@ class _CommandBar extends StatelessWidget {
       return KeyEventResult.ignored;
     }
     final key = event.logicalKey;
+    final nodeContext = node.context;
+    final isRtl = nodeContext != null &&
+        Directionality.maybeOf(nodeContext) == TextDirection.rtl;
     final nodes = <FocusNode>[
       if (index != 1) searchFocusNode,
       refreshFocusNode,
@@ -1488,13 +1513,17 @@ class _CommandBar extends StatelessWidget {
     ];
     final current = nodes.indexOf(node);
     if (current < 0) return KeyEventResult.ignored;
-    if (key == LogicalKeyboardKey.arrowLeft) {
-      if (current > 0) {
+    if (key == LogicalKeyboardKey.arrowLeft ||
+        key == LogicalKeyboardKey.arrowRight) {
+      final moveToPrevious = key == LogicalKeyboardKey.arrowLeft
+          ? !isRtl
+          : isRtl;
+      if (moveToPrevious && current > 0) {
         nodes[current - 1].requestFocus();
-      } else {
+      } else if (moveToPrevious) {
         // Cross sibling scopes after this key dispatch finishes. Requesting
-        // the rail synchronously while the command-bar Focus is handling Left
-        // can briefly promote rootScope and make focus appear to vanish.
+        // the rail synchronously while the command-bar Focus is handling its
+        // previous-item key can briefly promote rootScope and make focus vanish.
         WidgetsBinding.instance.addPostFrameCallback((_) {
           final railContext = railFocusNode.context;
           if (railContext != null &&
@@ -1507,11 +1536,9 @@ class _CommandBar extends StatelessWidget {
         // Without this, the queued cross-scope handoff can remain pending and
         // make Left appear dead on televisions until an unrelated repaint.
         WidgetsBinding.instance.ensureVisualUpdate();
+      } else if (current + 1 < nodes.length) {
+        nodes[current + 1].requestFocus();
       }
-      return KeyEventResult.handled;
-    }
-    if (key == LogicalKeyboardKey.arrowRight) {
-      if (current + 1 < nodes.length) nodes[current + 1].requestFocus();
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.arrowUp) {
