@@ -25,12 +25,12 @@ typedef ProfileCredentialValidator =
     Future<void> Function(XtreamCredentials credentials);
 
 enum ProfilePage {
-  menu('Settings'),
-  accounts('Accounts & services'),
-  viewers('Viewing profiles'),
-  appearance('Appearance'),
-  playback('Playback'),
-  library('Library & downloads');
+  menu('الإعدادات'),
+  accounts('الحسابات والخدمات'),
+  viewers('ملفات المشاهدة'),
+  appearance('المظهر'),
+  playback('التشغيل'),
+  library('المكتبة والتنزيلات');
 
   const ProfilePage(this.title);
   final String title;
@@ -72,7 +72,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   };
   final _pageScroll = ScrollController();
   final _entryFocus = FocusNode(debugLabel: 'Profile add account');
-  final _viewerManageFocus = FocusNode(debugLabel: 'Switch or manage viewers');
+  final _viewerManageFocus = FocusNode(debugLabel: 'التبديل بين المشاهدين أو إدارتهم');
   final _themeEntryFocus = FocusNode(debugLabel: 'Dark appearance');
   final _fontEntryFocus = FocusNode(debugLabel: 'Lumen font');
   final _cornerEntryFocus = FocusNode(debugLabel: 'Crisp corners');
@@ -209,7 +209,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
     for (final profile in visible) {
       final key = _profileKey(profile);
-      final label = profile.isDemo ? 'Demo Mode' : profile.username;
+      final label = profile.isDemo ? 'الوضع التجريبي' : profile.username;
       _profileSwitchFocus.putIfAbsent(
         key,
         () => FocusNode(debugLabel: 'Switch account $label'),
@@ -431,7 +431,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ..hideCurrentSnackBar()
         ..showSnackBar(
           const SnackBar(
-            content: Text('Service address updated'),
+            content: Text('تم تحديث عنوان الخدمة'),
             duration: Duration(seconds: 2),
           ),
         );
@@ -481,15 +481,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: surface,
-        title: const Text('Clear watch history?'),
+        title: const Text('هل تريد مسح سجل المشاهدة؟'),
         content: const Text(
-          'This removes Continue watching and Recent channels. Your favourites and downloads are kept.',
+          'سيؤدي هذا إلى حذف «متابعة المشاهدة» والقنوات الأخيرة. ستبقى المفضلة والتنزيلات كما هي.',
         ),
         actions: [
           TextButton(
             autofocus: true,
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancel', style: TextStyle(color: muted)),
+            child: Text('إلغاء', style: TextStyle(color: muted)),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -497,7 +497,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               foregroundColor: onAccent,
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Clear'),
+            child: const Text('مسح'),
           ),
         ],
       ),
@@ -508,7 +508,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ..hideCurrentSnackBar()
         ..showSnackBar(
           const SnackBar(
-            content: Text('Watch history cleared'),
+            content: Text('تم مسح سجل المشاهدة'),
             duration: Duration(seconds: 2),
           ),
         );
@@ -521,7 +521,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: surface,
-        title: const Text('Sign out of Lumen?'),
+        title: const Text('تسجيل الخروج من Eagle X؟'),
         content: const Text(
           'This account stays saved on this device, but playback and its '
           'library will close now.',
@@ -530,7 +530,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           TextButton(
             autofocus: true,
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Stay signed in', style: TextStyle(color: muted)),
+            child: Text('البقاء مسجلًا', style: TextStyle(color: muted)),
           ),
           FilledButton.icon(
             style: FilledButton.styleFrom(
@@ -539,7 +539,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             onPressed: () => Navigator.pop(ctx, true),
             icon: const Icon(Icons.logout_rounded, size: 18),
-            label: const Text('Sign out'),
+            label: const Text('تسجيل الخروج'),
           ),
         ],
       ),
@@ -556,7 +556,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ..showSnackBar(
           const SnackBar(
             content: Text(
-              'Lumen could not finish signing out. Please try again.',
+              'تعذّر إكمال تسجيل الخروج. حاول مجددًا.',
             ),
             duration: Duration(seconds: 3),
           ),
@@ -565,10 +565,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   String _expiry() {
-    if (widget.client.creds.isDemo) return 'Not applicable';
-    if (_info == null) return _accountInfoLoading ? 'Checking' : '—';
+    if (widget.client.creds.isDemo) return 'لا ينطبق';
+    if (_info == null) return _accountInfoLoading ? 'جارٍ التحقق' : '—';
     final e = _info?['exp_date'];
-    if (e == null || '$e' == 'null') return 'Unlimited';
+    if (e == null || '$e' == 'null') return 'غير محدود';
     final secs = int.tryParse('$e');
     if (secs == null) return '—';
     final d = DateTime.fromMillisecondsSinceEpoch(secs * 1000);
@@ -666,7 +666,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         leading: IconButton(
           focusNode: _backFocus,
           autofocus: true,
-          tooltip: 'Back to Settings',
+          tooltip: 'العودة إلى الإعدادات',
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
@@ -716,7 +716,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   List<Widget> _settingsMenu() => [
-    Text('Settings', style: kPageTitle()),
+    Text('الإعدادات', style: kPageTitle()),
     const SizedBox(height: 12),
     AnimatedBuilder(
       animation: AppLocaleController.instance,
@@ -750,7 +750,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   Text(viewer.name, style: kTitle()),
                   const SizedBox(height: 4),
-                  Text('Your space. Your way to watch.', style: kBody()),
+                  Text('مساحتك الخاصة وطريقتك في المشاهدة.', style: kBody()),
                 ],
               ),
             ),
@@ -760,37 +760,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ),
     for (final (heading, entries) in [
       (
-        'Your library',
+        'مكتبتك',
         [
           (
             ProfilePage.accounts,
             Icons.dns_outlined,
-            'Add, edit, switch, or combine services',
+            'إضافة الخدمات أو تعديلها أو التبديل بينها أو دمجها',
           ),
           (
             ProfilePage.viewers,
             Icons.people_outline_rounded,
-            'Separate lists and history for each viewer',
+            'قوائم وسجل منفصل لكل مشاهد',
           ),
         ],
       ),
       (
-        'Your experience',
+        'تجربتك',
         [
           (
             ProfilePage.appearance,
             Icons.palette_outlined,
-            'Theme, typeface, colors, and focus',
+            'السمة والخطوط والألوان والتركيز',
           ),
           (
             ProfilePage.playback,
             Icons.play_circle_outline_rounded,
-            'Choose how live streams connect',
+            'اختر طريقة الاتصال بالبث المباشر',
           ),
           (
             ProfilePage.library,
             Icons.video_library_outlined,
-            'Downloads, organization, and history',
+            'التنزيلات والتنظيم والسجل',
           ),
         ],
       ),
@@ -850,7 +850,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('VIEWING PROFILE', style: kSection()),
+            Text('ملف المشاهدة', style: kSection()),
             const SizedBox(height: 10),
             LumenAvatar(seed: viewer.id, size: 56),
             const SizedBox(height: 10),
@@ -860,7 +860,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Your own My List, history, and Continue Watching. Services are shared.',
+              'لديك قائمتي وسجل المشاهدة والمتابعة الخاصة بك. الخدمات مشتركة.',
               style: TextStyle(color: muted, fontSize: 12),
             ),
             const SizedBox(height: 14),
@@ -882,7 +882,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               icon: const Icon(Icons.switch_account_outlined),
-              label: const Text('Switch or manage viewers'),
+              label: const Text('التبديل بين المشاهدين أو إدارتهم'),
             ),
           ],
         ),
@@ -894,17 +894,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final c = widget.client.creds;
     final combinedCount = {..._enabledScopes, _profileKey(c)}.length;
     final status = c.isDemo
-        ? 'Ready'
+        ? 'جاهز'
         : _accountInfoLoading
-        ? 'Checking'
+        ? 'جارٍ التحقق'
         : _info == null
-        ? 'Unavailable'
+        ? 'غير متاح'
         : '${_info?['status'] ?? 'Unknown'}';
     final isActive =
         status.toLowerCase() == 'active' || status.toLowerCase() == 'ready';
-    final accountName = c.isDemo ? 'Demo Mode' : c.username;
+    final accountName = c.isDemo ? 'الوضع التجريبي' : c.username;
     final accountSubtitle = c.isDemo
-        ? 'Offline sample library'
+        ? 'مكتبة تجريبية دون اتصال'
         : c.baseUrl.replaceFirst(RegExp(r'^https?://'), '');
     return Glass(
       radius: 24,
@@ -912,7 +912,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('CURRENT ACCOUNT', style: kSection()),
+          Text('الحساب الحالي', style: kSection()),
           const SizedBox(height: 5),
           Text(
             '$combinedCount ${combinedCount == 1 ? 'service' : 'services'} in this combined library',
@@ -1316,7 +1316,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: const Text('إلغاء'),
           ),
         ],
       ),
@@ -1694,13 +1694,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ? _profileEditFocus[_profileKey(profiles[target])]
         : null;
     final host = p.isDemo
-        ? 'Offline sample library'
+        ? 'مكتبة تجريبية دون اتصال'
         : p.baseUrl.replaceFirst(RegExp(r'^https?://'), '');
     return RemoteTap(
       key: ValueKey('profile-switch-$key'),
       behavior: HitTestBehavior.opaque,
       focusNode: switchFocus,
-      semanticLabel: 'Switch to ${p.isDemo ? 'Demo Mode' : p.username}',
+      semanticLabel: 'Switch to ${p.isDemo ? 'الوضع التجريبي' : p.username}',
       onKeyEvent: (_, event) => _moveInFocusGraph(event, {
         LogicalKeyboardKey.arrowLeft: widget.shellRailFocusNode,
         LogicalKeyboardKey.arrowRight: p.isDemo ? deleteFocus : combineFocus,
@@ -1723,7 +1723,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    p.isDemo ? 'Demo Mode' : p.username,
+                    p.isDemo ? 'الوضع التجريبي' : p.username,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.w500),
@@ -1822,7 +1822,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               key: ValueKey('profile-remove-$key'),
               focusNode: deleteFocus,
               semanticLabel:
-                  'Remove ${p.isDemo ? 'Demo Mode' : p.username} account',
+                  'Remove ${p.isDemo ? 'الوضع التجريبي' : p.username} account',
               focusRadius: 10,
               onKeyEvent: (_, event) => _moveInFocusGraph(event, {
                 LogicalKeyboardKey.arrowLeft: p.isDemo
@@ -2028,7 +2028,7 @@ class _EditServiceDialogState extends State<_EditServiceDialog> {
       TextButton(
         focusNode: _cancelFocus,
         onPressed: _busy ? null : () => Navigator.of(context).pop(),
-        child: const Text('Cancel'),
+        child: const Text('إلغاء'),
       ),
       FilledButton.icon(
         key: const ValueKey('save-service-address'),
@@ -2100,7 +2100,7 @@ class _AccountRemovalDialogState extends State<_AccountRemovalDialog> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
             child: Text(
-              'Cancel',
+              'إلغاء',
               style: TextStyle(color: muted, fontWeight: FontWeight.w500),
             ),
           ),
@@ -2834,7 +2834,7 @@ class _AccentPickerState extends State<_AccentPicker> {
                     border: Border.all(color: line),
                   ),
                   child: Text(
-                    'Cancel',
+                    'إلغاء',
                     style: TextStyle(
                       color: textHi,
                       fontWeight: FontWeight.w500,
