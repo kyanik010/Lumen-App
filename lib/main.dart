@@ -25,12 +25,10 @@ import 'stats.dart';
 import 'store.dart';
 import 'viewing_profiles.dart';
 import 'library.dart';
-import 'legal.dart';
 import 'theme.dart';
 import 'widgets.dart';
 import 'xtream.dart';
 import 'screens/login_screen.dart';
-import 'screens/legal_screen.dart';
 import 'screens/player_host.dart';
 import 'screens/shell.dart';
 import 'screens/splash_screen.dart';
@@ -300,7 +298,6 @@ class SessionGate extends StatefulWidget {
 class _SessionGateState extends State<SessionGate> {
   XtreamCredentials? _creds;
   List<XtreamCredentials> _viewerProfiles = const [];
-  bool _legalAccepted = false;
   bool _loading = true;
   bool _selectingViewer = false;
   String _loadingLabel = 'RESTORING YOUR SESSION';
@@ -316,7 +313,6 @@ class _SessionGateState extends State<SessionGate> {
   Future<void> _bootstrap() async {
     final values = await Future.wait<dynamic>([
       Store.active(),
-      LegalAcceptance.isAccepted(),
       ThemeController.instance.load(),
       PlaybackModeController.instance.load(),
       ViewingProfiles.instance.load(),
@@ -330,7 +326,6 @@ class _SessionGateState extends State<SessionGate> {
     setState(() {
       _creds = credentials;
       _viewerProfiles = viewerProfiles;
-      _legalAccepted = values[1] as bool;
       _loading = false;
       _selectingViewer =
           credentials != null && ViewingProfiles.instance.profiles.length > 1;
@@ -342,11 +337,6 @@ class _SessionGateState extends State<SessionGate> {
           : 'Restored ${AppDiagnostics.sourceLabel(credentials)} session',
     );
     unawaited(_guardProfileState(profileState));
-  }
-
-  Future<void> _acceptLegal() async {
-    await LegalAcceptance.accept();
-    if (mounted) setState(() => _legalAccepted = true);
   }
 
   XtreamClient? _client; // cached so theme rebuilds don't recreate it
@@ -582,9 +572,6 @@ class _SessionGateState extends State<SessionGate> {
             canPop: false,
             child: SessionLoading(message: _loadingLabel),
           );
-        }
-        if (!_legalAccepted) {
-          return _rootExitGuard(LegalWelcomeScreen(onAccepted: _acceptLegal));
         }
         if (_creds == null) {
           return _rootExitGuard(LoginScreen(onLogin: _onLogin));
