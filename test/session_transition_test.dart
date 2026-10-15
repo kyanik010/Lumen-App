@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -11,17 +10,6 @@ import 'package:lumen_tv/screens/login_screen.dart';
 import 'package:lumen_tv/store.dart';
 import 'package:lumen_tv/theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-class _DelayedHydration {
-  int calls = 0;
-  final Completer<void> pending = Completer<void>();
-
-  Future<void> call(XtreamCredentials? credentials) {
-    calls++;
-    if (calls == 1) return Future<void>.value();
-    return pending.future;
-  }
-}
 
 class _ThrowingHydration {
   int calls = 0;
