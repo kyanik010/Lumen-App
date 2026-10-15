@@ -821,7 +821,7 @@ class _ProfileTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    profile.isDemo ? 'Demo Mode' : profile.username,
+                    profile.isDemo ? 'الوضع التجريبي' : profile.username,
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   Text(
