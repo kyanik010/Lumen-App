@@ -65,7 +65,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(const SnackBar(content: Text('Redacted report copied')));
+      ..showSnackBar(const SnackBar(content: Text('تم نسخ التقرير بعد إخفاء البيانات الحساسة')));
   }
 
   Future<void> _shareReport(BuildContext originContext) async {
@@ -311,7 +311,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     final buttons = <Widget>[
       _actionButton(
         icon: Icons.copy_rounded,
-        label: 'Copy report',
+        label: 'نسخ التقرير',
         onTap: _loading ? null : _copyReport,
       ),
       Builder(
@@ -327,7 +327,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
       if (!DeviceProfile.isTelevision)
         _actionButton(
           icon: Icons.email_outlined,
-          label: 'Email support',
+          label: 'مراسلة الدعم',
           onTap: _loading ? null : _emailSupport,
         ),
     ];
@@ -395,7 +395,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
             const SizedBox(width: 9),
             const Expanded(
               child: Text(
-                'Report preview',
+                'معاينة التقرير',
                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
               ),
             ),
@@ -440,7 +440,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'TV playback test',
+          'اختبار تشغيل التلفاز',
           style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
         ),
         const SizedBox(height: 6),
@@ -472,12 +472,12 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
           children: [
             _actionButton(
               icon: Icons.refresh_rounded,
-              label: 'Refresh trace',
+              label: 'تحديث سجل التتبع',
               onTap: _refreshTvReport,
             ),
             _actionButton(
               icon: Icons.copy_rounded,
-              label: 'Copy playback trace',
+              label: 'نسخ سجل تتبع التشغيل',
               primary: true,
               onTap: _tvReport == null ? null : _copyTvReport,
             ),
