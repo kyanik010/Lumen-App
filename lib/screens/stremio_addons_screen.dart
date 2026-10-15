@@ -79,8 +79,35 @@ class _StremioAddonsScreenState extends State<StremioAddonsScreen> {
     }
     var changed = false;
     for (final seed in _defaultAddons) {
-      if (!loaded.any((e) => e['id'] == seed['id'] || e['url'] == seed['url'])) {
+      final index = loaded.indexWhere(
+        (e) => e['id'] == seed['id'] || e['url'] == seed['url'],
+      );
+      if (index < 0) {
         loaded.add(Map<String, dynamic>.from(seed));
+        changed = true;
+        continue;
+      }
+
+      // Older installs may have persisted these defaults with incomplete
+      // manifest metadata. Merge the seed back in so subtitle resources and
+      // the canonical manifest URL remain usable after an app update, while
+      // preserving the user's enabled/disabled choice.
+      final existing = loaded[index];
+      final merged = <String, dynamic>{...seed, ...existing};
+      for (final field in const ['id', 'name', 'version', 'url']) {
+        if ((merged[field] ?? '').toString().trim().isEmpty) {
+          merged[field] = seed[field];
+        }
+      }
+      for (final field in const ['types', 'resources']) {
+        final values = merged[field];
+        if (values is! List || values.isEmpty) {
+          merged[field] = seed[field];
+        }
+      }
+      if (merged['enabled'] is! bool) merged['enabled'] = true;
+      if (jsonEncode(existing) != jsonEncode(merged)) {
+        loaded[index] = merged;
         changed = true;
       }
     }
