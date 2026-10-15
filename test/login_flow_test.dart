@@ -25,6 +25,10 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: buildTheme(darkPalette),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(disableAnimations: true),
+          child: child!,
+        ),
         home: LoginScreen(onLogin: (_) {}),
       ),
     );
@@ -89,6 +93,10 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: buildTheme(darkPalette),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(disableAnimations: true),
+          child: child!,
+        ),
         home: LoginScreen(onLogin: (credentials) => loggedIn = credentials),
       ),
     );
