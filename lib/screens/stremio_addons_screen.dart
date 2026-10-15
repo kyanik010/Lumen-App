@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../widgets.dart';
 
 /// Stremio addon marketplace and installed-addon manager.
 class StremioAddonsScreen extends StatefulWidget {
@@ -211,13 +212,13 @@ class _StremioAddonsScreenState extends State<StremioAddonsScreen> {
       Text('ابحث عن الإضافات الرسمية والمجتمعية وثبّتها وأدر إضافاتك المثبّتة.',
         style: theme.textTheme.bodyMedium),
       const SizedBox(height: 16),
-      TextField(
+      RemoteTextInput(child: TextField(
         controller: _search,
         onChanged: (_) => setState(() {}),
         decoration: const InputDecoration(
           prefixIcon: Icon(Icons.search), hintText: 'البحث عن إضافة...',
           border: OutlineInputBorder()),
-      ),
+      )),
       const SizedBox(height: 12),
       SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: [
         for (final entry in const [
@@ -228,9 +229,9 @@ class _StremioAddonsScreenState extends State<StremioAddonsScreen> {
       ])),
       if (_tab != 'installed') ...[
         const SizedBox(height: 12),
-        TextField(controller: _url, decoration: const InputDecoration(
+        RemoteTextInput(child: TextField(controller: _url, decoration: const InputDecoration(
           labelText: 'رابط Manifest لإضافة أخرى', hintText: 'https://example.com/manifest.json',
-          border: OutlineInputBorder())),
+          border: OutlineInputBorder()))),
         Align(alignment: Alignment.centerRight, child: TextButton.icon(
           onPressed: _busy ? null : _addByUrl,
           icon: const Icon(Icons.add_link), label: const Text('تثبيت من الرابط'))),
