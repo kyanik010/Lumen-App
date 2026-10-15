@@ -42,7 +42,7 @@ class _GuideTabScreenState extends State<GuideTabScreen>
     with AutomaticKeepAliveClientMixin {
   late final EpgRepository _repository;
   final Map<String, FocusNode> _categoryFocus = <String, FocusNode>{};
-  final FocusNode _sourceFocus = FocusNode(debugLabel: 'Guide service filter');
+  final FocusNode _sourceFocus = FocusNode(debugLabel: 'تصفية خدمات الدليل');
   final GlobalKey<PopupMenuButtonState<String>> _sourceMenuKey = GlobalKey();
   List<Category> _rawCategories = const [];
   List<Category> _categories = const [];
@@ -117,7 +117,7 @@ class _GuideTabScreenState extends State<GuideTabScreen>
     for (final category in _rawCategories) {
       if (category.sourceScope.isEmpty) continue;
       sources[category.sourceScope] = category.sourceLabel.isEmpty
-          ? 'IPTV service'
+          ? 'خدمة IPTV'
           : category.sourceLabel;
     }
     return sources.entries.map((entry) => (entry.key, entry.value)).toList()
@@ -404,7 +404,7 @@ class _GuideTabScreenState extends State<GuideTabScreen>
       children: [
         if (widget.onExit != null) ...[
           IconButton.outlined(
-            tooltip: 'Back from guide',
+            tooltip: 'العودة من الدليل',
             onPressed: widget.onExit,
             icon: const Icon(Icons.arrow_back_rounded, size: 19),
           ),
