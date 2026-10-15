@@ -158,7 +158,7 @@ class _LongSessionRefreshClient extends XtreamClient {
   @override
   Future<List<Category>> vodCategories() => stall
       ? _stalledCategories.future
-      : Future.value([Category('movie', 'Movies')]);
+      : Future.value([Category('movie', 'الأفلام')]);
 
   @override
   Future<List<VodStream>> vodStreams(String? categoryId) => stall
@@ -190,7 +190,7 @@ class _StaggeredSearchClient extends XtreamClient {
   final liveResults = Completer<List<LiveStream>>();
 
   @override
-  Future<List<Category>> vodCategories() async => [Category('movie', 'Movies')];
+  Future<List<Category>> vodCategories() async => [Category('movie', 'الأفلام')];
 
   @override
   Future<List<Category>> seriesCategories() async => const [];
@@ -433,7 +433,7 @@ void main() {
       MovieDetailScreen(client: client, movie: movie),
       const Size(390, 844),
     );
-    expect(find.text('FEATURE PRESENTATION'), findsOneWidget);
+    expect(find.text('عرض الفيلم'), findsOneWidget);
     expect(find.text('The Last Signal'), findsOneWidget);
     expect(find.textContaining('(4K)'), findsNothing);
     expect(find.text('Play film'), findsOneWidget);
@@ -540,8 +540,8 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('SEASON ARCHIVE'), findsOneWidget);
-    expect(find.text('CHOOSE A CHAPTER'), findsOneWidget);
+    expect(find.text('أرشيف المواسم'), findsOneWidget);
+    expect(find.text('اختر حلقة'), findsOneWidget);
     expect(find.text('EPISODE 01'), findsWidgets);
     expect(find.text('Play next'), findsOneWidget);
     expect(
@@ -633,7 +633,7 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('CHOOSE A CHAPTER'), findsOneWidget);
+    expect(find.text('اختر حلقة'), findsOneWidget);
     expect(find.text('EPISODE 01'), findsWidgets);
     expect(find.text('The Signal'), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -707,14 +707,14 @@ void main() {
     expect(client.vodStreamCategories.toSet(), contains('1'));
     expect(client.vodStreamCategories.toSet().difference({'1', '2'}), isEmpty);
     expect(find.byType(HomeScreen), findsOneWidget);
-    expect(find.text('Customize'), findsOneWidget);
+    expect(find.text('تخصيص'), findsOneWidget);
     expect(find.text('Recently added'), findsNothing);
     expect(find.text('Latest arrivals'), findsNothing);
     expect(tester.takeException(), isNull);
 
     expect(client.seriesCategoryCalls, 0);
     expect(client.liveCategoryCalls, 0);
-    await tester.tap(find.text('Customize'));
+    await tester.tap(find.text('تخصيص'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('Build your own front row'), findsOneWidget);
@@ -887,7 +887,7 @@ void main() {
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
     await tester.pump();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'Catalog sort');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ترتيب المكتبة');
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
     await tester.pump();
@@ -907,7 +907,7 @@ void main() {
     expect(tile.focusNode!.hasFocus, isTrue);
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
     await tester.pump();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'Catalog sort');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ترتيب المكتبة');
 
     await tester.sendKeyEvent(LogicalKeyboardKey.select);
     await tester.pumpAndSettle();
@@ -1312,7 +1312,7 @@ void main() {
 
     key.currentState!.focusSearch();
     await tester.pump();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'Search library');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'البحث في المكتبة');
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pump();
@@ -1383,7 +1383,7 @@ void main() {
 
     key.currentState!.focusSearch();
     await tester.pump();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'Search library');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'البحث في المكتبة');
     expect(tester.testTextInput.isVisible, isFalse);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.select);
@@ -1400,7 +1400,7 @@ void main() {
     );
     await tester.tap(find.text('DONE'));
     await tester.pumpAndSettle();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'Search library');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'البحث في المكتبة');
 
     await tester.sendKeyEvent(LogicalKeyboardKey.select);
     await tester.pumpAndSettle();
@@ -1463,7 +1463,7 @@ void main() {
       () => find.text('Signal Movie').evaluate().isNotEmpty,
     );
 
-    expect(find.text('Series'), findsAtLeastNWidgets(1));
+    expect(find.text('المسلسلات'), findsAtLeastNWidgets(1));
     expect(find.text('Channels'), findsAtLeastNWidgets(1));
     expect(find.text('Loading'), findsNWidgets(2));
 
