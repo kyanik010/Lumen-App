@@ -255,7 +255,7 @@ class _LaunchSplashState extends State<LaunchSplash>
                                 child: Column(
                                   children: [
                                     Text(
-                                      'YOUR SCREEN. YOUR SIGNAL.',
+                                      'شاشتك. إشارتك.',
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         color: const Color(0xFFF4F1E8),
@@ -267,7 +267,7 @@ class _LaunchSplashState extends State<LaunchSplash>
                                     ),
                                     const SizedBox(height: 10),
                                     Text(
-                                      'LIVE   •   FILMS   •   SERIES',
+                                      'مباشر   •   أفلام   •   مسلسلات',
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         color: const Color(
@@ -324,7 +324,7 @@ class _LaunchSplashState extends State<LaunchSplash>
                                     ),
                                     const SizedBox(height: 12),
                                     const Text(
-                                      'TUNING YOUR EXPERIENCE',
+                                      'نجهّز تجربتك',
                                       style: TextStyle(
                                         color: Color(0xFF747A75),
                                         fontFamily: 'SpaceGrotesk',
