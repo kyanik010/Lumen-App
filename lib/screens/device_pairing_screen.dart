@@ -173,7 +173,7 @@ class _TvPairingScreenState extends State<TvPairingScreen>
         ),
         Center(
           child: Semantics(
-            label: 'Temporary Lumen pairing QR. Scan with the Lumen phone app.',
+            label: 'رمز QR مؤقت للإقران. امسحه باستخدام تطبيق Eagle X على الهاتف.',
             child: SizedBox(
               width: 300,
               height: 300,
@@ -234,25 +234,25 @@ class _TvPairingScreenState extends State<TvPairingScreen>
         FilledButton(
           focusNode: _approveFocus,
           onPressed: _approve,
-          child: const Text('Approve and connect'),
+          child: const Text('موافقة واتصال'),
         ),
       ],
       if (state == PairingState.approved)
-        _message('Approved. Continuing to provider sign-in…'),
+        _message('تمت الموافقة. جارٍ الانتقال إلى تسجيل الدخول لدى المزوّد…'),
       if (state == PairingState.rejected)
-        _message('Request rejected. No account was saved.'),
+        _message('تم رفض الطلب. لم يتم حفظ أي حساب.'),
       if (state == PairingState.expired)
-        _message('This QR has expired. No account was saved.'),
+        _message('انتهت صلاحية رمز QR. لم يتم حفظ أي حساب.'),
       if (!_starting &&
           state != PairingState.pending &&
           state != PairingState.approved) ...[
         const SizedBox(height: 16),
-        OutlinedButton(onPressed: _start, child: const Text('Generate new QR')),
+        OutlinedButton(onPressed: _start, child: const Text('إنشاء رمز QR جديد')),
       ],
       const SizedBox(height: 12),
       TextButton(
         onPressed: () => Navigator.pop(context),
-        child: const Text('Cancel and use manual login'),
+        child: const Text('إلغاء واستخدام تسجيل الدخول اليدوي'),
       ),
     ]);
   }
@@ -453,7 +453,7 @@ class _PhonePairingScreenState extends State<PhonePairingScreen>
             context,
           ).textTheme.headlineLarge?.copyWith(letterSpacing: 8),
         ),
-        _message('Waiting for your confirmation on the TV…'),
+        _message('بانتظار تأكيدك على التلفاز…'),
       ],
       if (_reply!.state == PairingState.approved)
         _message(
@@ -468,12 +468,12 @@ class _PhonePairingScreenState extends State<PhonePairingScreen>
       FilledButton.icon(
         onPressed: _scan,
         icon: const Icon(Icons.qr_code_scanner),
-        label: Text(_ticket == null ? 'Scan TV QR' : 'Scan a different TV'),
+        label: Text(_ticket == null ? 'مسح رمز QR للتلفاز' : 'مسح رمز تلفاز آخر'),
       ),
       if (_ticket != null) ...[
         _message('TV at ${_ticket!.host} · Choose one service to send'),
         if (_profiles.isNotEmpty) ...[
-          Text('Saved services', style: Theme.of(context).textTheme.titleLarge),
+          Text('الخدمات المحفوظة', style: Theme.of(context).textTheme.titleLarge),
           for (final profile in _profiles)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
@@ -492,7 +492,7 @@ class _PhonePairingScreenState extends State<PhonePairingScreen>
             ),
           TextButton(
             onPressed: () => setState(() => _selected = null),
-            child: const Text('Enter another service'),
+            child: const Text('إدخال خدمة أخرى'),
           ),
         ],
         if (_selected == null) ...[
@@ -513,14 +513,14 @@ class _PhonePairingScreenState extends State<PhonePairingScreen>
         _message(
           'Account details are encrypted in transit to this TV. You must approve on the TV before they are used. New details are not saved on this phone.',
         ),
-        FilledButton(onPressed: _send, child: const Text('Send account to TV')),
+        FilledButton(onPressed: _send, child: const Text('إرسال الحساب إلى التلفاز')),
       ],
     ],
     if (_busy && _reply == null) const LinearProgressIndicator(),
     const SizedBox(height: 12),
     TextButton(
       onPressed: () => Navigator.pop(context),
-      child: Text(_busy ? 'مغادرة الإعداد' : 'Done'),
+      child: Text(_busy ? 'مغادرة الإعداد' : 'تم'),
     ),
     if (_busy)
       _message(
@@ -558,7 +558,7 @@ class _PairingScannerScreenState extends State<_PairingScannerScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Scan the Lumen TV QR')),
+    appBar: AppBar(title: const Text('امسح رمز QR الخاص بتلفاز Eagle X')),
     body: SafeArea(
       child: Column(
         children: [
