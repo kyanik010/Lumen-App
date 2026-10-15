@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
 
 import '../theme.dart';
 import '../widgets.dart';
@@ -109,7 +108,6 @@ class _LaunchSplashState extends State<LaunchSplash>
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final compact = size.shortestSide < 560;
-    final markSize = compact ? 104.0 : 136.0;
     final brandSize = compact ? 43.0 : 58.0;
     final reducedMotion = MediaQuery.disableAnimationsOf(context);
 
