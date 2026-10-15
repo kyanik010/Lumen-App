@@ -835,20 +835,20 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   }
 
   List<_Nav> get _mobileDock => <_Nav>[
-    const _Nav(Icons.home_rounded, 'Home', 0),
+    const _Nav(Icons.home_rounded, 'الرئيسية', 0),
     if (_capabilities.movies)
-      const _Nav(Icons.movie_filter_rounded, 'Movies', 4),
+      const _Nav(Icons.movie_filter_rounded, 'الأفلام', 4),
     if (_capabilities.series)
-      const _Nav(Icons.amp_stories_rounded, 'Series', 5),
-    if (_capabilities.live) const _Nav(Icons.sensors_rounded, 'Live', 6),
+      const _Nav(Icons.amp_stories_rounded, 'المسلسلات', 5),
+    if (_capabilities.live) const _Nav(Icons.sensors_rounded, 'مباشر', 6),
     if (_capabilities.live && !DeviceProfile.isMobileApp)
-      const _Nav(Icons.calendar_view_week_rounded, 'Guide', 8),
-    const _Nav(Icons.search_rounded, 'Search', 1),
+      const _Nav(Icons.calendar_view_week_rounded, 'الدليل', 8),
+    const _Nav(Icons.search_rounded, 'بحث', 1),
   ];
 
   Widget _mobileUtilityButton() {
     return Tooltip(
-      message: 'You & library',
+      message: 'حسابك ومكتبتك',
       child: RemoteTap(
         behavior: HitTestBehavior.opaque,
         onTap: _openMobileUtilityHub,
@@ -972,7 +972,7 @@ class _MobileUtilityHub extends StatelessWidget {
   Widget build(BuildContext context) {
     final username = client.creds.username.trim();
     final host = Uri.tryParse(client.creds.baseUrl)?.host;
-    final account = username.isEmpty ? (host ?? 'Local library') : username;
+    final account = username.isEmpty ? (host ?? 'المكتبة المحلية') : username;
     return Material(
       color: Colors.transparent,
       child: Container(
@@ -1022,7 +1022,7 @@ class _MobileUtilityHub extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  tooltip: 'Close',
+                  tooltip: 'إغلاق',
                   onPressed: () => Navigator.pop(context),
                   icon: Icon(Icons.close_rounded, color: muted),
                 ),
@@ -1030,7 +1030,7 @@ class _MobileUtilityHub extends StatelessWidget {
             ),
             const SizedBox(height: 18),
             Text(
-              'SAVED & PERSONAL',
+              'المحفوظات والشخصي',
               style: TextStyle(
                 color: subtle,
                 fontSize: 10,
@@ -1044,8 +1044,8 @@ class _MobileUtilityHub extends StatelessWidget {
                 Expanded(
                   child: _MobileUtilityDestination(
                     icon: Icons.favorite_rounded,
-                    label: 'My List',
-                    subtitle: 'Saved titles',
+                    label: 'قائمتي',
+                    subtitle: 'العناوين المحفوظة',
                     autofocus: true,
                     onTap: () => Navigator.pop(context, 2),
                   ),
@@ -1184,18 +1184,18 @@ class _Nav {
 }
 
 const List<_Nav> _mainDock = [
-  _Nav(Icons.home_rounded, 'Home', 0),
-  _Nav(Icons.movie_filter_rounded, 'Movies', 4),
-  _Nav(Icons.amp_stories_rounded, 'Series', 5),
-  _Nav(Icons.sensors_rounded, 'Live', 6),
-  _Nav(Icons.calendar_view_week_rounded, 'Guide', 8),
-  _Nav(Icons.search_rounded, 'Search', 1),
+  _Nav(Icons.home_rounded, 'الرئيسية', 0),
+  _Nav(Icons.movie_filter_rounded, 'الأفلام', 4),
+  _Nav(Icons.amp_stories_rounded, 'المسلسلات', 5),
+  _Nav(Icons.sensors_rounded, 'مباشر', 6),
+  _Nav(Icons.calendar_view_week_rounded, 'الدليل', 8),
+  _Nav(Icons.search_rounded, 'بحث', 1),
 ];
 
 const List<_Nav> _utilityDock = [
-  _Nav(Icons.favorite_rounded, 'My List', 2),
+  _Nav(Icons.favorite_rounded, 'قائمتي', 2),
   _Nav(Icons.download_rounded, 'Downloads', 7, trailingIsDownloads: true),
-  _Nav(Icons.person_rounded, 'Profile', 3),
+  _Nav(Icons.person_rounded, 'الملف الشخصي', 3),
 ];
 
 class _SignalDock extends StatelessWidget {
@@ -1468,9 +1468,9 @@ class _CommandBar extends StatelessWidget {
     0: 'Tonight',
     1: 'Search library',
     2: 'My list',
-    3: 'Profile',
-    4: 'Movies',
-    5: 'Series',
+    3: 'الملف الشخصي',
+    4: 'الأفلام',
+    5: 'المسلسلات',
     6: 'Live TV',
     7: 'Downloads',
     8: 'TV guide',
@@ -1621,7 +1621,7 @@ class _CommandBar extends StatelessWidget {
                   );
               },
               builder: (_, active) => Tooltip(
-                message: 'Refresh library',
+                message: 'تحديث المكتبة',
                 child: AnimatedContainer(
                   duration: lumenMotion,
                   width: 40,
