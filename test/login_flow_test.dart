@@ -40,17 +40,19 @@ void main() {
     await pumpEagleLogin(tester);
 
     expect(find.text('EAGLE X'), findsOneWidget);
-    expect(find.text('LIVE · FILMS · SERIES'), findsOneWidget);
-    expect(find.text('ترفيهك، في مكان واحد'), findsOneWidget);
-    expect(find.text('تسجيل الدخول'), findsNWidgets(2));
-    expect(find.text('أدخل بيانات حسابك للمتابعة إلى التطبيق.'), findsOneWidget);
-    expect(find.text('اسم المستخدم'), findsNWidgets(2));
-    expect(find.text('كلمة المرور'), findsNWidgets(2));
-    expect(find.text('لتفعيل التطبيق أو الحصول على اشتراك IPTV،'), findsOneWidget);
-    expect(find.text('تواصل مع الدعم عبر مسح رمز QR.'), findsOneWidget);
+    expect(find.text('لديك فترة تجريبية 30 يوم'), findsOneWidget);
+    expect(find.text('اضغط هنا لتبدأ'), findsOneWidget);
+    expect(find.text('لتفعيل التطبيق او الحصول على اشتراك IPTV'), findsOneWidget);
+    expect(find.text('تواصل مع الدعم عبر مسح رمز QR'), findsOneWidget);
     expect(find.text('امسح الرمز للتواصل مع الدعم'), findsOneWidget);
-    expect(find.text('هل تحتاج إلى تفعيل التطبيق؟'), findsNothing);
-    expect(find.byType(TextField), findsNWidgets(2));
+    expect(find.byType(TextField), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('login-submit')));
+    await tester.pump();
+    expect(find.text('إضافة الاشتراك'), findsOneWidget);
+    expect(find.text('هوست'), findsOneWidget);
+    expect(find.text('يوزر'), findsOneWidget);
+    expect(find.text('باسورد'), findsOneWidget);
+    expect(find.byType(TextField), findsNWidgets(3));
     expect(
       find.byWidgetPredicate(
         (widget) => widget is Image &&
@@ -65,7 +67,9 @@ void main() {
   testWidgets('password visibility control toggles obscuring', (tester) async {
     await pumpEagleLogin(tester);
 
-    final password = find.byType(TextField).at(1);
+    await tester.tap(find.byKey(const ValueKey('login-submit')));
+    await tester.pump();
+    final password = find.byType(TextField).at(2);
     expect(tester.widget<TextField>(password).obscureText, isTrue);
 
     await tester.tap(find.byTooltip('إظهار كلمة المرور'));
@@ -110,11 +114,12 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('login-submit')));
     await tester.pump();
-    expect(find.text('أدخل اسم المستخدم وكلمة المرور.'), findsOneWidget);
+    expect(find.text('إضافة الاشتراك'), findsOneWidget);
     expect(loggedIn, isNull);
 
-    await tester.enterText(find.byType(TextField).at(0), 'viewer');
-    await tester.enterText(find.byType(TextField).at(1), 'secret');
+    await tester.enterText(find.byType(TextField).at(0), 'https://provider.example');
+    await tester.enterText(find.byType(TextField).at(1), 'viewer');
+    await tester.enterText(find.byType(TextField).at(2), 'secret');
     await tester.tap(find.byKey(const ValueKey('login-submit')));
     await tester.pump();
 
