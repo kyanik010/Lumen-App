@@ -1097,7 +1097,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.text('Your Lumen'), findsOneWidget);
-    expect(find.text('My List'), findsOneWidget);
+    expect(find.text('قائمتي'), findsOneWidget);
     expect(find.text('Downloads'), findsOneWidget);
     expect(find.text('Profile & settings'), findsOneWidget);
     expect(tester.takeException(), isNull);

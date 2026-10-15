@@ -174,8 +174,8 @@ void main() {
     await tester.tap(find.textContaining('tap to reorder or remove'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
-    await tester.ensureVisible(find.byTooltip('Move up').last);
-    await tester.tap(find.byTooltip('Move up').last);
+    await tester.ensureVisible(find.byTooltip('تحريك للأعلى').last);
+    await tester.tap(find.byTooltip('تحريك للأعلى').last);
     await tester.pump();
     expect(HomeConfig.instance.shelves.map((s) => s.name).toList(), [
       'Prestige drama',
