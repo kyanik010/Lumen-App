@@ -117,6 +117,7 @@ flutter:
     - assets/eagle_x_logo.png
     - assets/eagle_x_qr.png
     - assets/demo/
+    - assets/fonts/subtitles/
 
   # Bundle Lumen's editorial typeface so the interface stays consistent on
   # offline TVs and phones instead of relying on a runtime font download.
