@@ -26,6 +26,7 @@ import android.os.Looper
 import android.os.SystemClock
 import android.provider.OpenableColumns
 import android.util.Log
+import android.util.Base64
 import android.util.Rational
 import android.view.Gravity
 import android.view.KeyEvent
@@ -200,6 +201,7 @@ class Media3PlayerActivity : Activity() {
     private var selectedPlaybackSpeed = 1.0f
     private var sleepTimerMinutes = 0
     private var subtitleFontIndex = 0
+    private val subtitleTypefaceCache = mutableMapOf<Int, Typeface>()
     private var subtitleColorIndex = 0
     private var subtitleBackgroundIndex = 0
     private var subtitleOutlineIndex = 1
@@ -2388,13 +2390,66 @@ class Media3PlayerActivity : Activity() {
         subtitleSyncMs = (savedDelay * 1000.0).toLong().coerceIn(-30000L, 30000L)
     }
 
+    /**
+     * Loads the actual bundled Arabic typeface selected in More > Subtitle appearance.
+     * The font payloads are stored as Base64 text assets so GitHub's text-only
+     * file editor can version them safely; they are decoded once into app cache.
+     */
+    private fun loadSubtitleTypeface(index: Int): Typeface {
+        subtitleTypefaceCache[index]?.let { return it }
+        val fontSpecs = listOf(
+            "reem_kufi" to "01",
+            "aref_ruqaa" to "02",
+            "amiri" to "01",
+            "lalezar" to "02",
+            "marhey" to "03",
+            "rakkas" to "03",
+            "changa" to "04",
+            "noto_naskh_arabic" to "04",
+            "lemonada" to "05",
+            "noto_kufi_arabic" to "05"
+        )
+        val (fontKey, bundle) = fontSpecs.getOrElse(index.coerceIn(0, fontSpecs.lastIndex)) {
+            fontSpecs[0]
+        }
+        val typeface = runCatching {
+            var collecting = false
+            val encoded = assets.open(
+                "flutter_assets/assets/fonts/subtitles/arabic-fonts-$bundle.b64"
+            ).bufferedReader(Charsets.UTF_8).use { reader ->
+                buildString {
+                    reader.forEachLine { line ->
+                        if (line.startsWith("@@") && line.endsWith("@@")) {
+                            collecting = line == "@@$fontKey@@"
+                        } else if (collecting) {
+                            append(line.trim())
+                        }
+                    }
+                }
+            }
+            check(encoded.isNotEmpty()) { "Bundled font payload not found: $fontKey" }
+            val bytes = Base64.decode(encoded, Base64.DEFAULT)
+            val fontFile = File(cacheDir, "subtitle-font-$fontKey.ttf")
+            if (!fontFile.exists() || fontFile.length() != bytes.size.toLong()) {
+                fontFile.writeBytes(bytes)
+            }
+            Typeface.createFromFile(fontFile)
+        }.onFailure {
+            Log.w("Media3PlayerActivity", "Could not load Arabic subtitle font $fontKey", it)
+        }.getOrElse {
+            Typeface.create("sans-serif", Typeface.NORMAL)
+        }
+        subtitleTypefaceCache[index] = typeface
+        return typeface
+    }
+
     private fun applySubtitleStyle() {
         if (!::playerView.isInitialized) return
         val foreground = intArrayOf(Color.WHITE, Color.YELLOW, 0xFF00FFFF.toInt(), 0xFF69F0AE.toInt())[subtitleColorIndex]
         val background = when (subtitleBackgroundIndex) { 1 -> 0x88000000.toInt(); 2 -> Color.BLACK; else -> Color.TRANSPARENT }
         val edge = when (subtitleOutlineIndex) { 1 -> CaptionStyleCompat.EDGE_TYPE_DROP_SHADOW; 2 -> CaptionStyleCompat.EDGE_TYPE_OUTLINE; else -> CaptionStyleCompat.EDGE_TYPE_NONE }
         val fonts = listOf("Reem Kufi", "Aref Ruqaa", "Amiri", "Lalezar", "Marhey", "Rakkas", "Changa", "Noto Naskh Arabic", "Lemonada", "Noto Kufi Arabic")
-        val typeface = Typeface.create(fonts[subtitleFontIndex], Typeface.NORMAL)
+        val typeface = loadSubtitleTypeface(subtitleFontIndex)
         val style = CaptionStyleCompat(foreground, background, Color.TRANSPARENT, edge, Color.BLACK, typeface)
         playerView.subtitleView?.let {
             it.setStyle(style)
