@@ -25,7 +25,6 @@ import 'viewing_profiles.dart';
 import 'library.dart';
 import 'legal.dart';
 import 'theme.dart';
-import 'updater.dart';
 import 'widgets.dart';
 import 'xtream.dart';
 import 'screens/login_screen.dart';
@@ -58,7 +57,6 @@ Future<void> main() async {
     return previousPlatformError?.call(error, stack) ?? false;
   };
   await DeviceProfile.detect();
-  await Updater.instance.initialize();
   await NetworkPathMonitor.instance.initialize();
   AppDiagnostics.instance.record(
     'App',
