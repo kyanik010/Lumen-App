@@ -77,7 +77,7 @@ class _LegalWelcomeScreenState extends State<LegalWelcomeScreen> {
                               builder: (_) => const LegalScreen(),
                             ),
                           ),
-                          child: const Text('Read Legal & Privacy'),
+                          child: const Text('قراءة الشروط والخصوصية'),
                         ),
                         const SizedBox(height: 6),
                         SizedBox(
@@ -215,7 +215,7 @@ class LegalScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 22),
                                   Text(
-                                    'THE IMPORTANT PARTS',
+                                    'المعلومات المهمة',
                                     style: kSection(color: accentInk),
                                   ),
                                   const SizedBox(height: 12),
@@ -247,7 +247,7 @@ class LegalScreen extends StatelessWidget {
                                       _Section(
                                         width: cardWidth,
                                         index: '04',
-                                        title: 'Third-party services',
+                                        title: 'خدمات الجهات الخارجية',
                                         body:
                                             'Metadata may come from TMDB, missing channel artwork may be matched from IPTV-org’s public catalog, and optional subtitle searches may use OpenSubtitles. Those independent services have their own terms and privacy practices. Optional phone-to-TV setup scans a QR locally, saves no camera images, and sends encrypted credentials directly to your TV with your approval; no Lumen relay server is used.',
                                       ),
@@ -269,7 +269,7 @@ class LegalScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 24),
                                   Text(
-                                    'POLICIES & CONTACT',
+                                    'السياسات والتواصل',
                                     style: kSection(color: accentInk),
                                   ),
                                   const SizedBox(height: 12),
@@ -283,7 +283,7 @@ class LegalScreen extends StatelessWidget {
                                             : double.infinity,
                                         child: _LinkTile(
                                           icon: Icons.privacy_tip_outlined,
-                                          title: 'Privacy policy',
+                                          title: 'سياسة الخصوصية',
                                           subtitle: privacyPolicyUrl,
                                           onTap: () => _open(privacyPolicyUrl),
                                         ),
@@ -307,7 +307,7 @@ class LegalScreen extends StatelessWidget {
                                             : double.infinity,
                                         child: _LinkTile(
                                           icon: Icons.email_outlined,
-                                          title: 'Privacy & support',
+                                          title: 'الخصوصية والدعم',
                                           subtitle: supportEmail,
                                           onTap: () =>
                                               _open('mailto:$supportEmail'),
