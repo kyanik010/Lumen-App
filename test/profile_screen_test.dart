@@ -109,17 +109,12 @@ void main() {
     expect(find.text('CURRENT ACCOUNT'), findsNothing);
     expect(find.text('Appearance'), findsOneWidget);
     expect(find.text('Playback'), findsOneWidget);
-    expect(find.text('Help & about'), findsOneWidget);
+    expect(find.text('Help & about'), findsNothing);
     expect(find.text('Your Lumen'), findsNothing);
     expect(find.byType(LumenAvatar), findsOneWidget);
     expect(find.text('Your library'), findsOneWidget);
     expect(find.text('Your experience'), findsOneWidget);
     expect(find.byType(Glass), findsNWidgets(3));
-    // Use the phone's height for useful groups, not a half-empty dashboard.
-    expect(
-      tester.getBottomLeft(find.text('Help & about')).dy,
-      greaterThan(580),
-    );
     expect(tester.takeException(), isNull);
 
     expect(find.text('Color mode'), findsNothing);
