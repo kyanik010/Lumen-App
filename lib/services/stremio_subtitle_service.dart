@@ -77,8 +77,7 @@ class StremioSubtitleService {
               .toList();
         }
       } catch (_) {
-        // Recover with the built-in subtitle addons instead of silently
-        // disabling every Stremio subtitle source for malformed old storage.
+        // Recover from malformed older storage with the built-in defaults.
       }
     }
 
@@ -94,10 +93,15 @@ class StremioSubtitleService {
       }
       final existing = stored[index];
       final merged = <String, dynamic>{...seed, ...existing};
-      final resources = _resourceNames(merged['resources']);
-      if (!resources.contains('subtitles')) merged['resources'] = seed['resources'];
-      if ((merged['url'] ?? '').toString().trim().isEmpty) merged['url'] = seed['url'];
-      if ((merged['name'] ?? '').toString().trim().isEmpty) merged['name'] = seed['name'];
+      if (!_resourceNames(merged['resources']).contains('subtitles')) {
+        merged['resources'] = seed['resources'];
+      }
+      if ((merged['url'] ?? '').toString().trim().isEmpty) {
+        merged['url'] = seed['url'];
+      }
+      if ((merged['name'] ?? '').toString().trim().isEmpty) {
+        merged['name'] = seed['name'];
+      }
       if (merged['enabled'] is! bool) merged['enabled'] = true;
       if (jsonEncode(existing) != jsonEncode(merged)) {
         stored[index] = merged;
@@ -194,11 +198,6 @@ class StremioSubtitleService {
         // Continue with the next supported catalog type.
       }
     }
-
-    // Cinemeta is the preferred identity provider, but it can be unavailable
-    // or return no match for a title. Fall back to searchable catalogs from
-    // the user's enabled Stremio addons, accepting only IMDb-backed movie or
-    // series identities before requesting subtitle resources.
     return _searchConfiguredIdentity(
       clean,
       series: series,
@@ -235,7 +234,7 @@ class StremioSubtitleService {
       final candidates = batches.expand((batch) => batch).where((item) {
         final id = (item['id'] ?? '').toString();
         final type = (item['type'] ?? '').toString().toLowerCase();
-        return RegExp(r'^tt\\d{7,10}
+        return RegExp(r'^tt\d{7,10}
     Map<String, dynamic> addon,
     Map<String, dynamic> identity,
     String language,
@@ -339,14 +338,14 @@ class StremioSubtitleService {
           (addon['url'] ?? addon['manifestUrl'] ?? addon['transportUrl'] ?? '')
               .toString()
               .trim();
-      var uri = Uri.tryParse(rawUrl);
-      if (uri == null ||
-          (uri.scheme != 'http' && uri.scheme != 'https')) {
+      final parsedUrl = Uri.tryParse(rawUrl);
+      if (parsedUrl == null ||
+          (parsedUrl.scheme != 'http' && parsedUrl.scheme != 'https')) {
         return const [];
       }
       final manifestUrl = rawUrl.endsWith('/manifest.json')
           ? rawUrl
-          : (rawUrl.endsWith('/') ? '${rawUrl}manifest.json' : '${rawUrl}/manifest.json');
+          : (rawUrl.endsWith('/') ? rawUrl + 'manifest.json' : rawUrl + '/manifest.json');
       final response = await _client.get(Uri.parse(manifestUrl)).timeout(_timeout);
       if (response.statusCode != 200) return const [];
       final manifest = jsonDecode(response.body);
@@ -435,7 +434,8 @@ class StremioSubtitleService {
           final id = (catalog['id'] ?? '').toString();
           if (id.isEmpty) return const <Map<String, dynamic>>[];
           final request = Uri.parse(
-            '$base/catalog/$type/$id/search=${Uri.encodeComponent(query)}.json',
+            base + '/catalog/' + type + '/' + id + '/search=' +
+                Uri.encodeComponent(query) + '.json',
           );
           final response = await _client.get(request).timeout(_timeout);
           if (response.statusCode != 200) return const <Map<String, dynamic>>[];
@@ -448,7 +448,7 @@ class StremioSubtitleService {
               'type': (meta['type'] ?? type).toString(),
               'name': (meta['name'] ?? meta['title'] ?? '').toString(),
             };
-          }).where((meta) => RegExp(r'^tt\\d{7,10}
+          }).where((meta) => RegExp(r'^tt\d{7,10}
     Map<String, dynamic> addon,
     Map<String, dynamic> identity,
     String language,
