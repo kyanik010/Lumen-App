@@ -214,11 +214,11 @@ class _MyListScreenState extends State<MyListScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             EditorialPageHeader(
-              eyebrow: 'Your library',
-              title: wideShell ? 'Saved for later' : 'My list',
+              eyebrow: 'مكتبتك',
+              title: wideShell ? 'محفوظ لوقت لاحق' : 'قائمتي',
               subtitle: all.isEmpty
                   ? 'Keep the films, series and channels you care about close.'
-                  : '${all.length} saved ${all.length == 1 ? 'item' : 'items'} across your library',
+                  : '${all.length} saved ${all.length == 1 ? 'عنصر' : 'عناصر'} across your library',
               icon: Icons.bookmark_rounded,
               trailing: MediaQuery.sizeOf(context).width >= 560
                   ? _countBadge(all.length)
