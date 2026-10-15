@@ -474,7 +474,7 @@ void main() {
     expect(find.text('تسجيل الخروج من Eagle X؟'), findsOneWidget);
     expect(calls, 0);
 
-    await tester.tap(find.byIcon(Icons.logout_rounded));
+    await tester.tap(find.widgetWithText(FilledButton, 'تسجيل الخروج'));
     await tester.pump();
     expect(calls, 1);
     expect(find.text('جارٍ تسجيل الخروج…'), findsOneWidget);
