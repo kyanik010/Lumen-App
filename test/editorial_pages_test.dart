@@ -83,7 +83,7 @@ void main() {
       MyListScreen(client: testClient()),
       const Size(390, 844),
     );
-    expect(find.text('محفوظ لوقت لاحق'), findsOneWidget);
+    expect(find.text('قائمتي'), findsOneWidget);
     expect(find.text('Save the good stuff'), findsOneWidget);
     expect(tester.takeException(), isNull);
 

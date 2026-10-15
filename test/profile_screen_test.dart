@@ -112,8 +112,8 @@ void main() {
     expect(find.text('Help & about'), findsNothing);
     expect(find.text('Your Lumen'), findsNothing);
     expect(find.byType(LumenAvatar), findsOneWidget);
-    expect(find.text('Your library'), findsOneWidget);
-    expect(find.text('Your experience'), findsOneWidget);
+    expect(find.text('مكتبتك'), findsOneWidget);
+    expect(find.text('تجربتك'), findsOneWidget);
     expect(find.byType(Glass), findsNWidgets(2));
     expect(tester.takeException(), isNull);
 
@@ -461,13 +461,15 @@ void main() {
         return completion.future;
       },
     );
+    await tester.tap(find.text('الحسابات والخدمات'));
+    await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text('تسجيل الخروج من Eagle X'),
+      find.text('تسجيل الخروج'),
       500,
       scrollable: find.byType(Scrollable).first,
     );
 
-    await tester.tap(find.text('تسجيل الخروج من Eagle X'));
+    await tester.tap(find.text('تسجيل الخروج'));
     await tester.pumpAndSettle();
     expect(find.text('تسجيل الخروج من Eagle X؟'), findsOneWidget);
     expect(calls, 0);
@@ -475,7 +477,7 @@ void main() {
     await tester.tap(find.text('Sign out of Lumen'));
     await tester.pump();
     expect(calls, 1);
-    expect(find.text('Signing out…'), findsOneWidget);
+    expect(find.text('جارٍ تسجيل الخروج…'), findsOneWidget);
 
     completion.complete();
     await tester.pump();
@@ -532,7 +534,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(activePalette.brightness, Brightness.light);
     final lightTile = tester.widget<AnimatedContainer>(
-      find.byKey(const ValueKey('profile-theme-light')),
+      find.byKey(const ValueKey('profile-theme-فاتح')),
     );
     expect((lightTile.decoration! as BoxDecoration).color, accent);
     final unselectedAccent = tester.widget<AnimatedContainer>(
@@ -544,12 +546,12 @@ void main() {
       reason: 'Cached accent tiles must repaint to the light surface.',
     );
 
-    await tester.tap(find.text('System'));
+    await tester.tap(find.text('النظام'));
     await tester.pumpAndSettle();
     expect(ThemeController.instance.mode.value, ThemeMode.system);
     expect(activePalette.brightness, Brightness.light);
     final systemTile = tester.widget<AnimatedContainer>(
-      find.byKey(const ValueKey('profile-theme-system')),
+      find.byKey(const ValueKey('profile-theme-النظام')),
     );
     expect((systemTile.decoration! as BoxDecoration).color, accent);
 

@@ -127,7 +127,7 @@ void main() {
         find.widgetWithText(OutlinedButton, 'رفض'),
       );
       final approve = tester.widget<FilledButton>(
-        find.widgetWithText(FilledButton, 'الموافقة والاتصال'),
+        find.widgetWithText(FilledButton, 'موافقة واتصال'),
       );
       expect(reject.focusNode!.hasFocus, isTrue);
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);

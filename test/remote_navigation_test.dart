@@ -830,7 +830,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('الخروج من Eagle X؟'), findsOneWidget);
     final noButton = tester.widget<TextButton>(
-      find.widgetWithText(TextButton, 'No'),
+      find.widgetWithText(TextButton, 'لا'),
     );
     expect(noButton.autofocus, isTrue);
   });

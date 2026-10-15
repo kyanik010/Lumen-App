@@ -1022,13 +1022,13 @@ void main() {
 
     final homeBack = tester.binding.handlePopRoute();
     await tester.pump();
-    expect(find.text('هل تريد الخروج من Eagle X؟'), findsOneWidget);
-    expect(find.widgetWithText(TextButton, 'No'), findsOneWidget);
-    expect(find.widgetWithText(FilledButton, 'Yes'), findsOneWidget);
+    expect(find.text('الخروج من Eagle X؟'), findsOneWidget);
+    expect(find.widgetWithText(TextButton, 'لا'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'نعم'), findsOneWidget);
     await tester.tap(find.widgetWithText(TextButton, 'No'));
     await tester.pump();
     await homeBack;
-    expect(find.text('هل تريد الخروج من Eagle X؟'), findsNothing);
+    expect(find.text('الخروج من Eagle X؟'), findsNothing);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 1));
