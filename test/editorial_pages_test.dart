@@ -83,7 +83,7 @@ void main() {
       MyListScreen(client: testClient()),
       const Size(390, 844),
     );
-    expect(find.text('My list'), findsOneWidget);
+    expect(find.text('قائمتي'), findsOneWidget);
     expect(find.text('Save the good stuff'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
@@ -106,7 +106,7 @@ void main() {
       MyListScreen(client: testClient()),
       const Size(1280, 900),
     );
-    expect(find.text('Saved for later'), findsOneWidget);
+    expect(find.text('محفوظ للمشاهدة لاحقًا'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await pumpAt(tester, const LegalScreen(), const Size(1280, 900));
@@ -162,7 +162,7 @@ void main() {
 
     await tester.tap(find.text('New cinema'));
     await tester.pump();
-    await tester.tap(find.text('Series'));
+    await tester.tap(find.text('المسلسلات'));
     await tester.pump();
     await tester.tap(find.text('Prestige drama'));
     await tester.pump();
