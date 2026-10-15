@@ -155,33 +155,13 @@ class _LaunchSplashState extends State<LaunchSplash>
                                 opacity: markIn.clamp(0, 1),
                                 child: SizedBox.square(
                                   dimension: compact ? 184 : 240,
-                                  child: Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      Lottie.asset(
-                                        'assets/lumen_loader.json',
-                                        width: compact ? 184 : 240,
-                                        height: compact ? 184 : 240,
-                                        repeat: !reducedMotion,
-                                        animate: !reducedMotion,
-                                        fit: BoxFit.contain,
-                                        delegates: LottieDelegates(
-                                          values: [
-                                            ValueDelegate.color(const [
-                                              '**',
-                                            ], value: defaultAccent),
-                                          ],
-                                        ),
-                                      ),
-                                      Image.asset(
-                                        'assets/eagle_x_logo.png',
-                                        width: markSize * 1.65,
-                                        height: markSize * 1.25,
-                                        fit: BoxFit.contain,
-                                        errorBuilder: (_, __, ___) =>
-                                            const SizedBox.shrink(),
-                                      ),
-                                    ],
+                                  child: Image.asset(
+                                    'assets/eagle_x_logo.png',
+                                    width: compact ? 184 : 240,
+                                    height: compact ? 184 : 240,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (_, __, ___) =>
+                                        const SizedBox.shrink(),
                                   ),
                                 ),
                               ),
