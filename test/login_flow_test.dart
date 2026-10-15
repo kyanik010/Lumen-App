@@ -82,52 +82,25 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('login button validates fields and calls activation resolver', (
+  testWidgets('subscription form validates host and required credentials', (
     tester,
   ) async {
     XtreamCredentials? loggedIn;
-    tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(1280, 900);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(() async {
-      await tester.pumpWidget(const SizedBox.shrink());
-      await tester.pump(const Duration(seconds: 1));
-    });
-
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: buildTheme(darkPalette),
-        builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(disableAnimations: true),
-          child: child!,
-        ),
-        home: LoginScreen(
-          onLogin: (credentials) => loggedIn = credentials,
-          activationResolver: (_, __) async => throw const ActivationApiException(
-            'بيانات الاشتراك غير صحيحة أو غير مفعّلة على الهوستات.',
-          ),
-        ),
-      ),
-    );
-    await tester.pump();
+    await pumpEagleLogin(tester);
 
     await tester.tap(find.byKey(const ValueKey('login-submit')));
     await tester.pump();
     expect(find.text('إضافة الاشتراك'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('login-submit')));
+    await tester.pump();
+    expect(find.text('أدخل هوست صالحًا يبدأ بـ http:// أو https://.'), findsOneWidget);
     expect(loggedIn, isNull);
 
     await tester.enterText(find.byType(TextField).at(0), 'https://provider.example');
-    await tester.enterText(find.byType(TextField).at(1), 'viewer');
-    await tester.enterText(find.byType(TextField).at(2), 'secret');
     await tester.tap(find.byKey(const ValueKey('login-submit')));
     await tester.pump();
-
-    await tester.pumpAndSettle();
-    expect(
-      find.text('بيانات الاشتراك غير صحيحة أو غير مفعّلة على الهوستات.'),
-      findsOneWidget,
-    );
+    expect(find.text('أدخل اليوزر والباسورد.'), findsOneWidget);
     expect(loggedIn, isNull);
     expect(tester.takeException(), isNull);
   });
