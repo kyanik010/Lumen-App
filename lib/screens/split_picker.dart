@@ -97,7 +97,7 @@ class _SplitPickerState extends State<SplitPicker> {
       if (mounted && generation == _generation) setState(() => _cats = cats);
     } catch (_) {
       if (mounted && generation == _generation) {
-        setState(() => _error = 'Could not load categories.');
+        setState(() => _error = 'تعذّر تحميل التصنيفات.');
       }
     }
     if (mounted && generation == _generation) setState(() => _loading = false);
@@ -133,7 +133,7 @@ class _SplitPickerState extends State<SplitPicker> {
       if (mounted && generation == _generation) setState(() => _items = items);
     } catch (_) {
       if (mounted && generation == _generation) {
-        setState(() => _error = 'Could not load this collection.');
+        setState(() => _error = 'تعذّر تحميل هذه المجموعة.');
       }
     }
     if (mounted && generation == _generation) {
@@ -159,7 +159,7 @@ class _SplitPickerState extends State<SplitPicker> {
       if (mounted && generation == _generation) setState(() => _info = info);
     } catch (_) {
       if (mounted && generation == _generation) {
-        setState(() => _error = 'Could not load episodes.');
+        setState(() => _error = 'تعذّر تحميل الحلقات.');
       }
     }
     if (mounted && generation == _generation) {
