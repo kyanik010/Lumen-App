@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lumen_tv/models.dart';
 import 'package:lumen_tv/screens/login_screen.dart';
 import 'package:lumen_tv/theme.dart';
-import 'package:lumen_tv/xtream.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
