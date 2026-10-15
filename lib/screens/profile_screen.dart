@@ -901,7 +901,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ? 'غير متاح'
         : '${_info?['status'] ?? 'Unknown'}';
     final isActive =
-        status.toLowerCase() == 'active' || status.toLowerCase() == 'ready';
+        status.toLowerCase() == 'active' ||
+        status.toLowerCase() == 'ready' ||
+        status == 'جاهز';
     final accountName = c.isDemo ? 'الوضع التجريبي' : c.username;
     final accountSubtitle = c.isDemo
         ? 'مكتبة تجريبية دون اتصال'
