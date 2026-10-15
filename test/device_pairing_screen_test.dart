@@ -50,7 +50,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Scan TV QR'));
+      await tester.tap(find.text('مسح رمز التلفاز'));
       await tester.pumpAndSettle();
       expect(find.text('Demo profile'), findsNothing);
       expect(find.textContaining('viewer'), findsOneWidget);
@@ -75,7 +75,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.textContaining('Could not start local setup'), findsOneWidget);
-    expect(find.text('Generate new QR'), findsOneWidget);
+    expect(find.text('إنشاء رمز QR جديد'), findsOneWidget);
     expect(find.text('Cancel and use manual login'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
