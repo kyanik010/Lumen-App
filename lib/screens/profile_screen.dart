@@ -29,7 +29,7 @@ enum ProfilePage {
   viewers('Viewing profiles'),
   appearance('Appearance'),
   playback('Playback'),
-  library('Library & downloads'),
+  library('Library & downloads');
 
   const ProfilePage(this.title);
   final String title;
