@@ -66,26 +66,29 @@ class _StremioAddonsScreenState extends State<StremioAddonsScreen> {
 
   Future<void> _loadInstalled() async {
     final prefs = await SharedPreferences.getInstance();
+    List<Map<String, dynamic>> loaded = [];
     final raw = prefs.getString(_storageKey);
     if (raw != null) {
       try {
-        final parsed = (jsonDecode(raw) as List).whereType<Map>().map((e) =>
-          Map<String, dynamic>.from(e)).toList();
-        final merged = [...parsed];
-        for (final seed in _defaultAddons) {
-          if (!merged.any((e) => e['id'] == seed['id'] || e['url'] == seed['url'])) {
-            merged.add(Map<String, dynamic>.from(seed));
-          }
+        final parsed = jsonDecode(raw);
+        if (parsed is List) {
+          loaded = parsed.whereType<Map>().map((e) =>
+            Map<String, dynamic>.from(e)).toList();
         }
-        if (merged.length != parsed.length) {
-          _installed = merged;
-          await prefs.setString(_storageKey, jsonEncode(_installed));
-        } else {
-          _installed = parsed;
-        }
-        if (mounted) setState(() {});
       } catch (_) {}
     }
+    var changed = false;
+    for (final seed in _defaultAddons) {
+      if (!loaded.any((e) => e['id'] == seed['id'] || e['url'] == seed['url'])) {
+        loaded.add(Map<String, dynamic>.from(seed));
+        changed = true;
+      }
+    }
+    _installed = loaded;
+    if (changed || raw == null) {
+      await prefs.setString(_storageKey, jsonEncode(_installed));
+    }
+    if (mounted) setState(() {});
   }
 
   Future<void> _save() async {
@@ -172,24 +175,49 @@ class _StremioAddonsScreenState extends State<StremioAddonsScreen> {
     if (_isInstalled(item)) return;
     setState(() => _busy = true);
     try {
-      final uri = Uri.parse(item['url'].toString());
-      if (!uri.hasScheme || !(uri.scheme == 'https' || uri.scheme == 'http')) {
+      var url = item['url'].toString().trim();
+      var uri = Uri.tryParse(url);
+      if (uri == null || !uri.hasScheme ||
+          !(uri.scheme == 'https' || uri.scheme == 'http')) {
         throw Exception('رابط Manifest غير صالح');
       }
-      // Validate the actual manifest endpoint before saving it.
-      final response = await _client.get(uri).timeout(const Duration(seconds: 30));
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw Exception('تعذر قراءة Manifest (${response.statusCode})');
+      if (url.contains('/[config]/')) {
+        final configureUrl = url.replaceFirst('/[config]', '').replaceFirst(RegExp(r'/manifest\.json$'), '') + '/configure';
+        throw Exception('هذه الإضافة تحتاج إعدادًا قبل التثبيت. افتح صفحة الإعداد: $configureUrl');
       }
-      final manifest = jsonDecode(response.body);
-      if (manifest is! Map || manifest['id'] == null || manifest['name'] == null) {
-        throw Exception('بيانات Manifest غير مكتملة');
+
+      http.Response? response;
+      Map<String, dynamic>? manifest;
+      final candidates = <Uri>[uri];
+      if (!url.endsWith('/manifest.json')) {
+        candidates.add(Uri.parse('${url.replaceFirst(RegExp(r'/$'), '')}/manifest.json'));
       }
-      final hints = manifest['behaviorHints'];
-      final configRequired = hints is Map && hints['configurationRequired'] == true;
-      if (configRequired || uri.toString().contains('/[config]/')) {
-        final configureUrl = uri.toString().replaceFirst('/[config]', '').replaceFirst(RegExp(r'/manifest\.json
+      Object? lastError;
+      for (final candidate in candidates) {
+        try {
+          final candidateResponse = await _client.get(candidate).timeout(const Duration(seconds: 30));
+          if (candidateResponse.statusCode < 200 || candidateResponse.statusCode >= 300) {
+            lastError = Exception('HTTP ${candidateResponse.statusCode}');
+            continue;
+          }
+          final decoded = jsonDecode(candidateResponse.body);
+          if (decoded is Map && decoded['id'] != null && decoded['name'] != null) {
+            response = candidateResponse;
+            manifest = Map<String, dynamic>.from(decoded);
+            url = candidate.toString();
+            break;
+          }
+          lastError = Exception('بيانات Manifest غير مكتملة');
+        } catch (e) {
+          lastError = e;
+        }
+      }
+      if (response == null || manifest == null) {
+        throw Exception('تعذر تحميل Manifest من الرابط. ${lastError ?? ''}');
+      }
+
       final entry = Map<String, dynamic>.from(item);
+      entry['url'] = url;
       entry['id'] = manifest['id'].toString();
       entry['name'] = manifest['name'].toString();
       entry['description'] = manifest['description']?.toString() ?? '';
@@ -198,6 +226,7 @@ class _StremioAddonsScreenState extends State<StremioAddonsScreen> {
       entry['types'] = _stringList(manifest['types']);
       entry['resources'] = _stringList(manifest['resources']);
       entry['enabled'] = true;
+      _installed.removeWhere((e) => e['id'] == entry['id'] || e['url'] == entry['url']);
       _installed.add(entry);
       await _save();
       if (mounted) {
@@ -206,7 +235,7 @@ class _StremioAddonsScreenState extends State<StremioAddonsScreen> {
       }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('لم يتم التثبيت: $e')));
+        SnackBar(content: Text('لم يتم التثبيت: ${e.toString().replaceFirst('Exception: ', '')}')));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
