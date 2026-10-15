@@ -2,6 +2,7 @@ package com.talhaashraf.lumen
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.app.PictureInPictureParams
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -25,6 +26,7 @@ import android.os.Looper
 import android.os.SystemClock
 import android.provider.OpenableColumns
 import android.util.Log
+import android.util.Rational
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
@@ -2197,6 +2199,7 @@ class Media3PlayerActivity : Activity() {
         val labels = buildList {
             add(if (player.isPlaying) "Ⅱ  Pause playback" else "▶  Resume playback")
             add("ⓘ  Playback information")
+            add(if (splitActive) "×  Exit split view" else "▣  عرض منقسم")
             add("◖  Volume")
             add("▣  Video fit")
             add("▶  Playback speed · ${selectedPlaybackSpeed}x")
@@ -2213,16 +2216,15 @@ class Media3PlayerActivity : Activity() {
                 when (index) {
                     0 -> if (player.isPlaying) player.pause() else player.play()
                     1 -> showPlaybackInformation()
-                    2 -> showVolumeDialog()
-                    3 -> showVideoFitDialog()
-                    4 -> showPlaybackSpeedDialog()
-                    5 -> showSleepTimerDialog()
-                    6 -> showTrackDialog(C.TRACK_TYPE_AUDIO, "Audio", allowOff = false)
-                    7 -> showSubtitleDialog()
-                    8 -> showSubtitleAppearanceDialog()
-                    9 -> AlertDialog.Builder(this).setTitle("Picture-in-picture")
-                        .setMessage("Picture-in-picture is not available in this full-screen TV player.")
-                        .setPositiveButton("OK", null).show()
+                    2 -> if (splitActive) exitSplit() else showSplitChannelDialog()
+                    3 -> showVolumeDialog()
+                    4 -> showVideoFitDialog()
+                    5 -> showPlaybackSpeedDialog()
+                    6 -> showSleepTimerDialog()
+                    7 -> showTrackDialog(C.TRACK_TYPE_AUDIO, "Audio", allowOff = false)
+                    8 -> showSubtitleDialog()
+                    9 -> showSubtitleAppearanceDialog()
+                    10 -> enterPlayerPictureInPicture()
                     else -> {
                         playlistFavoriteStates[playlistIndex] = !saved
                         updateFavoriteUi()
@@ -2233,6 +2235,21 @@ class Media3PlayerActivity : Activity() {
         dialog.setOnShowListener { dialog.window?.setBackgroundDrawable(roundedRect(0xFF111511.toInt(), 0xFF596157.toInt(), 1, 18)) }
         dialog.setOnDismissListener { showControls(); moreButton.post { moreButton.requestFocus() } }
         dialog.show()
+    }
+
+    private fun enterPlayerPictureInPicture() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            Toast.makeText(this, "Picture-in-picture requires Android 8 or newer.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        try {
+            val params = PictureInPictureParams.Builder().setAspectRatio(Rational(16, 9)).build()
+            hideControlsNow()
+            enterPictureInPictureMode(params)
+        } catch (error: Exception) {
+            Toast.makeText(this, "Picture-in-picture is not available on this device.", Toast.LENGTH_SHORT).show()
+            showControls()
+        }
     }
 
     private fun showPlaybackInformation() {
@@ -2345,30 +2362,35 @@ class Media3PlayerActivity : Activity() {
     }
 
     private fun saveSubtitleSettings() {
+        val sizeScale = floatArrayOf(0.8f, 1.0f, 1.25f, 1.6f)[subtitleSizeIndex]
         getSharedPreferences("FlutterSharedPreferences", MODE_PRIVATE).edit()
-            .putInt("flutter.eagle_x_tv_subtitle_font", subtitleFontIndex)
-            .putInt("flutter.eagle_x_tv_subtitle_color", subtitleColorIndex)
-            .putInt("flutter.eagle_x_tv_subtitle_background", subtitleBackgroundIndex)
-            .putInt("flutter.eagle_x_tv_subtitle_outline", subtitleOutlineIndex)
-            .putInt("flutter.eagle_x_tv_subtitle_position", subtitlePositionIndex)
-            .putInt("flutter.eagle_x_tv_subtitle_size", subtitleSizeIndex)
-            .putLong("flutter.eagle_x_tv_subtitle_sync_ms", subtitleSyncMs).apply()
+            .putInt("flutter.subtitle.font", subtitleFontIndex)
+            .putInt("flutter.subtitle.color", subtitleColorIndex)
+            .putInt("flutter.subtitle.background", subtitleBackgroundIndex)
+            .putInt("flutter.subtitle.outline", subtitleOutlineIndex)
+            .putInt("flutter.subtitle.position", subtitlePositionIndex)
+            .putString("flutter.subtitle.scale", sizeScale.toString())
+            .putString("flutter.subtitle.delay", (subtitleSyncMs / 1000.0).toString())
+            .apply()
     }
 
     private fun loadSubtitleSettings() {
         val p = getSharedPreferences("FlutterSharedPreferences", MODE_PRIVATE)
-        subtitleFontIndex = p.getInt("flutter.eagle_x_tv_subtitle_font", 0).coerceIn(0, 9)
-        subtitleColorIndex = p.getInt("flutter.eagle_x_tv_subtitle_color", 0).coerceIn(0, 3)
-        subtitleBackgroundIndex = p.getInt("flutter.eagle_x_tv_subtitle_background", 0).coerceIn(0, 2)
-        subtitleOutlineIndex = p.getInt("flutter.eagle_x_tv_subtitle_outline", 1).coerceIn(0, 2)
-        subtitlePositionIndex = p.getInt("flutter.eagle_x_tv_subtitle_position", 0).coerceIn(0, 2)
-        subtitleSizeIndex = p.getInt("flutter.eagle_x_tv_subtitle_size", 2).coerceIn(0, 3)
-        subtitleSyncMs = p.getLong("flutter.eagle_x_tv_subtitle_sync_ms", 0L).coerceIn(-2000L, 2000L)
+        subtitleFontIndex = p.getInt("flutter.subtitle.font", 0).coerceIn(0, 9)
+        subtitleColorIndex = p.getInt("flutter.subtitle.color", 0).coerceIn(0, 3)
+        subtitleBackgroundIndex = p.getInt("flutter.subtitle.background", 0).coerceIn(0, 2)
+        subtitleOutlineIndex = p.getInt("flutter.subtitle.outline", 1).coerceIn(0, 2)
+        subtitlePositionIndex = p.getInt("flutter.subtitle.position", 0).coerceIn(0, 2)
+        val savedScale = p.getString("flutter.subtitle.scale", "1.0")?.toFloatOrNull() ?: 1.0f
+        val scales = floatArrayOf(0.8f, 1.0f, 1.25f, 1.6f)
+        subtitleSizeIndex = scales.indices.minByOrNull { kotlin.math.abs(scales[it] - savedScale) } ?: 1
+        val savedDelay = p.getString("flutter.subtitle.delay", "0")?.toDoubleOrNull() ?: 0.0
+        subtitleSyncMs = (savedDelay * 1000.0).toLong().coerceIn(-30000L, 30000L)
     }
 
     private fun applySubtitleStyle() {
         if (!::playerView.isInitialized) return
-        val foreground = intArrayOf(Color.WHITE, Color.YELLOW, Color.CYAN, Color.GREEN)[subtitleColorIndex]
+        val foreground = intArrayOf(Color.WHITE, Color.YELLOW, 0xFF00FFFF.toInt(), 0xFF69F0AE.toInt())[subtitleColorIndex]
         val background = when (subtitleBackgroundIndex) { 1 -> 0x88000000.toInt(); 2 -> Color.BLACK; else -> Color.TRANSPARENT }
         val edge = when (subtitleOutlineIndex) { 1 -> CaptionStyleCompat.EDGE_TYPE_DROP_SHADOW; 2 -> CaptionStyleCompat.EDGE_TYPE_OUTLINE; else -> CaptionStyleCompat.EDGE_TYPE_NONE }
         val fonts = listOf("Reem Kufi", "Aref Ruqaa", "Amiri", "Lalezar", "Marhey", "Rakkas", "Changa", "Noto Naskh Arabic", "Lemonada", "Noto Kufi Arabic")
@@ -2376,12 +2398,12 @@ class Media3PlayerActivity : Activity() {
         val style = CaptionStyleCompat(foreground, background, Color.TRANSPARENT, edge, Color.BLACK, typeface)
         playerView.subtitleView?.let {
             it.setStyle(style)
-            it.setFractionalTextSize(floatArrayOf(0.032f, 0.042f, 0.052f, 0.064f)[subtitleSizeIndex], false)
+            it.setFractionalTextSize(0.042f * floatArrayOf(0.8f, 1.0f, 1.25f, 1.6f)[subtitleSizeIndex], false)
             it.setBottomPaddingFraction(floatArrayOf(0.04f, 0.12f, 0.40f)[subtitlePositionIndex])
         }
         secondaryPlayerView?.subtitleView?.let {
             it.setStyle(style)
-            it.setFractionalTextSize(floatArrayOf(0.032f, 0.042f, 0.052f, 0.064f)[subtitleSizeIndex], false)
+            it.setFractionalTextSize(0.042f * floatArrayOf(0.8f, 1.0f, 1.25f, 1.6f)[subtitleSizeIndex], false)
             it.setBottomPaddingFraction(floatArrayOf(0.04f, 0.12f, 0.40f)[subtitlePositionIndex])
         }
     }
