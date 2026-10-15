@@ -9,7 +9,6 @@ import '../models.dart';
 import '../playback.dart';
 import '../refresh.dart';
 import '../split.dart';
-import '../updater.dart';
 import '../responsive.dart';
 import '../theme.dart';
 import '../widgets.dart';
@@ -18,7 +17,6 @@ import '../xtream.dart';
 import 'downloads_screen.dart';
 import 'guide_tab_screen.dart';
 import 'home_screen.dart';
-import 'update_dialog.dart';
 import 'mylist_screen.dart';
 import 'profile_screen.dart';
 import 'search_screen.dart';
@@ -168,15 +166,6 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     contentRefresh.addListener(_loadCapabilities);
     CatalogCache.instance.revision.addListener(_onCatalogRevision);
     WidgetsBinding.instance.addObserver(this);
-    // Quietly check for a newer build once per launch (skip dev builds).
-    if (Updater.instance.supportsReleaseCheck && kBuildNumber > 0) {
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        final result = await Updater.instance.check();
-        if (result.status == UpdateCheckStatus.available && mounted) {
-          showUpdateFlow(context, result.info!);
-        }
-      });
-    }
   }
 
   Future<void> _loadCapabilities() async {
