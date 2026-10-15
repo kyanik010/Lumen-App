@@ -22,9 +22,9 @@ class CatalogOrganizationScreen extends StatefulWidget {
 
 class _CatalogOrganizationScreenState extends State<CatalogOrganizationScreen> {
   static const _sections = <(String, String, IconData)>[
-    ('movie', 'Movies', Icons.movie_outlined),
-    ('series', 'Series', Icons.video_library_outlined),
-    ('live', 'Live TV', Icons.live_tv_outlined),
+    ('movie', 'الأفلام', Icons.movie_outlined),
+    ('series', 'المسلسلات', Icons.video_library_outlined),
+    ('live', 'التلفاز المباشر', Icons.live_tv_outlined),
   ];
 
   String _section = 'movie';
@@ -97,7 +97,7 @@ class _CatalogOrganizationScreenState extends State<CatalogOrganizationScreen> {
     for (final category in _categories[_section] ?? const <Category>[]) {
       if (category.sourceScope.isNotEmpty) {
         sources[category.sourceScope] = category.sourceLabel.isEmpty
-            ? 'IPTV service'
+            ? 'خدمة IPTV'
             : category.sourceLabel;
       }
     }
@@ -142,7 +142,7 @@ class _CatalogOrganizationScreenState extends State<CatalogOrganizationScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, controller.text),
-            child: const Text('Save'),
+            child: const Text('حفظ'),
           ),
         ],
       ),
@@ -183,7 +183,7 @@ class _CatalogOrganizationScreenState extends State<CatalogOrganizationScreen> {
                   initialValue: selected,
                   isExpanded: true,
                   decoration: const InputDecoration(
-                    labelText: 'Category',
+                    labelText: 'التصنيف',
                     border: OutlineInputBorder(),
                   ),
                   items: [
@@ -284,7 +284,7 @@ class _CatalogOrganizationScreenState extends State<CatalogOrganizationScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Reset'),
+            child: const Text('إعادة تعيين'),
           ),
         ],
       ),
@@ -312,7 +312,7 @@ class _CatalogOrganizationScreenState extends State<CatalogOrganizationScreen> {
           TextButton.icon(
             onPressed: _loading ? null : _reset,
             icon: const Icon(Icons.restart_alt_rounded, size: 18),
-            label: Text(compact ? 'Reset' : 'Reset section'),
+            label: Text(compact ? 'إعادة تعيين' : 'Reset section'),
           ),
           const SizedBox(width: 8),
         ],
@@ -357,7 +357,7 @@ class _CatalogOrganizationScreenState extends State<CatalogOrganizationScreen> {
                             initialValue: _sourceScope,
                             isExpanded: true,
                             decoration: const InputDecoration(
-                              labelText: 'Service',
+                              labelText: 'الخدمة',
                               prefixIcon: Icon(Icons.dns_outlined),
                               border: OutlineInputBorder(),
                             ),
@@ -430,7 +430,7 @@ class _CatalogOrganizationScreenState extends State<CatalogOrganizationScreen> {
       child: Row(
         children: [
           IconButton(
-            tooltip: hidden ? 'Show category' : 'Hide category',
+            tooltip: hidden ? 'إظهار التصنيف' : 'إخفاء التصنيف',
             onPressed: () async {
               _organization!.setHidden(_section, category.id, !hidden);
               await _save();
@@ -473,7 +473,7 @@ class _CatalogOrganizationScreenState extends State<CatalogOrganizationScreen> {
           ),
           if (!compact) ...[
             IconButton(
-              tooltip: 'Move up',
+              tooltip: 'تحريك للأعلى',
               onPressed: index == 0 ? null : () => _move(category, -1),
               icon: const Icon(Icons.keyboard_arrow_up_rounded),
             ),
@@ -500,7 +500,7 @@ class _CatalogOrganizationScreenState extends State<CatalogOrganizationScreen> {
               if (compact && index > 0)
                 const PopupMenuItem(
                   value: _CategoryAction.moveUp,
-                  child: Text('Move up'),
+                  child: Text('تحريك للأعلى'),
                 ),
               if (compact && index < count - 1)
                 const PopupMenuItem(
