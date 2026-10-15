@@ -3573,7 +3573,7 @@ class _PlayerHostState extends State<PlayerHost> {
             onTap: _openDiagnostics,
           ),
         ],
-        _settingLabel('Volume'),
+        _settingLabel('مستوى الصوت'),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Row(
@@ -3625,26 +3625,26 @@ class _PlayerHostState extends State<PlayerHost> {
             ],
           ),
         ),
-        _settingLabel('Video fit'),
+        _settingLabel('ملاءمة الفيديو'),
         _chipRow([
           (
-            'Fit',
+            'ملاءمة',
             _fit == BoxFit.contain,
             () => setState(() => _fit = BoxFit.contain),
           ),
           (
-            'Fill',
+            'ملء الشاشة',
             _fit == BoxFit.cover,
             () => setState(() => _fit = BoxFit.cover),
           ),
           (
-            'Stretch',
+            'تمديد',
             _fit == BoxFit.fill,
             () => setState(() => _fit = BoxFit.fill),
           ),
         ]),
         if (!_isLive) ...[
-          _settingLabel('Speed'),
+          _settingLabel('السرعة'),
           _chipRow([
             for (final r in const [0.5, 1.0, 1.25, 1.5, 2.0])
               (
@@ -3657,12 +3657,12 @@ class _PlayerHostState extends State<PlayerHost> {
               ),
           ]),
         ],
-        _settingLabel('Sleep timer'),
+        _settingLabel('مؤقت النوم'),
         _chipRow([
           for (final mn in const [0, 15, 30, 45, 60])
             (mn == 0 ? 'إيقاف' : '${mn}m', _sleepMin == mn, () => _setSleep(mn)),
         ]),
-        _settingLabel('Audio'),
+        _settingLabel('الصوت'),
         if (audio.isEmpty)
           const Padding(
             padding: EdgeInsets.fromLTRB(20, 2, 20, 4),
@@ -3703,7 +3703,7 @@ class _PlayerHostState extends State<PlayerHost> {
             },
           );
         }),
-        _settingLabel('Subtitle size'),
+        _settingLabel('حجم الترجمة'),
         _chipRow([
           ('S', _subScale == 0.8, () => setState(() => _subScale = 0.8)),
           ('M', _subScale == 1.0, () => setState(() => _subScale = 1.0)),
