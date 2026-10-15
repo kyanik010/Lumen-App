@@ -1,8 +1,10 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../widgets.dart';
 
 /// Stremio addon marketplace and installed-addon manager.
@@ -128,6 +130,21 @@ class _StremioAddonsScreenState extends State<StremioAddonsScreen> {
     final manifest = raw['manifest'];
     final transport = raw['transportUrl'] ?? raw['manifestUrl'];
     if (manifest is! Map || transport is! String || transport.isEmpty) return null;
+    final hints = manifest['behaviorHints'];
+    final configurationRequired =
+        (hints is Map && hints['configurationRequired'] == true) ||
+        transport.contains('/[config]/');
+    var configureUrl = (raw['configureUrl'] ?? '').toString();
+    if (configureUrl.isEmpty && configurationRequired) {
+      configureUrl = transport.replaceFirst('/[config]', '');
+      if (configureUrl.endsWith('/manifest.json')) {
+        configureUrl = configureUrl.substring(
+          0,
+          configureUrl.length - '/manifest.json'.length,
+        );
+      }
+      configureUrl += '/configure';
+    }
     return {
       'id': manifest['id']?.toString() ?? transport,
       'name': manifest['name']?.toString() ?? 'Unknown addon',
@@ -135,6 +152,9 @@ class _StremioAddonsScreenState extends State<StremioAddonsScreen> {
       'version': manifest['version']?.toString() ?? '',
       'logo': manifest['logo']?.toString() ?? '',
       'url': transport,
+      'configureUrl': configureUrl,
+      'configurationRequired': configurationRequired,
+      'configurable': hints is Map && hints['configurable'] == true,
       'types': _stringList(manifest['types']),
       'resources': _stringList(manifest['resources']),
       'enabled': true,
@@ -208,9 +228,42 @@ class _StremioAddonsScreenState extends State<StremioAddonsScreen> {
           !(uri.scheme == 'https' || uri.scheme == 'http')) {
         throw Exception('رابط Manifest غير صالح');
       }
-      if (url.contains('/[config]/')) {
-        final configureUrl = url.replaceFirst('/[config]', '').replaceFirst(RegExp(r'/manifest\.json$'), '') + '/configure';
-        throw Exception('هذه الإضافة تحتاج إعدادًا قبل التثبيت. افتح صفحة الإعداد: $configureUrl');
+      if (item['configurationRequired'] == true || url.contains('/[config]/')) {
+        var configureUrl = (item['configureUrl'] ?? '').toString();
+        if (configureUrl.isEmpty) {
+          configureUrl = url.replaceFirst('/[config]', '');
+          if (configureUrl.endsWith('/manifest.json')) {
+            configureUrl = configureUrl.substring(
+              0,
+              configureUrl.length - '/manifest.json'.length,
+            );
+          }
+          configureUrl += '/configure';
+        }
+        final configureUri = Uri.tryParse(configureUrl);
+        var opened = false;
+        if (configureUri != null) {
+          try {
+            opened = await launchUrl(
+              configureUri,
+              mode: LaunchMode.externalApplication,
+            );
+          } catch (_) {
+            opened = false;
+          }
+        }
+        if (!opened) {
+          await Clipboard.setData(ClipboardData(text: configureUrl));
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(opened
+                ? 'تم فتح صفحة إعداد الإضافة. بعد الإعداد أضف رابط Manifest الناتج.'
+                : 'تعذّر فتح المتصفح؛ نُسخ رابط الإعداد. بعد الإعداد أضف رابط Manifest الناتج.'),
+            duration: const Duration(seconds: 5),
+          ));
+        }
+        return;
       }
 
       http.Response? response;
