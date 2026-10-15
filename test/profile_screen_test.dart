@@ -114,7 +114,7 @@ void main() {
     expect(find.byType(LumenAvatar), findsOneWidget);
     expect(find.text('Your library'), findsOneWidget);
     expect(find.text('Your experience'), findsOneWidget);
-    expect(find.byType(Glass), findsNWidgets(3));
+    expect(find.byType(Glass), findsNWidgets(2));
     expect(tester.takeException(), isNull);
 
     expect(find.text('Color mode'), findsNothing);
