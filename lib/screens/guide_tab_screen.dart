@@ -48,7 +48,7 @@ class _GuideTabScreenState extends State<GuideTabScreen>
   List<Category> _categories = const [];
   List<LiveStream> _channels = const [];
   String? _selectedId;
-  String _selectedName = 'TV Guide';
+  String _selectedName = 'دليل التلفاز';
   bool _loadingCategories = true;
   bool _loadingChannels = false;
   String _error = '';
@@ -337,7 +337,7 @@ class _GuideTabScreenState extends State<GuideTabScreen>
             children: [
               Expanded(
                 child: Text(
-                  'CHANNEL GROUPS',
+                  'مجموعات القنوات',
                   style: TextStyle(
                     color: muted,
                     fontSize: 10,
@@ -478,10 +478,10 @@ class _GuideTabScreenState extends State<GuideTabScreen>
     child: ExcludeFocus(
       child: PopupMenuButton<String>(
         key: _sourceMenuKey,
-        tooltip: 'Filter guide by service',
+        tooltip: 'تصفية الدليل حسب الخدمة',
         onSelected: _selectSource,
         itemBuilder: (_) => [
-          _sourceItem('all', 'All services'),
+          _sourceItem('all', 'كل الخدمات'),
           for (final source in _sources) _sourceItem(source.$1, source.$2),
         ],
         child: Container(
