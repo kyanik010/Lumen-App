@@ -173,27 +173,13 @@ class _LaunchSplashState extends State<LaunchSplash>
                                           ],
                                         ),
                                       ),
-                                      Container(
-                                        width: markSize,
-                                        height: markSize,
-                                        alignment: Alignment.center,
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF0E1210),
-                                          borderRadius: BorderRadius.circular(
-                                            lumenCorner(markSize * .28),
-                                          ),
-                                          border: Border.all(
-                                            color: defaultAccent.withValues(
-                                              alpha: .7,
-                                            ),
-                                            width: 1.5,
-                                          ),
-                                        ),
-                                        child: LumenMark(
-                                          size: markSize * .68,
-                                          signal: defaultAccent,
-                                          frame: const Color(0xFFF4F1E8),
-                                        ),
+                                      Image.asset(
+                                        'assets/eagle_x_logo.png',
+                                        width: markSize * 1.65,
+                                        height: markSize * 1.25,
+                                        fit: BoxFit.contain,
+                                        errorBuilder: (_, __, ___) =>
+                                            const SizedBox.shrink(),
                                       ),
                                     ],
                                   ),
