@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lottie/lottie.dart';
 import 'package:lumen_tv/screens/splash_screen.dart';
 import 'package:lumen_tv/theme.dart';
 import 'package:lumen_tv/widgets.dart';
