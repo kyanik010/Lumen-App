@@ -116,13 +116,20 @@ void main() {
     await disposeUi(tester);
   });
 
-  testWidgets('sign in becomes a two-pane welcome on TV', (tester) async {
+  testWidgets('sign in shows Eagle X welcome and subscription form on TV', (tester) async {
     await pumpAt(tester, LoginScreen(onLogin: (_) {}), const Size(1280, 900));
     await tester.pump();
     expect(find.text('EAGLE X'), findsOneWidget);
-    expect(find.text('LIVE · FILMS · SERIES'), findsOneWidget);
-    expect(find.text('تسجيل الدخول'), findsNWidgets(2));
-    expect(find.byType(TextField), findsNWidgets(2));
+    expect(find.text('لديك فترة تجريبية 30 يوم'), findsOneWidget);
+    expect(find.text('اضغط هنا لتبدأ'), findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('login-submit')));
+    await tester.pump();
+    expect(find.text('إضافة الاشتراك'), findsOneWidget);
+    expect(find.text('هوست'), findsOneWidget);
+    expect(find.text('يوزر'), findsOneWidget);
+    expect(find.text('باسورد'), findsOneWidget);
+    expect(find.byType(TextField), findsNWidgets(3));
     expect(tester.takeException(), isNull);
     await disposeUi(tester);
   });
