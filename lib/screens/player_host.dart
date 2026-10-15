@@ -794,7 +794,7 @@ class _PlayerHostState extends State<PlayerHost> {
                   cursor: SystemMouseCursors.click,
                   child: RemoteTap(
                     focusNode: _transportFocus,
-                    semanticLabel: playing ? 'Pause' : 'Play',
+                    semanticLabel: playing ? 'إيقاف مؤقت' : 'تشغيل',
                     onTap: () {
                       if (_splitMainIsPc) {
                         pc.togglePlayPause();
@@ -856,7 +856,7 @@ class _PlayerHostState extends State<PlayerHost> {
                         color: Colors.white,
                       ),
                       label: const Text(
-                        'Swap audio',
+                        'تبديل الصوت',
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
@@ -1386,7 +1386,7 @@ class _PlayerHostState extends State<PlayerHost> {
                               pc.reconnectAttempt > 0) ...[
                             const SizedBox(width: 9),
                             IconButton(
-                              tooltip: 'Stop automatic retry',
+                              tooltip: 'إيقاف إعادة المحاولة التلقائية',
                               visualDensity: VisualDensity.compact,
                               style: IconButton.styleFrom(
                                 foregroundColor: Colors.white70,
@@ -1561,7 +1561,7 @@ class _PlayerHostState extends State<PlayerHost> {
         case PlayerKeyboardCommand.toggleMute:
           _toggleMute();
           _flashHud(
-            _muted ? 'Muted' : '${_curVol.round()}%',
+            _muted ? 'صامت' : '${_curVol.round()}%',
             _muted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
             value: _muted ? 0 : _curVol / 100,
           );
@@ -1744,7 +1744,7 @@ class _PlayerHostState extends State<PlayerHost> {
     _holding = true;
     _savedRate = _rate;
     pc.player!.setRate(2.0);
-    _flashHud('2× speed', Icons.fast_forward_rounded, persist: true);
+    _flashHud('سرعة 2×', Icons.fast_forward_rounded, persist: true);
   }
 
   void _holdSpeedEnd() {
@@ -1863,7 +1863,7 @@ class _PlayerHostState extends State<PlayerHost> {
             : CrossAxisAlignment.center,
         children: [
           Text(
-            _isLive ? 'Live feed paused' : 'Playback paused',
+            _isLive ? 'تم إيقاف البث المباشر مؤقتًا' : 'تم إيقاف التشغيل مؤقتًا',
             textAlign: constraints.maxWidth >= 560
                 ? TextAlign.left
                 : TextAlign.center,
@@ -1907,7 +1907,7 @@ class _PlayerHostState extends State<PlayerHost> {
               setState(() {});
             },
             icon: const Icon(Icons.refresh_rounded, size: 17),
-            label: const Text('Retry stream'),
+            label: const Text('إعادة محاولة البث'),
           ),
           if (_isAndroid)
             IconButton(
@@ -1979,7 +1979,7 @@ class _PlayerHostState extends State<PlayerHost> {
           TextButton(
             style: TextButton.styleFrom(foregroundColor: Colors.white70),
             onPressed: _minimize,
-            child: const Text('Browse'),
+            child: const Text('تصفح'),
           ),
         ],
       );
@@ -2130,7 +2130,7 @@ class _PlayerHostState extends State<PlayerHost> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Skip to 1:30',
+                  'الانتقال إلى 1:30',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
@@ -2220,7 +2220,7 @@ class _PlayerHostState extends State<PlayerHost> {
                 RemoteTap(
                   onTap: pc.cancelAutoAdvance,
                   child: const Text(
-                    'Dismiss',
+                    'إغلاق',
                     style: TextStyle(
                       color: Colors.white70,
                       fontWeight: FontWeight.w700,
@@ -2309,7 +2309,7 @@ class _PlayerHostState extends State<PlayerHost> {
                     ),
                     const SizedBox(width: 5),
                     Text(
-                      'LIVE',
+                      'مباشر',
                       style: TextStyle(
                         color: foregroundFor(const Color(0xFFFF3B5C)),
                         fontSize: 11,
@@ -2356,7 +2356,7 @@ class _PlayerHostState extends State<PlayerHost> {
                 },
               ),
             IconButton(
-              tooltip: 'Close player',
+              tooltip: 'إغلاق المشغل',
               onPressed: _close,
               icon: const Icon(Icons.close_rounded, color: Colors.white),
             ),
@@ -2414,7 +2414,7 @@ class _PlayerHostState extends State<PlayerHost> {
           else
             _smallBtn(
               Icons.skip_previous_rounded,
-              'Previous episode',
+              'الحلقة السابقة',
               _hasPrev ? () => _go(pc.index - 1) : null,
             ),
           if (!_isLive) ...[
@@ -2435,7 +2435,7 @@ class _PlayerHostState extends State<PlayerHost> {
                 cursor: SystemMouseCursors.click,
                 child: RemoteTap(
                   focusNode: _transportFocus,
-                  semanticLabel: playing ? 'Pause' : 'Play',
+                  semanticLabel: playing ? 'إيقاف مؤقت' : 'تشغيل',
                   onTap: () {
                     pc.togglePlayPause();
                     _scheduleHide();
@@ -2481,7 +2481,7 @@ class _PlayerHostState extends State<PlayerHost> {
           else
             _smallBtn(
               Icons.skip_next_rounded,
-              'Next episode',
+              'الحلقة التالية',
               _hasNext ? () => _go(pc.index + 1) : null,
             ),
         ],
@@ -2600,14 +2600,14 @@ class _PlayerHostState extends State<PlayerHost> {
                       _bottomIcon(
                         Icons.closed_caption_rounded,
                         _pickSubtitles,
-                        tooltip: 'Subtitles',
+                        tooltip: 'الترجمة',
                         compact: compact,
                       ),
                       if (activeClient != null && !compact)
                         _bottomIcon(
                           Icons.splitscreen_rounded,
                           _openSplitPicker,
-                          tooltip: 'Split view',
+                          tooltip: 'عرض منقسم',
                         ),
                       _bottomIcon(
                         Icons.tune_rounded,
@@ -2648,7 +2648,7 @@ class _PlayerHostState extends State<PlayerHost> {
                               ),
                               SizedBox(width: 6),
                               Text(
-                                'LIVE',
+                                'مباشر',
                                 style: TextStyle(fontWeight: FontWeight.w700),
                               ),
                             ],
@@ -2967,7 +2967,7 @@ class _PlayerHostState extends State<PlayerHost> {
                   )
                 : _panelKind == 'split'
                 ? (activeClient == null
-                      ? const Center(child: Text('Not available.'))
+                      ? const Center(child: Text('غير متاح.'))
                       : SplitPicker(
                           client: activeClient!,
                           onClose: _closePanel,
@@ -3012,12 +3012,12 @@ class _PlayerHostState extends State<PlayerHost> {
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              'Subtitles',
+              'الترجمة',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
             ),
           ),
         ),
-        _subRow('Off', _subtitlesDisabled || current.id == 'no', () {
+        _subRow('إيقاف', _subtitlesDisabled || current.id == 'no', () {
           unawaited(_disableSubtitles(closePanel: true));
         }),
         if (_appliedSubName != null && _appliedSubTrack != null)
@@ -3059,7 +3059,7 @@ class _PlayerHostState extends State<PlayerHost> {
             onTap: _pickLocalSubtitle,
             leading: Icon(Icons.folder_open_rounded, color: accent),
             title: const Text(
-              'Add subtitle file',
+              'إضافة ملف ترجمة',
               style: TextStyle(fontWeight: FontWeight.w700),
             ),
             subtitle: const Text(
@@ -3113,7 +3113,7 @@ class _PlayerHostState extends State<PlayerHost> {
               onSubmitted: (_) => _searchSubs(),
               decoration: InputDecoration(
                 isDense: true,
-                hintText: 'Movie or show title…',
+                hintText: 'عنوان الفيلم أو المسلسل…',
                 hintStyle: const TextStyle(color: Colors.white38),
                 filled: true,
                 fillColor: Colors.white.withValues(alpha: 0.08),
@@ -3251,7 +3251,7 @@ class _PlayerHostState extends State<PlayerHost> {
       n >= 1000 ? '${(n / 1000).toStringAsFixed(n >= 10000 ? 0 : 1)}k' : '$n';
 
   Widget _subRow(String label, bool sel, VoidCallback onTap) => ListTile(
-    autofocus: label == 'Off',
+    autofocus: label == 'إيقاف',
     onTap: onTap,
     leading: Icon(
       sel ? Icons.check_circle_rounded : Icons.subtitles_outlined,
@@ -3363,19 +3363,19 @@ class _PlayerHostState extends State<PlayerHost> {
             ),
           ),
           _diagnosticRow('Endpoint', pc.endpointLabel),
-          _diagnosticRow('Format', pc.sourceFormat),
-          _diagnosticRow('Source', '${pc.sourceNumber} of ${pc.sourceCount}'),
+          _diagnosticRow('التنسيق', pc.sourceFormat),
+          _diagnosticRow('المصدر', '${pc.sourceNumber} of ${pc.sourceCount}'),
           _diagnosticRow(
-            'Buffered',
+            'المخزّن مؤقتًا',
             '${pc.bufferedAhead.inSeconds}s · '
                 '${pc.bufferingPercentage.toStringAsFixed(0)}%',
           ),
           _diagnosticRow(
-            'Recovery',
+            'الاستعادة',
             '${pc.reconnectAttempt} of ${pc.retryLimit} attempts',
           ),
           if (pc.failure != null) ...[
-            _diagnosticRow('Failure code', pc.failure!.code),
+            _diagnosticRow('رمز الخطأ', pc.failure!.code),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
               child: Text(
@@ -3401,7 +3401,7 @@ class _PlayerHostState extends State<PlayerHost> {
                   ),
                   onPressed: pc.retryExhausted ? pc.retryNow : null,
                   icon: const Icon(Icons.refresh_rounded, size: 18),
-                  label: const Text('Retry stream'),
+                  label: const Text('إعادة محاولة البث'),
                 ),
                 OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(foregroundColor: Colors.white)
@@ -3417,13 +3417,13 @@ class _PlayerHostState extends State<PlayerHost> {
                     );
                     if (mounted) {
                       _flashHud(
-                        'Playback details copied',
+                        'تم نسخ تفاصيل التشغيل',
                         Icons.copy_all_rounded,
                       );
                     }
                   },
                   icon: const Icon(Icons.copy_all_rounded, size: 18),
-                  label: const Text('Copy details'),
+                  label: const Text('نسخ التفاصيل'),
                 ),
               ],
             ),
@@ -3509,7 +3509,7 @@ class _PlayerHostState extends State<PlayerHost> {
           child: Row(
             children: [
               const Text(
-                'Playback',
+                'التشغيل',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
               ),
               const Spacer(),
@@ -3522,7 +3522,7 @@ class _PlayerHostState extends State<PlayerHost> {
           ),
         ),
         if (_item.favRef != null) ...[
-          _settingLabel('My List'),
+          _settingLabel('قائمتي'),
           AnimatedBuilder(
             animation: Library.instance,
             builder: (_, _) {
@@ -3538,7 +3538,7 @@ class _PlayerHostState extends State<PlayerHost> {
                   color: saved ? accent : Colors.white70,
                 ),
                 title: Text(
-                  saved ? 'Remove from My List' : 'Add to My List',
+                  saved ? 'إزالة من قائمتي' : 'إضافة إلى قائمتي',
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 subtitle: Text(
@@ -3555,7 +3555,7 @@ class _PlayerHostState extends State<PlayerHost> {
           if (activeClient != null)
             ListTile(
               leading: const Icon(Icons.splitscreen_rounded),
-              title: const Text('Split view'),
+              title: const Text('عرض منقسم'),
               onTap: _openSplitPicker,
             ),
           if (_isAndroid)
@@ -3660,7 +3660,7 @@ class _PlayerHostState extends State<PlayerHost> {
         _settingLabel('Sleep timer'),
         _chipRow([
           for (final mn in const [0, 15, 30, 45, 60])
-            (mn == 0 ? 'Off' : '${mn}m', _sleepMin == mn, () => _setSleep(mn)),
+            (mn == 0 ? 'إيقاف' : '${mn}m', _sleepMin == mn, () => _setSleep(mn)),
         ]),
         _settingLabel('Audio'),
         if (audio.isEmpty)
@@ -3686,8 +3686,8 @@ class _PlayerHostState extends State<PlayerHost> {
               },
             );
           }),
-        _settingLabel('Subtitles'),
-        _trackRow('Off', _subtitlesDisabled || curSub.id == 'no', () {
+        _settingLabel('الترجمة'),
+        _trackRow('إيقاف', _subtitlesDisabled || curSub.id == 'no', () {
           unawaited(_disableSubtitles());
         }),
         ...subs.map((t) {
