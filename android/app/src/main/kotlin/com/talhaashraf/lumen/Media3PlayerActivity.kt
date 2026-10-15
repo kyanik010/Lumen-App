@@ -2364,7 +2364,7 @@ class Media3PlayerActivity : Activity() {
         val values = longArrayOf(-2000, -1000, -500, 0, 500, 1000, 2000)
         val labels = values.map { if (it > 0) "+${it} ms" else "${it} ms" }.toTypedArray()
         AlertDialog.Builder(this).setTitle("Subtitle sync")
-            .setMessage("Select a timing offset. This setting is stored; native embedded subtitle tracks may not apply it.")
+            .setMessage("The offset is applied to external SRT/VTT files (local and online). Embedded tracks and other formats may not support it.")
             .setSingleChoiceItems(labels, values.indexOfFirst { it == subtitleSyncMs }.coerceAtLeast(0)) { d, index ->
                 subtitleSyncMs = values[index]; saveSubtitleSettings(); d.dismiss(); showSubtitleAppearanceDialog()
             }.setNegativeButton("Back") { d, _ -> d.dismiss(); showSubtitleAppearanceDialog() }.show()
@@ -3026,7 +3026,14 @@ class Media3PlayerActivity : Activity() {
     private fun showSubtitleDialog() {
         val choices = trackChoices(player.currentTracks, C.TRACK_TYPE_TEXT)
         val canAddFile = !isLive
-        if (choices.isEmpty() && !canAddFile) return
+        if (choices.isEmpty() && !canAddFile) {
+            AlertDialog.Builder(this)
+                .setTitle("Subtitles")
+                .setMessage("No subtitle tracks are available for this live channel.")
+                .setPositiveButton("OK", null)
+                .show()
+            return
+        }
         handler.removeCallbacks(hideControls)
         val labels = buildList {
             add("Off")
@@ -3153,8 +3160,8 @@ class Media3PlayerActivity : Activity() {
         } catch (_: SecurityException) {
             // The activity grant still remains valid for this playback.
         }
-        externalSubtitleUri = uri
         externalSubtitleName = subtitleDisplayName(uri)
+        externalSubtitleUri = prepareExternalSubtitleWithSync(uri, externalSubtitleName)
         val position = player.currentPosition.coerceAtLeast(0L)
         val shouldPlay = player.playWhenReady
         player.setMediaItem(buildMediaItem(), position)
@@ -3172,6 +3179,35 @@ class Media3PlayerActivity : Activity() {
         ).show()
         showControls()
         subtitleButton.requestFocus()
+    }
+
+    /**
+     * Apply the selected offset to local SRT/WebVTT files as well as online ones.
+     * Other formats are passed through untouched because their timestamp syntax
+     * differs and must not be rewritten blindly.
+     */
+    private fun prepareExternalSubtitleWithSync(uri: Uri, displayName: String): Uri {
+        if (subtitleSyncMs == 0L) return uri
+        val extension = displayName.substringAfterLast('.', "").lowercase()
+        if (extension != "srt" && extension != "vtt") return uri
+        return runCatching {
+            val target = File(cacheDir, "local_subtitle_${System.currentTimeMillis()}.$extension")
+            val input = contentResolver.openInputStream(uri)
+                ?: throw IllegalStateException("Could not open the selected subtitle file.")
+            input.use { stream ->
+                target.outputStream().use { output -> stream.copyTo(output) }
+            }
+            check(target.length() > 0L) { "The selected subtitle file was empty." }
+            applyOnlineSubtitleDelay(target)
+            Uri.fromFile(target)
+        }.onFailure { error ->
+            Log.w("Media3PlayerActivity", "Could not apply subtitle sync to local file", error)
+            Toast.makeText(
+                this,
+                "Could not apply sync to this subtitle; using the original file.",
+                Toast.LENGTH_LONG
+            ).show()
+        }.getOrDefault(uri)
     }
 
     private fun subtitleDisplayName(uri: Uri): String {
@@ -3232,7 +3268,10 @@ class Media3PlayerActivity : Activity() {
 
     private fun showTrackDialog(type: Int, title: String, allowOff: Boolean) {
         val choices = trackChoices(player.currentTracks, type)
-        if (choices.isEmpty()) return
+        if (choices.isEmpty()) {
+            Toast.makeText(this, "No alternate $title tracks are available.", Toast.LENGTH_SHORT).show()
+            return
+        }
         handler.removeCallbacks(hideControls)
         val offset = if (allowOff) 1 else 0
         val labels = buildList {
