@@ -11,6 +11,7 @@ import 'catalog_cache.dart';
 import 'demo_catalog.dart';
 import 'downloads.dart';
 import 'device_profile.dart';
+import 'device_trial_gate.dart';
 import 'diagnostics.dart';
 import 'home_config.dart';
 import 'models.dart';
@@ -214,7 +215,7 @@ class LumenApp extends StatelessWidget {
           home: LaunchGate(
             startup: startup,
             minimumDuration: minimumSplashDuration,
-            child: const SessionGate(),
+            child: const DeviceTrialGate(child: SessionGate()),
           ),
         );
       },
