@@ -212,12 +212,12 @@ void main() {
       await tester.pumpAndSettle();
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pumpAndSettle();
-      expect(find.text('Color mode'), findsOneWidget);
+      expect(find.text('وضع الألوان'), findsOneWidget);
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(
         FocusManager.instance.primaryFocus?.debugLabel,
-        'الإعدادات المظهر',
+        'Settings المظهر',
       );
       expect(tester.takeException(), isNull);
     },
@@ -474,7 +474,7 @@ void main() {
     expect(find.text('تسجيل الخروج من Eagle X؟'), findsOneWidget);
     expect(calls, 0);
 
-    await tester.tap(find.text('تسجيل الخروج'));
+    await tester.tap(find.widgetWithText(FilledButton, 'تسجيل الخروج'));
     await tester.pump();
     expect(calls, 1);
     expect(find.text('جارٍ تسجيل الخروج…'), findsOneWidget);
@@ -682,7 +682,7 @@ void main() {
 
     final expected = <String>{
       'Dark appearance',
-      'المظهر الفاتح',
+      'فاتح appearance',
       'النظام appearance',
       for (final option in LumenFont.values) '${option.label} font',
       for (final option in LumenCornerStyle.values) '${option.label} corners',

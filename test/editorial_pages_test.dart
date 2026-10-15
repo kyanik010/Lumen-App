@@ -164,7 +164,7 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('المسلسلات'));
     await tester.pump();
-    await tester.tap(find.text('دراما مميزة'));
+    await tester.tap(find.text('Prestige drama'));
     await tester.pump();
     expect(HomeConfig.instance.shelves.map((s) => s.name).toList(), [
       'New cinema',

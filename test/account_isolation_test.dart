@@ -1080,19 +1080,19 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.byTooltip('الدليل'), findsNothing);
-    expect(find.byTooltip('You & library'), findsNothing);
+    expect(find.byTooltip('حسابك ومكتبتك'), findsNothing);
 
     await tester.binding.handlePopRoute();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.byTooltip('You & library'), findsOneWidget);
+    expect(find.byTooltip('حسابك ومكتبتك'), findsOneWidget);
     expect(find.byTooltip('الدليل'), findsNothing);
 
-    final utilityRect = tester.getRect(find.byTooltip('You & library'));
+    final utilityRect = tester.getRect(find.byTooltip('حسابك ومكتبتك'));
     expect(utilityRect.top, lessThan(100));
     expect(utilityRect.right, greaterThan(340));
 
-    await tester.tap(find.byTooltip('You & library'));
+    await tester.tap(find.byTooltip('حسابك ومكتبتك'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
