@@ -1,11 +1,11 @@
 name: Build and release Lumen
 
-# Build on every main push; the local release path remains an optional backup.
-# The private Google Play bundle stays out of the public GitHub release.
 on:
   push:
     branches: [main, master]
-    tags: ['v*']
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
   workflow_dispatch:
     inputs:
       build_number:
@@ -13,12 +13,11 @@ on:
         type: number
         required: true
 
-# Needed so the release job can publish/update the "latest" release.
 permissions:
   contents: write
 
 env:
-  FLUTTER_VERSION: 3.38.9 # matches local dev SDK (Dart 3.10.x)
+  FLUTTER_VERSION: 3.38.9
 
 jobs:
   prepare:
@@ -33,9 +32,7 @@ jobs:
           RUN_NUMBER: ${{ github.run_number }}
         shell: bash
         run: |
-          current="$(curl --fail --silent --show-error \
-            https://api.github.com/repos/Talha-Ashraf420/Lumen-App/releases/latest \
-            | jq -er '.body | capture("build: (?<number>[0-9]+)").number')"
+          current="$(curl --fail --silent --show-error https://api.github.com/repos/Talha-Ashraf420/Lumen-App/releases/latest | jq -er '.body | capture("build: (?<number>[0-9]+)").number')"
           if [ -n "$REQUESTED_BUILD_NUMBER" ]; then
             build="$REQUESTED_BUILD_NUMBER"
           else
@@ -125,270 +122,32 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
 
-  # Google Play receives an Android App Bundle signed with the dedicated upload
-  # key. The bundle remains a private workflow artifact until it is submitted to
-  # the closed-testing track; it is never attached to the public GitHub release.
-  android-play:
-    needs: [quality, prepare]
-    runs-on: ubuntu-latest
-    env:
-      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_PLAY_KEYSTORE_BASE64 }}
-      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_PLAY_KEY_ALIAS }}
-      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_PLAY_KEY_PASSWORD }}
-      ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_PLAY_STORE_PASSWORD }}
-      ORG_GRADLE_PROJECT_lumenCommunityBuild: 'false'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
-      - run: flutter pub get
-      - name: Configure Google Play upload signing
-        shell: bash
-        run: |
-          for value in ANDROID_KEYSTORE_BASE64 ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD ANDROID_STORE_PASSWORD; do
-            if [ -z "${!value:-}" ]; then
-              echo "Missing required GitHub Actions secret: $value"
-              exit 1
-            fi
-          done
-          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/play-upload.p12
-          {
-            printf 'storeFile=play-upload.p12\n'
-            printf 'storeType=PKCS12\n'
-            printf 'keyAlias=%s\n' "$ANDROID_KEY_ALIAS"
-            printf 'keyPassword=%s\n' "$ANDROID_KEY_PASSWORD"
-            printf 'storePassword=%s\n' "$ANDROID_STORE_PASSWORD"
-          } > android/key.properties
-          chmod 600 android/app/play-upload.p12 android/key.properties
-      - run: flutter build appbundle --release --build-number=${{ needs.prepare.outputs.build_number }} --dart-define=APP_BUILD=${{ needs.prepare.outputs.build_number }}
-      - name: Verify signed Google Play bundle
-        shell: bash
-        run: |
-          bundle="build/app/outputs/bundle/release/app-release.aab"
-          jarsigner -verify "$bundle"
-          test "$(unzip -p "$bundle" base/manifest/AndroidManifest.xml | strings | grep -o 'com.talhaashraf.lumen' | head -n 1)" = "com.talhaashraf.lumen"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Lumen-Google-Play-aab
-          path: build/app/outputs/bundle/release/app-release.aab
-          if-no-files-found: error
-
-  windows:
-    needs: [quality, prepare]
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
-      - run: flutter config --enable-windows-desktop
-      - run: flutter pub get
-      # media_kit's CMake downloader fails on the first transient CDN response
-      # (often an HTML error page) without retrying. Preload its pinned archives
-      # at CMAKE_BINARY_DIR and verify the same checksums before CMake runs.
-      - name: Prefetch and verify Windows media libraries
-        shell: pwsh
-        run: |
-          $destination = 'build/windows/x64'
-          New-Item -ItemType Directory -Force -Path $destination | Out-Null
-          $archives = @(
-            @{
-              name = 'mpv-dev-x86_64-20230924-git-652a1dd.7z'
-              url = 'https://github.com/media-kit/libmpv-win32-video-build/releases/download/2023-09-24/mpv-dev-x86_64-20230924-git-652a1dd.7z'
-              md5 = 'a832ef24b3a6ff97cd2560b5b9d04cd8'
-            },
-            @{
-              name = 'ANGLE.7z'
-              url = 'https://github.com/alexmercerind/flutter-windows-ANGLE-OpenGL-ES/releases/download/v1.0.1/ANGLE.7z'
-              md5 = 'e866f13e8d552348058afaafe869b1ed'
-            }
-          )
-          foreach ($archive in $archives) {
-            $target = Join-Path $destination $archive.name
-            $verified = $false
-            for ($attempt = 1; $attempt -le 5; $attempt++) {
-              $temporary = "$target.partial"
-              try {
-                curl.exe --fail --location --retry 3 --retry-all-errors --retry-delay 2 --connect-timeout 30 --max-time 180 --output $temporary $archive.url
-                if ($LASTEXITCODE -ne 0) { throw "Download failed with curl exit code $LASTEXITCODE" }
-                $actual = (Get-FileHash -Path $temporary -Algorithm MD5).Hash.ToLowerInvariant()
-                if ($actual -ne $archive.md5) { throw "Checksum mismatch for $($archive.name)" }
-                Move-Item -Force $temporary $target
-                $verified = $true
-                break
-              } catch {
-                Remove-Item -Force $temporary -ErrorAction SilentlyContinue
-                Write-Warning "Attempt $attempt for $($archive.name) failed: $_"
-                if ($attempt -lt 5) { Start-Sleep -Seconds ([Math]::Min(15, 2 * $attempt)) }
-              }
-            }
-            if (-not $verified) { throw "Could not obtain a verified $($archive.name) archive" }
-          }
-      - run: flutter build windows --release --dart-define=APP_BUILD=${{ needs.prepare.outputs.build_number }}
-      - name: Package portable zip
-        run: Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath Lumen-Windows.zip
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Lumen-Windows
-          path: Lumen-Windows.zip
-          if-no-files-found: error
-
-  macos:
-    needs: [quality, prepare]
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
-      - run: flutter config --enable-macos-desktop
-      - run: flutter pub get
-      - run: flutter build macos --release --dart-define=APP_BUILD=${{ needs.prepare.outputs.build_number }}
-      - name: Zip .app
-        run: |
-          APP_PATH="build/macos/Build/Products/Release/Lumen.app"
-          test -d "$APP_PATH"
-          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" Lumen-macOS.zip
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Lumen-macOS
-          path: Lumen-macOS.zip
-          if-no-files-found: error
-
-  linux:
-    needs: [quality, prepare]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install Linux build deps
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ninja-build libgtk-3-dev clang cmake pkg-config libmpv-dev mpv libsecret-1-dev libjsoncpp-dev libsqlite3-dev
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
-      - run: flutter config --enable-linux-desktop
-      - run: flutter pub get
-      - run: flutter build linux --release --dart-define=APP_BUILD=${{ needs.prepare.outputs.build_number }}
-      - name: Package tarball
-        run: tar -czf Lumen-Linux-x64.tar.gz -C build/linux/x64/release/bundle .
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Lumen-Linux
-          path: Lumen-Linux-x64.tar.gz
-          if-no-files-found: error
-
-  ios:
-    needs: [quality, prepare]
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
-      # iOS playback and catalog storage use the platform SQLite plugin. The
-      # transitive sqlite3 native-asset hook otherwise downloads a dylib from
-      # GitHub, making this job depend on runner DNS/CDN availability.
-      - name: Use iOS system SQLite for native assets
-        run: |
-          printf '\nhooks:\n  user_defines:\n    sqlite3:\n      source: system\n' >> pubspec.yaml
-      - run: flutter pub get
-      # Unsigned build (CI has no signing certs). Produces Runner.app that must
-      # be re-signed / sideloaded (e.g. with AltStore or Sideloadly) to install.
-      - run: flutter build ios --release --no-codesign --dart-define=APP_BUILD=${{ needs.prepare.outputs.build_number }}
-      - name: Zip unsigned .app
-        run: ditto -c -k --sequesterRsrc --keepParent build/ios/iphoneos/Runner.app Lumen-iOS-unsigned.zip
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Lumen-iOS-unsigned
-          path: Lumen-iOS-unsigned.zip
-          if-no-files-found: error
-
-  # Publish installable packages to the rolling "latest" release. The Google
-  # Play AAB remains a private Actions artifact and is intentionally omitted.
   release:
-    needs: [prepare, android, android-play, windows, macos, linux, ios]
-    if: >-
-      ${{
-        always() &&
-        needs.android.result == 'success' &&
-        needs.android-play.result == 'success' &&
-        needs.windows.result == 'success' &&
-        needs.macos.result == 'success' &&
-        needs.linux.result == 'success' &&
-        needs.ios.result == 'success'
-      }}
+    needs: [prepare, android]
+    if: ${{ always() && needs.android.result == 'success' && needs.prepare.result == 'success' }}
     runs-on: ubuntu-latest
     env:
       DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
     steps:
-      - name: Download Android Community artifact
+      - name: Download Android APK artifact
         uses: actions/download-artifact@v4
         with:
           name: Lumen-Android-apk
           path: dist/android
-      - name: Download Windows artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: Lumen-Windows
-          path: dist/windows
-      - name: Download macOS artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: Lumen-macOS
-          path: dist/macos
-      - name: Download Linux artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: Lumen-Linux
-          path: dist/linux
-      - name: Download unsigned iOS artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: Lumen-iOS-unsigned
-          path: dist/ios
-      - name: Stage release assets (stable names)
+      - name: Stage Android release asset
         run: |
           mkdir -p out
           cp dist/android/app-release.apk out/Lumen-Android.apk
-          cp dist/windows/Lumen-Windows.zip out/Lumen-Windows.zip
-          cp dist/macos/Lumen-macOS.zip out/Lumen-macOS.zip
-          cp dist/linux/Lumen-Linux-x64.tar.gz out/Lumen-Linux-x64.tar.gz
-          cp dist/ios/Lumen-iOS-unsigned.zip out/Lumen-iOS-unsigned.zip
-          for asset in out/*; do
-            sha256sum "$asset" > "$asset.sha256"
-          done
-          ls -la out
-      - name: Publish to "latest" release
+          sha256sum out/Lumen-Android.apk > out/Lumen-Android.apk.sha256
+      - name: Publish Android-only release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
           name: Build ${{ needs.prepare.outputs.build_number }}
-          # The app reads this 'build:' line to detect newer builds for in-app update.
           body: |
             build: ${{ needs.prepare.outputs.build_number }}
 
-            Lumen automatic build for Android, Android TV, Windows, macOS,
-            Linux and iOS. Install links are below.
-            The Android asset is a signed Community build for direct installation
-            and uses a separate package from the Google Play edition.
-            The iOS asset is unsigned and must be signed before installation.
-          # Must NOT be a prerelease, or the /releases/latest/ download URLs 404.
+            Lumen Android / Android TV APK only.
           prerelease: false
           make_latest: true
           files: out/*
@@ -399,19 +158,14 @@ jobs:
           DOWNLOADER_URL: https://aftv.news/4560142
           DOWNLOADER_CODE: "4560142"
         run: |
-          if [ ! -f out/Lumen-Android.apk ]; then
-            echo "Android artifact is unavailable; skipping Discord announcement."
-            exit 0
-          fi
           jq -n \
             --arg build "$BUILD_NUMBER" \
             --arg downloader "$DOWNLOADER_URL" \
             --arg downloaderCode "$DOWNLOADER_CODE" \
             '{
               username: "Lumen Releases",
-              content: ("**New Lumen build " + $build + " is available**\n\nAndroid and Android TV\nDownloader code: `" + $downloaderCode + "`\nDownload: " + $downloader)
-            }' \
-            > discord-payload.json
+              content: ("**New Lumen Android build " + $build + " is available**\n\nAndroid and Android TV\nDownloader code: `" + $downloaderCode + "`\nDownload: " + $downloader)
+            }' > discord-payload.json
           curl --fail --silent --show-error \
             -H "Content-Type: application/json" \
             --data @discord-payload.json \
