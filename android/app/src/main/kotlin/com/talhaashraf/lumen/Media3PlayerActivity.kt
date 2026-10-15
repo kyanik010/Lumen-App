@@ -211,6 +211,8 @@ class Media3PlayerActivity : Activity() {
     private val stopPlaybackForSleep = Runnable {
         if (::player.isInitialized) {
             player.pause()
+            // A sleep timer must stop both decoders when split view is active.
+            secondaryPlayer?.pause()
             sleepTimerMinutes = 0
             Toast.makeText(this, "Sleep timer finished", Toast.LENGTH_SHORT).show()
         }
@@ -2198,43 +2200,48 @@ class Media3PlayerActivity : Activity() {
         handler.removeCallbacks(hideControls)
         val favoriteKey = playlistFavoriteKeys.getOrNull(playlistIndex).orEmpty()
         val saved = playlistFavoriteStates.getOrNull(playlistIndex) == true
-        val labels = buildList {
-            add(if (player.isPlaying) "Ⅱ  Pause playback" else "▶  Resume playback")
-            add("ⓘ  Playback information")
-            add(if (splitActive) "×  Exit split view" else "▣  عرض منقسم")
-            add("◖  Volume")
-            add("▣  Video fit")
-            add("▶  Playback speed · ${selectedPlaybackSpeed}x")
-            add("◷  Sleep timer" + if (sleepTimerMinutes > 0) " · ${sleepTimerMinutes}m" else "")
-            add("♪  Audio")
-            add("CC  Subtitles")
-            add("Aa  Subtitle appearance")
-            add("▣  Picture-in-picture")
-            if (favoriteKey.isNotBlank()) add(if (saved) "♥  Remove from My List" else "♡  Add to My List")
-        }.toTypedArray()
+        val actions = mutableListOf<Pair<String, () -> Unit>>()
+
+        actions += (if (player.isPlaying) "Ⅱ  Pause playback" else "▶  Resume playback") to {
+            if (player.isPlaying) player.pause() else player.play()
+        }
+        actions += "ⓘ  Playback information" to { showPlaybackInformation() }
+        // Split view only works for live channel lists with another channel to show.
+        if (splitActive || (isLive && playlistUrls.size > 1)) {
+            actions += (if (splitActive) "×  Exit split view" else "▣  عرض منقسم") to {
+                if (splitActive) exitSplit() else showSplitChannelDialog()
+            }
+        }
+        actions += "◖  Volume" to { showVolumeDialog() }
+        actions += "▣  Video fit" to { showVideoFitDialog() }
+        actions += "▶  Playback speed · ${selectedPlaybackSpeed}x" to { showPlaybackSpeedDialog() }
+        actions += ("◷  Sleep timer" + if (sleepTimerMinutes > 0) " · ${sleepTimerMinutes}m" else "") to {
+            showSleepTimerDialog()
+        }
+        actions += "♪  Audio" to { showTrackDialog(C.TRACK_TYPE_AUDIO, "Audio", allowOff = false) }
+        actions += "CC  Subtitles" to { showSubtitleDialog() }
+        actions += "Aa  Subtitle appearance" to { showSubtitleAppearanceDialog() }
+        actions += "▣  Picture-in-picture" to { enterPlayerPictureInPicture() }
+        if (favoriteKey.isNotBlank()) {
+            actions += (if (saved) "♥  Remove from My List" else "♡  Add to My List") to {
+                playlistFavoriteStates[playlistIndex] = !saved
+                updateFavoriteUi()
+                Toast.makeText(
+                    this,
+                    if (saved) "Removed from My List" else "Added to My List",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
         val dialog = AlertDialog.Builder(this).setTitle("More")
-            .setItems(labels) { activeDialog, index ->
+            .setItems(actions.map { it.first }.toTypedArray()) { activeDialog, index ->
                 activeDialog.dismiss()
-                when (index) {
-                    0 -> if (player.isPlaying) player.pause() else player.play()
-                    1 -> showPlaybackInformation()
-                    2 -> if (splitActive) exitSplit() else showSplitChannelDialog()
-                    3 -> showVolumeDialog()
-                    4 -> showVideoFitDialog()
-                    5 -> showPlaybackSpeedDialog()
-                    6 -> showSleepTimerDialog()
-                    7 -> showTrackDialog(C.TRACK_TYPE_AUDIO, "Audio", allowOff = false)
-                    8 -> showSubtitleDialog()
-                    9 -> showSubtitleAppearanceDialog()
-                    10 -> enterPlayerPictureInPicture()
-                    else -> {
-                        playlistFavoriteStates[playlistIndex] = !saved
-                        updateFavoriteUi()
-                        Toast.makeText(this, if (saved) "Removed from My List" else "Added to My List", Toast.LENGTH_SHORT).show()
-                    }
-                }
+                actions.getOrNull(index)?.second?.invoke()
             }.setNegativeButton("Cancel", null).create()
-        dialog.setOnShowListener { dialog.window?.setBackgroundDrawable(roundedRect(0xFF111511.toInt(), 0xFF596157.toInt(), 1, 18)) }
+        dialog.setOnShowListener {
+            dialog.window?.setBackgroundDrawable(roundedRect(0xFF111511.toInt(), 0xFF596157.toInt(), 1, 18))
+        }
         dialog.setOnDismissListener { showControls(); moreButton.post { moreButton.requestFocus() } }
         dialog.show()
     }
