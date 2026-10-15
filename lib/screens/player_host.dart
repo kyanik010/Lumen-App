@@ -2089,7 +2089,7 @@ class _PlayerHostState extends State<PlayerHost> {
           ),
           if (_isAndroid)
             IconButton(
-              tooltip: 'Open Android compatibility player',
+              tooltip: 'فتح مشغّل أندرويد البديل',
               style:
                   IconButton.styleFrom(
                     foregroundColor: Colors.white,
@@ -2116,7 +2116,7 @@ class _PlayerHostState extends State<PlayerHost> {
                   _close();
                 } else {
                   _flashHud(
-                    'Android player is unavailable',
+                    'مشغّل أندرويد غير متاح',
                     Icons.error_outline_rounded,
                   );
                 }
@@ -2124,7 +2124,7 @@ class _PlayerHostState extends State<PlayerHost> {
               icon: const Icon(Icons.android_rounded, size: 19),
             ),
           IconButton(
-            tooltip: 'Playback information',
+            tooltip: 'معلومات التشغيل',
             style:
                 IconButton.styleFrom(
                   foregroundColor: Colors.white,
@@ -2140,7 +2140,7 @@ class _PlayerHostState extends State<PlayerHost> {
           ),
           if (_hasNext)
             IconButton(
-              tooltip: 'Next channel',
+              tooltip: 'القناة التالية',
               style:
                   IconButton.styleFrom(
                     foregroundColor: Colors.white,
@@ -2586,7 +2586,7 @@ class _PlayerHostState extends State<PlayerHost> {
           if (_isLive)
             _channelBtn(
               Icons.skip_previous_rounded,
-              'Previous channel',
+              'القناة السابقة',
               _hasPrev ? () => _go(pc.index - 1) : null,
             )
           else
@@ -2599,7 +2599,7 @@ class _PlayerHostState extends State<PlayerHost> {
             const SizedBox(width: 5),
             _roundBtn(
               Icons.replay_10_rounded,
-              'Rewind 10 seconds',
+              'ترجيع ١٠ ثوانٍ',
               () => _seekBy(-10),
             ),
           ],
@@ -2645,7 +2645,7 @@ class _PlayerHostState extends State<PlayerHost> {
             const SizedBox(width: 9),
             _roundBtn(
               Icons.forward_10_rounded,
-              'Fast forward 10 seconds',
+              'تقديم ١٠ ثوانٍ',
               () => _seekBy(10),
             ),
           ],
@@ -2653,7 +2653,7 @@ class _PlayerHostState extends State<PlayerHost> {
           if (_isLive)
             _channelBtn(
               Icons.skip_next_rounded,
-              'Next channel',
+              'القناة التالية',
               _hasNext ? () => _go(pc.index + 1) : null,
             )
           else
@@ -2772,7 +2772,7 @@ class _PlayerHostState extends State<PlayerHost> {
                             ? Icons.volume_off_rounded
                             : Icons.volume_up_rounded,
                         _toggleMute,
-                        tooltip: _muted ? 'Unmute' : 'Mute',
+                        tooltip: _muted ? 'إلغاء كتم الصوت' : 'كتم الصوت',
                         compact: compact,
                       ),
                       _bottomIcon(
@@ -2790,27 +2790,27 @@ class _PlayerHostState extends State<PlayerHost> {
                       _bottomIcon(
                         Icons.tune_rounded,
                         _openSettings,
-                        tooltip: 'Playback settings',
+                        tooltip: 'إعدادات التشغيل',
                         compact: compact,
                       ),
                       if (!compact)
                         _bottomIcon(
                           Icons.info_outline_rounded,
                           _openDiagnostics,
-                          tooltip: 'Playback information',
+                          tooltip: 'معلومات التشغيل',
                         ),
                       if (_isAndroid && !DeviceProfile.isTelevision && !compact)
                         _bottomIcon(
                           Icons.picture_in_picture_alt_rounded,
                           () => Pip.instance.enter(),
-                          tooltip: 'Picture-in-picture',
+                          tooltip: 'صورة داخل صورة',
                         ),
                       const Spacer(),
                       if (_isLive)
                         _bottomIcon(
                           Icons.view_sidebar_rounded,
                           _openLiveHub,
-                          tooltip: 'Live control hub (G)',
+                          tooltip: 'لوحة التحكم بالبث المباشر (G)',
                           compact: compact,
                         ),
                       if (_isLive)
@@ -2838,8 +2838,8 @@ class _PlayerHostState extends State<PlayerHost> {
                             : Icons.fullscreen_rounded,
                         _toggleFullscreen,
                         tooltip: _fullscreen
-                            ? 'Exit full screen'
-                            : 'Full screen',
+                            ? 'الخروج من ملء الشاشة'
+                            : 'ملء الشاشة',
                         compact: compact,
                       ),
                     ],
@@ -3255,7 +3255,7 @@ class _PlayerHostState extends State<PlayerHost> {
             t.language,
           ].whereType<String>().where((e) => e.isNotEmpty).join(' · ');
           return _subRow(
-            label.isEmpty ? 'Track ${t.id}' : label,
+            label.isEmpty ? 'مسار ${t.id}' : label,
             !_subtitlesDisabled && current.id == t.id,
             () {
               unawaited(_selectSubtitle(t, closePanel: true));
@@ -3489,7 +3489,7 @@ class _PlayerHostState extends State<PlayerHost> {
           Padding(
             padding: const EdgeInsets.only(top: 8, bottom: 4),
             child: Text(
-              'Powered by OpenSubtitles',
+              'بدعم من OpenSubtitles',
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.28),
                 fontSize: 10.5,
@@ -3541,7 +3541,7 @@ class _PlayerHostState extends State<PlayerHost> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Playback information',
+                        'معلومات التشغيل',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
@@ -3549,7 +3549,7 @@ class _PlayerHostState extends State<PlayerHost> {
                       ),
                       SizedBox(height: 3),
                       Text(
-                        'Safe details—credentials are never shown.',
+                        'تفاصيل آمنة؛ لا يتم عرض بيانات الدخول.',
                         style: TextStyle(color: Colors.white54, fontSize: 11.5),
                       ),
                     ],
@@ -3602,7 +3602,7 @@ class _PlayerHostState extends State<PlayerHost> {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          pc.failure?.message ?? 'The stream is responding.',
+                          pc.failure?.message ?? 'البث يعمل بشكل طبيعي.',
                           style: const TextStyle(
                             color: Colors.white60,
                             fontSize: 12,
@@ -3616,17 +3616,17 @@ class _PlayerHostState extends State<PlayerHost> {
               ),
             ),
           ),
-          _diagnosticRow('Endpoint', pc.endpointLabel),
+          _diagnosticRow('عنوان المصدر', pc.endpointLabel),
           _diagnosticRow('التنسيق', pc.sourceFormat),
-          _diagnosticRow('المصدر', '${pc.sourceNumber} of ${pc.sourceCount}'),
+          _diagnosticRow('المصدر', '${pc.sourceNumber} من ${pc.sourceCount}'),
           _diagnosticRow(
             'المخزّن مؤقتًا',
-            '${pc.bufferedAhead.inSeconds}s · '
+            '${pc.bufferedAhead.inSeconds} ثانية · '
                 '${pc.bufferingPercentage.toStringAsFixed(0)}%',
           ),
           _diagnosticRow(
             'الاستعادة',
-            '${pc.reconnectAttempt} of ${pc.retryLimit} attempts',
+            '${pc.reconnectAttempt} من ${pc.retryLimit} محاولة',
           ),
           if (pc.failure != null) ...[
             _diagnosticRow('رمز الخطأ', pc.failure!.code),
@@ -3683,7 +3683,7 @@ class _PlayerHostState extends State<PlayerHost> {
             ),
           ),
           if (events.isNotEmpty) ...[
-            _settingLabel('Recent recovery activity'),
+            _settingLabel('سجل محاولات الاستعادة الأخيرة'),
             for (final event in events)
               ListTile(
                 dense: true,
@@ -3797,8 +3797,8 @@ class _PlayerHostState extends State<PlayerHost> {
                 ),
                 subtitle: Text(
                   saved
-                      ? 'This title is saved on this device.'
-                      : 'Keep this title or channel close.',
+                      ? 'تم حفظ هذا المحتوى على هذا الجهاز.'
+                      : 'أضف هذا المحتوى أو القناة إلى قائمتك للرجوع إليها بسهولة.',
                   style: const TextStyle(color: Colors.white54, fontSize: 12),
                 ),
               );
@@ -3815,7 +3815,7 @@ class _PlayerHostState extends State<PlayerHost> {
           if (_isAndroid)
             ListTile(
               leading: const Icon(Icons.picture_in_picture_alt_rounded),
-              title: const Text('Picture-in-picture'),
+              title: const Text('صورة داخل صورة'),
               onTap: () {
                 _closePanel();
                 Pip.instance.enter();
@@ -3823,7 +3823,7 @@ class _PlayerHostState extends State<PlayerHost> {
             ),
           ListTile(
             leading: const Icon(Icons.info_outline_rounded),
-            title: const Text('Playback information'),
+            title: const Text('معلومات التشغيل'),
             onTap: _openDiagnostics,
           ),
         ],
@@ -3902,7 +3902,7 @@ class _PlayerHostState extends State<PlayerHost> {
           _chipRow([
             for (final r in const [0.5, 1.0, 1.25, 1.5, 2.0])
               (
-                '${r}x',
+                '${r}×',
                 _rate == r,
                 () {
                   pc.player!.setRate(r);
@@ -3914,14 +3914,14 @@ class _PlayerHostState extends State<PlayerHost> {
         _settingLabel('مؤقت النوم'),
         _chipRow([
           for (final mn in const [0, 15, 30, 45, 60])
-            (mn == 0 ? 'إيقاف' : '${mn}m', _sleepMin == mn, () => _setSleep(mn)),
+            (mn == 0 ? 'إيقاف' : '${mn} دقيقة', _sleepMin == mn, () => _setSleep(mn)),
         ]),
         _settingLabel('الصوت'),
         if (audio.isEmpty)
           const Padding(
             padding: EdgeInsets.fromLTRB(20, 2, 20, 4),
             child: Text(
-              'Only one audio track.',
+              'يتوفر مسار صوتي واحد فقط.',
               style: TextStyle(color: Colors.white54),
             ),
           )
@@ -3932,7 +3932,7 @@ class _PlayerHostState extends State<PlayerHost> {
               t.language,
             ].whereType<String>().where((e) => e.isNotEmpty).join(' · ');
             return _trackRow(
-              label.isEmpty ? 'Track ${t.id}' : label,
+              label.isEmpty ? 'مسار ${t.id}' : label,
               curAudio.id == t.id,
               () {
                 pc.player!.setAudioTrack(t);
@@ -3950,7 +3950,7 @@ class _PlayerHostState extends State<PlayerHost> {
             t.language,
           ].whereType<String>().where((e) => e.isNotEmpty).join(' · ');
           return _trackRow(
-            label.isEmpty ? 'Track ${t.id}' : label,
+            label.isEmpty ? 'مسار ${t.id}' : label,
             !_subtitlesDisabled && curSub.id == t.id,
             () {
               unawaited(_selectSubtitle(t));
@@ -4016,7 +4016,7 @@ class _PlayerHostState extends State<PlayerHost> {
                 child: Text(
                   _subDelay == 0
                       ? 'متزامنة'
-                      : '${_subDelay > 0 ? '+' : ''}${_subDelay.toStringAsFixed(2)}s',
+                      : '${_subDelay > 0 ? '+' : ''}${_subDelay.toStringAsFixed(2)} ثانية',
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
