@@ -441,7 +441,7 @@ void main() {
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'استئناف');
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
     await tester.pump();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'Cancel');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'إلغاء');
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
     await tester.pump();
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'استئناف');

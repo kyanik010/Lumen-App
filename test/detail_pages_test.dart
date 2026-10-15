@@ -436,7 +436,7 @@ void main() {
     expect(find.text('عرض الفيلم'), findsOneWidget);
     expect(find.text('The Last Signal'), findsOneWidget);
     expect(find.textContaining('(4K)'), findsNothing);
-    expect(find.text('Play film'), findsOneWidget);
+    expect(find.text('تشغيل الفيلم'), findsOneWidget);
     expect(
       tester.getSize(find.byKey(const ValueKey('movie-detail-back'))),
       const Size(46, 46),
@@ -460,8 +460,8 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('THE STORY'), findsOneWidget);
-    expect(find.text('THE CREDITS'), findsOneWidget);
+    expect(find.text('القصة'), findsOneWidget);
+    expect(find.text('طاقم العمل'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await disposeUi(tester);
   });
@@ -489,7 +489,7 @@ void main() {
 
     expect(find.byType(DetailMetadataSkeleton), findsOneWidget);
     expect(find.byType(DetailBackdropPlaceholder), findsWidgets);
-    final playLabel = tester.widget<Text>(find.text('Play film'));
+    final playLabel = tester.widget<Text>(find.text('تشغيل الفيلم'));
     expect(playLabel.style?.color, onAccent);
 
     const synopsis =
@@ -911,7 +911,7 @@ void main() {
 
     await tester.sendKeyEvent(LogicalKeyboardKey.select);
     await tester.pumpAndSettle();
-    expect(find.text('A–Z'), findsOneWidget);
+    expect(find.text('أ-ي'), findsOneWidget);
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
 
@@ -1340,7 +1340,7 @@ void main() {
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
     await tester.pump();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'Search category');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'التصنيف');
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
     await tester.pump();
     expect(

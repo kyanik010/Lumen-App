@@ -32,8 +32,8 @@ void main() {
 
     expect(find.byType(Lottie), findsOneWidget);
     expect(find.text('EAGLE X'), findsOneWidget);
-    expect(find.text('YOUR SCREEN. YOUR SIGNAL.'), findsOneWidget);
-    expect(find.text('TUNING YOUR EXPERIENCE'), findsOneWidget);
+    expect(find.text('شاشتك. إشارتك.'), findsOneWidget);
+    expect(find.text('نجهّز تجربتك'), findsOneWidget);
     expect(find.byType(ScaleTransition), findsNothing);
     expect(tester.takeException(), isNull);
   });
@@ -43,7 +43,7 @@ void main() {
 
     expect(find.byType(Lottie), findsOneWidget);
     expect(find.text('EAGLE X'), findsOneWidget);
-    expect(find.text('LIVE   •   FILMS   •   SERIES'), findsOneWidget);
+    expect(find.text('مباشر   •   أفلام   •   مسلسلات'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

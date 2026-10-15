@@ -106,7 +106,7 @@ void main() {
       MyListScreen(client: testClient()),
       const Size(1280, 900),
     );
-    expect(find.text('محفوظ للمشاهدة لاحقًا'), findsOneWidget);
+    expect(find.text('قائمتي'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await pumpAt(tester, const LegalScreen(), const Size(1280, 900));
@@ -137,8 +137,8 @@ void main() {
       const Size(1280, 900),
     );
     await tester.pump();
-    expect(find.text('Build your own front row'), findsOneWidget);
-    expect(find.text('New cinema'), findsOneWidget);
+    expect(find.text('أنشئ صفك الأول'), findsOneWidget);
+    expect(find.text('سينما جديدة'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await pumpAt(tester, StatsScreen(client: client), const Size(1280, 900));
@@ -160,11 +160,11 @@ void main() {
     );
     await tester.pump();
 
-    await tester.tap(find.text('New cinema'));
+    await tester.tap(find.text('سينما جديدة'));
     await tester.pump();
     await tester.tap(find.text('المسلسلات'));
     await tester.pump();
-    await tester.tap(find.text('Prestige drama'));
+    await tester.tap(find.text('دراما مميزة'));
     await tester.pump();
     expect(HomeConfig.instance.shelves.map((s) => s.name).toList(), [
       'New cinema',

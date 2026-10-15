@@ -179,7 +179,7 @@ void main() {
 
     expect(find.text('Recent channels'), findsOneWidget);
     expect(find.text('Evening News'), findsOneWidget);
-    expect(find.text('مشاهدة البث المباشر'), findsOneWidget);
+    expect(find.text('مشاهدة مباشرة'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('home-recent-channels-viewport')),
       findsOneWidget,

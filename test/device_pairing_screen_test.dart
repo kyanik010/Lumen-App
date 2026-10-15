@@ -56,8 +56,8 @@ void main() {
       expect(find.textContaining('viewer'), findsOneWidget);
       expect(find.textContaining('hidden-secret'), findsNothing);
       expect(tester.takeException(), isNull);
-      await tester.ensureVisible(find.text('Send account to TV'));
-      await tester.tap(find.text('Send account to TV'));
+      await tester.ensureVisible(find.text('إرسال الحساب إلى التلفاز'));
+      await tester.tap(find.text('إرسال الحساب إلى التلفاز'));
       await tester.pumpAndSettle();
       expect(find.textContaining('Enter a valid HTTP'), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -76,7 +76,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('Could not start local setup'), findsOneWidget);
     expect(find.text('إنشاء رمز QR جديد'), findsOneWidget);
-    expect(find.text('Cancel and use manual login'), findsOneWidget);
+    expect(find.text('إلغاء واستخدام تسجيل الدخول اليدوي'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
