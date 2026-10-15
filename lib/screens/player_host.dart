@@ -298,6 +298,7 @@ class _PlayerHostState extends State<PlayerHost> {
   // online subtitle search (OpenSubtitles)
   bool _subsOnline = false;
   bool _subBusy = false;
+  int? _focusedSubLangIndex;
   String _subLang = 'en';
   String? _subError;
   String? _appliedSubName; // label of an applied online or local subtitle
@@ -3364,7 +3365,18 @@ class _PlayerHostState extends State<PlayerHost> {
               itemBuilder: (_, i) {
                 final (label, code) = OpenSubs.langs[i];
                 final sel = code == _subLang;
+                final focused = _focusedSubLangIndex == i;
                 return RemoteTap(
+                  semanticLabel: 'Subtitle language: $label',
+                  onFocusChange: (hasFocus) {
+                    setState(() {
+                      if (hasFocus) {
+                        _focusedSubLangIndex = i;
+                      } else if (_focusedSubLangIndex == i) {
+                        _focusedSubLangIndex = null;
+                      }
+                    });
+                  },
                   onTap: () {
                     setState(() => _subLang = code);
                     _searchSubs();
@@ -3375,9 +3387,26 @@ class _PlayerHostState extends State<PlayerHost> {
                     decoration: BoxDecoration(
                       color: sel
                           ? accent
+                          : focused
+                          ? Colors.cyanAccent.withValues(alpha: 0.18)
                           : Colors.white.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(lumenCorner(16)),
-                      border: Border.all(color: sel ? accent : Colors.white24),
+                      border: Border.all(
+                        color: focused
+                            ? Colors.cyanAccent
+                            : sel
+                            ? accent
+                            : Colors.white24,
+                        width: focused ? 2.5 : sel ? 1.5 : 1,
+                      ),
+                      boxShadow: focused
+                          ? [
+                              BoxShadow(
+                                color: Colors.cyanAccent.withValues(alpha: 0.4),
+                                blurRadius: 8,
+                              ),
+                            ]
+                          : null,
                     ),
                     child: Text(
                       label,
