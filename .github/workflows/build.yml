@@ -2,7 +2,7 @@ name: Build and release Lumen
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, feature/eagle-x-login-branding]
     paths-ignore:
       - '**/*.md'
       - 'docs/**'
