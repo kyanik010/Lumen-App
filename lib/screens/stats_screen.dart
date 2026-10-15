@@ -69,7 +69,7 @@ class _StatsScreenState extends State<StatsScreen> {
                       title: 'Time well watched',
                       subtitle: s.total == 0
                           ? 'Your activity becomes a private story, kept only on this device.'
-                          : '${s.titleCount} ${s.titleCount == 1 ? 'عنوان' : 'عناوين'} across films, series and live TV',
+                          : '${s.titleCount} ${s.titleCount == 1 ? 'title' : 'titles'} across films, series and live TV',
                       icon: Icons.insights_rounded,
                       onBack: () => Navigator.of(context).maybePop(),
                       trailing: s.total > 0
@@ -198,7 +198,7 @@ class _StatsScreenState extends State<StatsScreen> {
         ),
         const SizedBox(height: 6),
         Text(
-          '${s.titleCount} distinct ${s.titleCount == 1 ? 'عنوان' : 'عناوين'} watched',
+          '${s.titleCount} distinct ${s.titleCount == 1 ? 'title' : 'titles'} watched',
           style: TextStyle(color: muted, fontSize: 13.5),
         ),
         const SizedBox(height: 20),
