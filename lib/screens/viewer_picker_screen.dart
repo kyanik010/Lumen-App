@@ -50,7 +50,7 @@ class ViewerPickerScreen extends StatelessWidget {
                     OutlinedButton.icon(
                       onPressed: () => _editName(context),
                       icon: const Icon(Icons.add_rounded),
-                      label: const Text('Add viewer'),
+                      label: const Text('إضافة مشاهد'),
                     ),
                 ],
               ),
@@ -140,7 +140,7 @@ class ViewerPickerScreen extends StatelessWidget {
     final name = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(profile == null ? 'Add viewer' : 'Rename viewer'),
+        title: Text(profile == null ? 'إضافة مشاهد' : 'Rename viewer'),
         content: RemoteTextInput(
           child: TextField(
             controller: input,
@@ -158,7 +158,7 @@ class ViewerPickerScreen extends StatelessWidget {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, input.text),
-            child: const Text('Save'),
+            child: const Text('حفظ'),
           ),
         ],
       ),
@@ -195,7 +195,7 @@ class ViewerPickerScreen extends StatelessWidget {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Remove'),
+            child: const Text('إزالة'),
           ),
         ],
       ),
