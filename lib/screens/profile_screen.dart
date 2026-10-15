@@ -718,23 +718,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   List<Widget> _settingsMenu() => [
     Text('الإعدادات', style: kPageTitle()),
     const SizedBox(height: 12),
-    AnimatedBuilder(
-      animation: AppLocaleController.instance,
-      builder: (context, _) => Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: OutlinedButton.icon(
-          onPressed: () => AppLocaleController.instance.setLanguage(
-            AppLocaleController.instance.isArabic ? 'en' : 'ar',
-          ),
-          icon: const Icon(Icons.translate_rounded),
-          label: Text(
-            AppLocaleController.instance.isArabic
-                ? 'اللغة: العربية  ·  English'
-                : 'Language: English  ·  العربية',
-          ),
-        ),
-      ),
-    ),
     const SizedBox(height: 20),
     AnimatedBuilder(
       animation: ViewingProfiles.instance,
