@@ -50,15 +50,15 @@ void main() {
       );
       await tester.pumpWidget(player(false));
       for (final label in [
-        'Previous episode',
-        'Rewind 10 seconds',
-        'Play',
-        'Fast forward 10 seconds',
-        'Next episode',
-        'Channels',
-        'Subtitles',
-        'More',
-        'Exit full screen',
+        'الحلقة السابقة',
+        'ترجيع ١٠ ثوانٍ',
+        'تشغيل',
+        'تقديم ١٠ ثوانٍ',
+        'الحلقة التالية',
+        'القنوات',
+        'الترجمة',
+        'المزيد',
+        'الخروج من ملء الشاشة',
       ]) {
         final control = find.byTooltip(label);
         expect(tester.getSize(control).width, greaterThanOrEqualTo(48));
@@ -82,10 +82,10 @@ void main() {
       expect(calls.last, 'play');
       expect(calls.length, 10);
       await tester.pumpWidget(player(true));
-      expect(find.byTooltip('Rewind 10 seconds'), findsNothing);
-      expect(find.byTooltip('Fast forward 10 seconds'), findsNothing);
-      expect(find.byTooltip('Previous channel'), findsOneWidget);
-      expect(find.byTooltip('Next channel'), findsOneWidget);
+      expect(find.byTooltip('ترجيع ١٠ ثوانٍ'), findsNothing);
+      expect(find.byTooltip('تقديم ١٠ ثوانٍ'), findsNothing);
+      expect(find.byTooltip('القناة السابقة'), findsOneWidget);
+      expect(find.byTooltip('القناة التالية'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
     },
