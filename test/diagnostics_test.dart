@@ -101,7 +101,7 @@ void main() {
 
     expect(find.text('Diagnostics & feedback'), findsOneWidget);
     expect(find.text('Private until you choose to share'), findsOneWidget);
-    expect(find.text('Copy report'), findsOneWidget);
+    expect(find.text('نسخ التقرير'), findsOneWidget);
     expect(find.text('Share report'), findsOneWidget);
     expect(find.text('Email support'), findsOneWidget);
     expect(find.text('What happened?'), findsOneWidget);
@@ -132,7 +132,7 @@ void main() {
 
     expect(find.text('What happened?'), findsNothing);
     expect(find.text('Email support'), findsNothing);
-    expect(find.text('Copy report'), findsOneWidget);
+    expect(find.text('نسخ التقرير'), findsOneWidget);
     expect(find.text('Share report'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
