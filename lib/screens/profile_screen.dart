@@ -77,14 +77,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _cornerEntryFocus = FocusNode(debugLabel: 'Crisp corners');
   final _focusStyleEntryFocus = FocusNode(debugLabel: 'Outline focus');
   final _accentEntryFocus = FocusNode(debugLabel: 'Signal lime accent');
-  final _playbackModeFocus = FocusNode(debugLabel: 'Live playback mode');
+  final _playbackModeFocus = FocusNode(debugLabel: 'وضع البث المباشر');
   final _insightsFocus = FocusNode(debugLabel: 'Watch insights');
   final _downloadsFocus = FocusNode(debugLabel: 'Downloads');
-  final _refreshFocus = FocusNode(debugLabel: 'Refresh library');
+  final _refreshFocus = FocusNode(debugLabel: 'تحديث المكتبة');
   final _organizeFocus = FocusNode(debugLabel: 'Organize library');
-  final _guideSettingsFocus = FocusNode(debugLabel: 'TV guide setup');
-  final _pairingFocus = FocusNode(debugLabel: 'Set up a TV');
-  final _historyFocus = FocusNode(debugLabel: 'Clear watch history');
+  final _guideSettingsFocus = FocusNode(debugLabel: 'إعداد دليل التلفاز');
+  final _pairingFocus = FocusNode(debugLabel: 'إعداد التلفاز');
+  final _historyFocus = FocusNode(debugLabel: 'مسح سجل المشاهدة');
   final _signOutFocus = FocusNode(debugLabel: 'Sign out of Lumen');
   final _currentEditFocus = FocusNode(debugLabel: 'Edit current service');
   final Map<String, FocusNode> _profileSwitchFocus = {};
@@ -964,7 +964,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               Expanded(
                 child: _accountMetric(
-                  'STATUS',
+                  'الحالة',
                   status,
                   isActive ? accentInk : textHi,
                 ),
@@ -972,7 +972,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _metricDivider(),
               Expanded(
                 child: _accountMetric(
-                  c.isDemo ? 'CONTENT' : 'EXPIRES',
+                  c.isDemo ? 'المحتوى' : 'انتهاء الصلاحية',
                   c.isDemo ? 'Fictional' : _expiry(),
                   textHi,
                 ),
@@ -980,7 +980,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _metricDivider(),
               Expanded(
                 child: _accountMetric(
-                  c.isDemo ? 'NETWORK' : 'DEVICES',
+                  c.isDemo ? 'الشبكة' : 'الأجهزة',
                   c.isDemo
                       ? 'Offline'
                       : _info == null
@@ -1042,7 +1042,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 const Expanded(
                   child: Text(
-                    'IPTV services',
+                    'خدمات IPTV',
                     style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                   ),
                 ),
@@ -1112,13 +1112,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _personalizationCard() => _profileSection(
-    eyebrow: 'PERSONALIZATION',
+    eyebrow: 'التخصيص',
     title: 'Appearance',
     subtitle: 'Choose a look that stays consistent on every screen.',
     icon: Icons.tune_rounded,
     body: [
       _controlHeading(
-        'Color mode',
+        'وضع الألوان',
         'Use a dark, light, or device-matched interface.',
       ),
       const SizedBox(height: 12),
@@ -1129,7 +1129,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         leftExitFocusNode: widget.shellRailFocusNode,
       ),
       const SizedBox(height: 24),
-      _controlHeading('Typeface', 'Set the reading style across Lumen.'),
+      _controlHeading('نوع الخط', 'Set the reading style across Lumen.'),
       const SizedBox(height: 12),
       _FontSelector(
         entryFocusNode: _fontEntryFocus,
@@ -1138,7 +1138,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         leftExitFocusNode: widget.shellRailFocusNode,
       ),
       const SizedBox(height: 24),
-      _controlHeading('Shape', 'Control the roundness of cards and controls.'),
+      _controlHeading('الشكل', 'Control the roundness of cards and controls.'),
       const SizedBox(height: 12),
       _PreferenceSelector<LumenCornerStyle>(
         entryFocusNode: _cornerEntryFocus,
@@ -1168,7 +1168,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       const SizedBox(height: 24),
       _controlHeading(
-        'Focus style',
+        'نمط التركيز',
         'Choose how the selected item stands out on TV and keyboard devices.',
       ),
       const SizedBox(height: 12),
@@ -1207,7 +1207,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         builder: (context, _) => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Focus preview', style: kBody()),
+            Text('معاينة التركيز', style: kBody()),
             const SizedBox(height: 6),
             Text(
               'This is how remote or keyboard focus looks. Touch selections stay calm.',
@@ -1272,7 +1272,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: surface,
-        title: const Text('Live playback mode'),
+        title: const Text('وضع البث المباشر'),
         content: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
           child: Column(
@@ -1310,7 +1310,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _playbackCard() => _profileSection(
-    eyebrow: 'STREAMING',
+    eyebrow: 'البث',
     icon: Icons.play_circle_outline_rounded,
     title: 'Playback preferences',
     subtitle: 'Choose a balance between startup speed and buffering tolerance.',
@@ -1331,7 +1331,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   );
 
   Widget _libraryCard() => _profileSection(
-    eyebrow: 'YOUR COLLECTION',
+    eyebrow: 'مجموعتك',
     icon: Icons.video_library_outlined,
     title: 'Manage your library',
     subtitle: 'Offline items, category organization, and viewing activity.',
@@ -1373,7 +1373,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         onKeyEvent: (_, event) =>
             _moveVertically(event, up: _downloadsFocus, down: _organizeFocus),
         icon: Icons.refresh_rounded,
-        title: 'Refresh library',
+        title: 'تحديث المكتبة',
         subtitle: 'Reload channels, films and series',
         onTap: () {
           refreshContent();
@@ -1411,7 +1411,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           onKeyEvent: (_, event) =>
               _moveVertically(event, up: _organizeFocus, down: _historyFocus),
           icon: Icons.calendar_view_week_outlined,
-          title: 'TV guide setup',
+          title: 'إعداد دليل التلفاز',
           subtitle: 'Manage EPG source, timing, refresh and cache',
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(
@@ -1427,7 +1427,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           onKeyEvent: (_, event) =>
               _moveVertically(event, up: _organizeFocus, down: _historyFocus),
           icon: Icons.qr_code_scanner,
-          title: 'Set up a TV',
+          title: 'إعداد التلفاز',
           subtitle: 'Send one service securely over your home network',
           onTap: () => Navigator.of(
             context,
@@ -1443,7 +1443,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           down: _backFocus,
         ),
         icon: Icons.history_rounded,
-        title: 'Clear watch history',
+        title: 'مسح سجل المشاهدة',
         subtitle: 'Remove Continue watching and Recent channels',
         onTap: _clearHistory,
         danger: true,
@@ -1855,9 +1855,9 @@ class _EditServiceDialog extends StatefulWidget {
 
 class _EditServiceDialogState extends State<_EditServiceDialog> {
   late final TextEditingController _address;
-  final _addressFocus = FocusNode(debugLabel: 'Service address');
+  final _addressFocus = FocusNode(debugLabel: 'عنوان الخدمة');
   final _cancelFocus = FocusNode(debugLabel: 'Cancel service edit');
-  final _saveFocus = FocusNode(debugLabel: 'Save service address');
+  final _saveFocus = FocusNode(debugLabel: 'حفظ عنوان الخدمة');
   bool _busy = false;
   String? _error;
 
@@ -1955,7 +1955,7 @@ class _EditServiceDialogState extends State<_EditServiceDialog> {
   @override
   Widget build(BuildContext context) => AlertDialog(
     backgroundColor: surface,
-    title: Text(widget.profile.isM3u ? 'Edit playlist' : 'Edit server'),
+    title: Text(widget.profile.isM3u ? 'تعديل قائمة التشغيل' : 'تعديل الخادم'),
     content: ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 480),
       child: Column(
@@ -1982,8 +1982,8 @@ class _EditServiceDialogState extends State<_EditServiceDialog> {
               enableSuggestions: false,
               decoration: InputDecoration(
                 labelText: widget.profile.isM3u
-                    ? 'Playlist URL'
-                    : 'Server address',
+                    ? 'رابط قائمة التشغيل'
+                    : 'عنوان الخادم',
                 hintText: 'https://provider.example',
                 errorText: _error,
               ),
@@ -2103,7 +2103,7 @@ class _AccountRemovalDialogState extends State<_AccountRemovalDialog> {
               borderRadius: BorderRadius.circular(lumenCorner(12)),
             ),
             child: Text(
-              'Remove',
+              'إزالة',
               style: TextStyle(
                 color: foregroundFor(danger),
                 fontWeight: FontWeight.w600,
@@ -2499,12 +2499,12 @@ class _ThemeSelector extends StatefulWidget {
 
 class _ThemeSelectorState extends State<_ThemeSelector> {
   static const _opts = [
-    (mode: ThemeMode.dark, icon: Icons.dark_mode_rounded, label: 'Dark'),
-    (mode: ThemeMode.light, icon: Icons.light_mode_rounded, label: 'Light'),
+    (mode: ThemeMode.dark, icon: Icons.dark_mode_rounded, label: 'داكن'),
+    (mode: ThemeMode.light, icon: Icons.light_mode_rounded, label: 'فاتح'),
     (
       mode: ThemeMode.system,
       icon: Icons.brightness_auto_rounded,
-      label: 'System',
+      label: 'النظام',
     ),
   ];
 
@@ -2842,7 +2842,7 @@ class _AccentPickerState extends State<_AccentPicker> {
                     borderRadius: BorderRadius.circular(lumenCorner(22)),
                   ),
                   child: Text(
-                    'Apply',
+                    'تطبيق',
                     style: TextStyle(
                       color: foregroundFor(picked),
                       fontWeight: FontWeight.w600,
@@ -3059,7 +3059,7 @@ class _AccentPickerState extends State<_AccentPicker> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Custom',
+                            'مخصص',
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
