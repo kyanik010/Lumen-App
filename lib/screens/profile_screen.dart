@@ -1113,13 +1113,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _personalizationCard() => _profileSection(
     eyebrow: 'التخصيص',
-    title: 'Appearance',
-    subtitle: 'Choose a look that stays consistent on every screen.',
+    title: 'المظهر',
+    subtitle: 'اختر مظهرًا موحدًا عبر جميع الشاشات.',
     icon: Icons.tune_rounded,
     body: [
       _controlHeading(
         'وضع الألوان',
-        'Use a dark, light, or device-matched interface.',
+        'اختر الواجهة الداكنة أو الفاتحة أو المطابقة لإعدادات الجهاز.',
       ),
       const SizedBox(height: 12),
       _ThemeSelector(
@@ -1129,7 +1129,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         leftExitFocusNode: widget.shellRailFocusNode,
       ),
       const SizedBox(height: 24),
-      _controlHeading('نوع الخط', 'Set the reading style across Lumen.'),
+      _controlHeading('نوع الخط', 'حدد نمط الخط في جميع أجزاء التطبيق.'),
       const SizedBox(height: 12),
       _FontSelector(
         entryFocusNode: _fontEntryFocus,
@@ -1138,7 +1138,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         leftExitFocusNode: widget.shellRailFocusNode,
       ),
       const SizedBox(height: 24),
-      _controlHeading('الشكل', 'Control the roundness of cards and controls.'),
+      _controlHeading('الشكل', 'تحكم في استدارة البطاقات وعناصر التحكم.'),
       const SizedBox(height: 12),
       _PreferenceSelector<LumenCornerStyle>(
         entryFocusNode: _cornerEntryFocus,
@@ -2572,7 +2572,7 @@ class _ThemeSelectorState extends State<_ThemeSelector> {
                     focusNode: _focusNodes[index],
                     onKeyEvent: (_, event) => _route(index, event),
                     behavior: HitTestBehavior.opaque,
-                    semanticLabel: '${_opts[index].label} appearance',
+                    semanticLabel: switch (_opts[index].label) { 'فاتح' => 'المظهر الفاتح', 'داكن' => 'المظهر الداكن', _ => 'مظهر النظام' },
                     onTap: () =>
                         ThemeController.instance.set(_opts[index].mode),
                     child: AnimatedContainer(
