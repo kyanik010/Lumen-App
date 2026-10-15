@@ -24,6 +24,26 @@ class StremioSubtitleService {
 
   static final instance = StremioSubtitleService._();
   static const _key = 'eagle_x_stremio_addons_v1';
+  static const _defaultSubtitleAddons = <Map<String, dynamic>>[
+    {
+      'id': 'org.stremio.opensubtitlesv3',
+      'name': 'OpenSubtitles V3',
+      'version': '1.0.0',
+      'url': 'https://opensubtitles-v3.strem.io/manifest.json',
+      'types': ['movie', 'series'],
+      'resources': ['subtitles'],
+      'enabled': true,
+    },
+    {
+      'id': 'opensubtitles-pro',
+      'name': 'OpenSubtitles PRO',
+      'version': '0.1.0',
+      'url': 'https://opensubtitlesv3-pro.dexter21767.com/manifest.json',
+      'types': ['movie', 'series'],
+      'resources': ['subtitles'],
+      'enabled': true,
+    },
+  ];
   final http.Client _client = http.Client();
   static const _timeout = Duration(seconds: 20);
 
@@ -46,20 +66,49 @@ class StremioSubtitleService {
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_key);
-    if (raw == null || raw.isEmpty) return const [];
-
-    dynamic decoded;
-    try {
-      decoded = jsonDecode(raw);
-    } catch (_) {
-      return const [];
+    List<Map<String, dynamic>> stored = [];
+    if (raw != null && raw.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is List) {
+          stored = decoded
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
+        }
+      } catch (_) {
+        // Recover with the built-in subtitle addons instead of silently
+        // disabling every Stremio subtitle source for malformed old storage.
+      }
     }
-    if (decoded is! List) return const [];
 
-    final addons = decoded
-        .whereType<Map>()
-        .map((e) => Map<String, dynamic>.from(e))
-        .where((addon) {
+    var changed = false;
+    for (final seed in _defaultSubtitleAddons) {
+      final index = stored.indexWhere(
+        (addon) => addon['id'] == seed['id'] || addon['url'] == seed['url'],
+      );
+      if (index < 0) {
+        stored.add(Map<String, dynamic>.from(seed));
+        changed = true;
+        continue;
+      }
+      final existing = stored[index];
+      final merged = <String, dynamic>{...seed, ...existing};
+      final resources = _resourceNames(merged['resources']);
+      if (!resources.contains('subtitles')) merged['resources'] = seed['resources'];
+      if ((merged['url'] ?? '').toString().trim().isEmpty) merged['url'] = seed['url'];
+      if ((merged['name'] ?? '').toString().trim().isEmpty) merged['name'] = seed['name'];
+      if (merged['enabled'] is! bool) merged['enabled'] = true;
+      if (jsonEncode(existing) != jsonEncode(merged)) {
+        stored[index] = merged;
+        changed = true;
+      }
+    }
+    if (changed || raw == null || raw.isEmpty) {
+      await prefs.setString(_key, jsonEncode(stored));
+    }
+
+    final addons = stored.where((addon) {
       if (addon['enabled'] == false) return false;
       final resources = _resourceNames(addon['resources']);
       return resources.contains('subtitles') &&
