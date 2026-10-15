@@ -2244,7 +2244,7 @@ class Media3PlayerActivity : Activity() {
         }
         try {
             val params = PictureInPictureParams.Builder().setAspectRatio(Rational(16, 9)).build()
-            hideControlsNow()
+            hideControls(force = true)
             enterPictureInPictureMode(params)
         } catch (error: Exception) {
             Toast.makeText(this, "Picture-in-picture is not available on this device.", Toast.LENGTH_SHORT).show()
