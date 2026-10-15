@@ -41,38 +41,29 @@ void main() {
     activePalette = darkPalette;
   });
 
-  testWidgets('Demo opens Home while profile hydration continues', (
-    tester,
-  ) async {
+  testWidgets('branded login does not start a demo session', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1280, 900);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
-    final hydration = _DelayedHydration();
 
     await tester.pumpWidget(
       MaterialApp(
         theme: buildTheme(darkPalette),
-        home: SessionGate(profileActivator: hydration.call),
+        home: SessionGate(profileActivator: (_) async {}),
       ),
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.text('Explore offline demo'), findsOneWidget);
-    await tester.tap(find.text('Explore offline demo'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byType(LoginScreen), findsOneWidget);
+    expect(find.text('EAGLE X'), findsOneWidget);
+    expect(find.text('Explore offline demo'), findsNothing);
+    expect(find.byType(HomeShell), findsNothing);
+    expect(tester.takeException(), isNull);
 
-    expect(hydration.calls, 2);
-    expect(hydration.pending.isCompleted, isFalse);
-    expect(find.byType(HomeShell), findsOneWidget);
-    expect(find.text('Opening your library…'), findsNothing);
-
-    hydration.pending.complete();
-    await tester.pump();
     await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump(const Duration(seconds: 1));
   });
 
   testWidgets(
@@ -151,34 +142,31 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1));
   });
 
-  testWidgets('saved login opens Home even when profile hydration fails', (
+  testWidgets('login screen stays visible without a saved session', (
     tester,
   ) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1280, 900);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
-    final hydration = _ThrowingHydration();
 
     await tester.pumpWidget(
       MaterialApp(
         theme: buildTheme(darkPalette),
-        home: SessionGate(profileActivator: hydration.call),
+        home: SessionGate(profileActivator: (_) async {}),
       ),
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    await tester.tap(find.text('Explore offline demo'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byType(LoginScreen), findsOneWidget);
+    expect(find.text('EAGLE X'), findsOneWidget);
+    expect(find.byType(HomeShell), findsNothing);
+    expect(find.text('Explore offline demo'), findsNothing);
+    expect(tester.takeException(), isNull);
 
-    expect(hydration.calls, 2);
-    expect(find.byType(HomeShell), findsOneWidget);
-    expect(
-      find.textContaining('could not connect to this provider'),
-      findsNothing,
-    );
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 1));
   });
 
   testWidgets('logout reaches Login even when profile cleanup fails', (
