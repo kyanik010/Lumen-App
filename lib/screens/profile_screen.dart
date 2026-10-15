@@ -19,6 +19,7 @@ import 'login_screen.dart';
 import 'device_pairing_screen.dart';
 import 'stats_screen.dart';
 import 'viewer_picker_screen.dart';
+import 'stremio_addons_screen.dart';
 
 typedef ProfileCredentialValidator =
     Future<void> Function(XtreamCredentials credentials);
@@ -29,7 +30,8 @@ enum ProfilePage {
   viewers('ملفات المشاهدة'),
   appearance('المظهر'),
   playback('التشغيل'),
-  library('المكتبة والتنزيلات');
+  library('المكتبة والتنزيلات'),
+  stremioAddons('إضافات Stremio');
 
   const ProfilePage(this.title);
   final String title;
@@ -651,6 +653,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ProfilePage.appearance => [_personalizationCard()],
                   ProfilePage.playback => [_playbackCard()],
                   ProfilePage.library => [_libraryCard()],
+                  ProfilePage.stremioAddons => [const StremioAddonsScreen()],
                 },
               ),
             ),
@@ -773,6 +776,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ProfilePage.library,
             Icons.video_library_outlined,
             'التنزيلات والتنظيم والسجل',
+          ),
+          (
+            ProfilePage.stremioAddons,
+            Icons.extension_outlined,
+            'البحث عن إضافات Stremio وتثبيتها وإدارتها',
           ),
         ],
       ),
