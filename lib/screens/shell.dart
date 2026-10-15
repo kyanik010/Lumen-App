@@ -42,17 +42,17 @@ Future<bool> showHomeExitConfirmation(BuildContext context) async =>
     await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Exit Lumen?'),
-        content: const Text('Do you want to close the app?'),
+        title: const Text('الخروج من Eagle X؟'),
+        content: const Text('هل تريد إغلاق التطبيق؟'),
         actions: [
           TextButton(
             autofocus: true,
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('No'),
+            child: const Text('لا'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Yes'),
+            child: const Text('نعم'),
           ),
         ],
       ),
