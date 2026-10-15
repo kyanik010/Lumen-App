@@ -2864,7 +2864,7 @@ class Media3PlayerActivity : Activity() {
     }
 
     private fun normaliseOnlineTitle(value: String): String =
-        value.lowercase().replace(Regex("""[^a-z0-9]"""), "")
+        value.lowercase().replace(Regex("""[^\\p{L}\\p{N}]"""), "")
 
     private fun downloadAndApplyOnlineSubtitle(subtitle: OnlineSubtitleChoice) {
         val progress = AlertDialog.Builder(this)
