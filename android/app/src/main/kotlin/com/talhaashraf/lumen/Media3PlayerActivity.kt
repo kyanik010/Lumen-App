@@ -2624,7 +2624,15 @@ class Media3PlayerActivity : Activity() {
             }
             if (candidates.isNotEmpty()) break
         }
-        if (candidates.isEmpty()) return emptyList()
+        if (candidates.isEmpty()) {
+            val addonIdentity = searchConfiguredOnlineIdentity(
+                cleanTitle,
+                series = season != null && episodeNumber != null,
+                season = season,
+                episode = episodeNumber
+            ) ?: return emptyList()
+            candidates.add(addonIdentity)
+        }
         val queryKey = normaliseOnlineTitle(cleanTitle)
         candidates.sortBy { meta ->
             val name = meta.optString("name").ifBlank { meta.optString("title") }
@@ -2724,6 +2732,116 @@ class Media3PlayerActivity : Activity() {
             }
         }
         return results
+    }
+
+
+    /**
+     * Mirrors the phone subtitle service fallback: when Cinemeta cannot resolve
+     * the title, search enabled Stremio add-on catalogs that advertise search.
+     * Only IMDb IDs are accepted as subtitle identities.
+     */
+    private fun searchConfiguredOnlineIdentity(
+        query: String,
+        series: Boolean,
+        season: Int?,
+        episode: Int?
+    ): JSONObject? {
+        val addons = mutableListOf<JSONObject>()
+        val raw = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+            .getString("flutter.eagle_x_stremio_addons_v1", null)
+        if (!raw.isNullOrBlank()) {
+            try {
+                val saved = JSONArray(raw)
+                for (index in 0 until saved.length()) {
+                    saved.optJSONObject(index)?.let { addon ->
+                        if (addon.optBoolean("enabled", true)) addons.add(addon)
+                    }
+                }
+            } catch (_: Exception) {
+                // Keep searching with the built-in subtitle add-ons below.
+            }
+        }
+        val defaultAddons = listOf(
+            JSONObject().put("id", "org.stremio.opensubtitlesv3")
+                .put("name", "OpenSubtitles V3")
+                .put("url", "https://opensubtitles-v3.strem.io/manifest.json")
+                .put("enabled", true),
+            JSONObject().put("id", "opensubtitles-pro")
+                .put("name", "OpenSubtitles PRO")
+                .put("url", "https://opensubtitlesv3-pro.dexter21767.com/manifest.json")
+                .put("enabled", true)
+        )
+        for (seed in defaultAddons) {
+            if (addons.none { it.optString("id") == seed.optString("id") ||
+                    it.optString("url") == seed.optString("url") }) addons.add(seed)
+        }
+
+        val found = mutableListOf<JSONObject>()
+        val queryKey = normaliseOnlineTitle(query)
+        for (addon in addons.take(20)) {
+            if (!addon.optBoolean("enabled", true)) continue
+            val rawUrl = addon.optString("url").ifBlank {
+                addon.optString("manifestUrl").ifBlank { addon.optString("transportUrl") }
+            }.trim()
+            if (!rawUrl.startsWith("https://") && !rawUrl.startsWith("http://")) continue
+            val manifestUrl = if (rawUrl.endsWith("/manifest.json")) rawUrl
+                else rawUrl.trimEnd('/') + "/manifest.json"
+            val manifest = getOnlineJson(manifestUrl) ?: continue
+            val catalogs = manifest.optJSONArray("catalogs") ?: continue
+            val manifestUri = Uri.parse(manifestUrl)
+            val manifestPath = manifestUri.encodedPath.orEmpty()
+            val basePath = if (manifestPath.endsWith("/manifest.json")) {
+                manifestPath.removeSuffix("/manifest.json")
+            } else manifestPath.trimEnd('/')
+            val base = manifestUri.buildUpon().encodedPath(basePath).clearQuery()
+                .fragment(null).build().toString().trimEnd('/')
+
+            for (catalogIndex in 0 until catalogs.length()) {
+                val catalog = catalogs.optJSONObject(catalogIndex) ?: continue
+                val type = catalog.optString("type")
+                if (type != "movie" && type != "series") continue
+                if (series && type != "series") continue
+                val catalogId = catalog.optString("id")
+                if (catalogId.isBlank()) continue
+                val extras = catalog.optJSONArray("extra") ?: continue
+                val supportsSearch = (0 until extras.length()).any { extraIndex ->
+                    extras.optJSONObject(extraIndex)?.optString("name") == "search"
+                }
+                if (!supportsSearch) continue
+                val catalogUrl = base + "/catalog/" + type + "/" + Uri.encode(catalogId) +
+                    "/search=" + java.net.URLEncoder.encode(query, "UTF-8").replace("+", "%20") + ".json"
+                val response = getOnlineJson(catalogUrl) ?: continue
+                val metas = response.optJSONArray("metas") ?: continue
+                for (metaIndex in 0 until metas.length()) {
+                    val meta = metas.optJSONObject(metaIndex) ?: continue
+                    val id = meta.optString("imdb_id").ifBlank { meta.optString("id") }
+                    if (!Regex("""^tt\d+$""").matches(id)) continue
+                    val resultType = meta.optString("type").ifBlank { type }
+                    if (resultType != "movie" && resultType != "series") continue
+                    found.add(JSONObject()
+                        .put("id", id)
+                        .put("imdb_id", id)
+                        .put("type", resultType)
+                        .put("name", meta.optString("name").ifBlank { meta.optString("title") }))
+                }
+            }
+        }
+        if (found.isEmpty()) return null
+        found.sortBy { meta ->
+            val key = normaliseOnlineTitle(meta.optString("name"))
+            when {
+                key == queryKey -> 0
+                key.contains(queryKey) || queryKey.contains(key) -> 1
+                else -> 2
+            }
+        }
+        val selected = found.first()
+        val type = selected.optString("type")
+        if (type == "series" && season != null && episode != null) {
+            selected.put("episodeIdentitySeason", season)
+            selected.put("episodeIdentityNumber", episode)
+        }
+        return selected
     }
 
     private fun getOnlineJson(address: String): JSONObject? {
