@@ -267,120 +267,76 @@ class StremioSubtitleService {
     required bool series,
   }) async {
     try {
-      final rawUrl =
-          (addon['url'] ?? addon['manifestUrl'] ?? addon['transportUrl'] ?? '')
-              .toString()
-              .trim();
+      final rawUrl = (addon['url'] ??
+              addon['manifestUrl'] ??
+              addon['transportUrl'] ??
+              '')
+          .toString()
+          .trim();
       final parsedUrl = Uri.tryParse(rawUrl);
       if (parsedUrl == null ||
           (parsedUrl.scheme != 'http' && parsedUrl.scheme != 'https')) {
         return const [];
       }
+
       final manifestUrl = rawUrl.endsWith('/manifest.json')
           ? rawUrl
-          : (rawUrl.endsWith('/') ? rawUrl + 'manifest.json' : rawUrl + '/manifest.json');
-      final response = await _client.get(Uri.parse(manifestUrl)).timeout(_timeout);
+          : '${rawUrl.endsWith('/') ? rawUrl : '$rawUrl/'}manifest.json';
+      final response =
+          await _client.get(Uri.parse(manifestUrl)).timeout(_timeout);
       if (response.statusCode != 200) return const [];
       final manifest = jsonDecode(response.body);
-      if (manifest is! Map || manifest['catalogs'] is! List) return const [];
-      final manifestUri = Uri.parse(manifestUrl);
-      final basePath = manifestUri.path.endsWith('/manifest.json')
-          ? manifestUri.path.substring(0, manifestUri.path.length - '/manifest.json'.length)
-          : manifestUri.path;
-      final base = manifestUri.replace(path: basePath, query: null, fragment: null)
-          .toString().replaceFirst(RegExp(r'/
-    Map<String, dynamic> addon,
-    Map<String, dynamic> identity,
-    String language,
-  ) async {
-    try {
-      final baseValue = (addon['url'] ?? addon['manifestUrl'] ?? addon['transportUrl'] ?? '').toString().trim();
-      if (baseValue.isEmpty) return const [];
-      var baseUri = Uri.tryParse(baseValue);
-      if (baseUri == null || (baseUri.scheme != 'http' && baseUri.scheme != 'https')) {
+      if (manifest is! Map || manifest['catalogs'] is! List) {
         return const [];
       }
-      var path = baseUri.path;
-      if (path.endsWith('/manifest.json')) {
-        path = path.substring(0, path.length - '/manifest.json'.length);
-      } else {
-        path = path.replaceFirst(RegExp(r'/$'), '');
-      }
-      baseUri = baseUri.replace(path: path, query: null, fragment: null);
-      final resourceId = identity['type'] == 'series' && identity['season'] != null
-          ? '${identity['id']}:${identity['season']}:${identity['episode']}'
-          : identity['id'].toString();
-      final uri = baseUri.resolve('subtitles/${identity['type']}/${Uri.encodeComponent(resourceId)}.json');
-      final response = await _client.get(uri).timeout(_timeout);
-      if (response.statusCode < 200 || response.statusCode >= 300) return const [];
-      final body = jsonDecode(response.body);
-      final rows = body is Map && body['subtitles'] is List
-          ? body['subtitles'] as List
-          : const [];
-      final wanted = _normaliseLanguage(language);
-      final allLanguages = language.trim().toLowerCase() == 'all' || wanted == 'all';
-      final name = (addon['name'] ?? 'Stremio addon').toString();
 
-      return rows.whereType<Map>().where((subtitle) {
-        final lang = _normaliseLanguage((subtitle['lang'] ?? '').toString());
-        return allLanguages || lang == wanted || lang.startsWith('$wanted-');
-      }).map((subtitle) {
-        final url = (subtitle['url'] ?? '').toString();
-        final lang = (subtitle['lang'] ?? '').toString();
-        return StremioSubtitleResult(
-          id: (subtitle['id'] ?? url).toString(),
-          url: url,
-          language: lang,
-          label: (subtitle['label'] ?? lang).toString(),
-          addon: name,
-        );
-      }).where((subtitle) {
-        final uri = Uri.tryParse(subtitle.url);
-        return uri != null && (uri.scheme == 'http' || uri.scheme == 'https');
-      }).toList();
-    } catch (_) {
-      return const [];
-    }
-  }
+      final manifestUri = Uri.parse(manifestUrl);
+      final basePath = manifestUri.path.endsWith('/manifest.json')
+          ? manifestUri.path.substring(
+              0,
+              manifestUri.path.length - '/manifest.json'.length,
+            )
+          : manifestUri.path;
+      final base = manifestUri
+          .replace(path: basePath, query: null, fragment: null)
+          .toString()
+          .replaceFirst(RegExp(r'/$'), '');
 
-  Future<String> download(StremioSubtitleResult subtitle) async {
-    final response = await _client.get(Uri.parse(subtitle.url)).timeout(_timeout);
-    if (response.statusCode != 200) {
-      throw Exception('Subtitle download failed (${response.statusCode}).');
-    }
-    return utf8.decode(response.bodyBytes, allowMalformed: true);
-  }
-}
-), '');
-      final catalogs = (manifest['catalogs'] as List).whereType<Map>().where((catalog) {
+      final catalogs = (manifest['catalogs'] as List)
+          .whereType<Map>()
+          .where((catalog) {
         final type = (catalog['type'] ?? '').toString();
         if (type != 'movie' && type != 'series') return false;
         if (series && type != 'series') return false;
-        final extras = catalog['extra'] is List ? catalog['extra'] as List : const [];
+        final extras =
+            catalog['extra'] is List ? catalog['extra'] as List : const [];
         return extras.whereType<Map>().any((extra) => extra['name'] == 'search');
       }).toList(growable: false);
+
       final results = await Future.wait(catalogs.map((catalog) async {
         try {
           final type = (catalog['type'] ?? '').toString();
           final id = (catalog['id'] ?? '').toString();
           if (id.isEmpty) return const <Map<String, dynamic>>[];
           final request = Uri.parse(
-            base + '/catalog/' + type + '/' + id + '/search=' +
-                Uri.encodeComponent(query) + '.json',
+            '$base/catalog/$type/$id/search=${Uri.encodeComponent(query)}.json',
           );
-          final response = await _client.get(request).timeout(_timeout);
-          if (response.statusCode != 200) return const <Map<String, dynamic>>[];
-          final body = jsonDecode(response.body);
-          final metas = body is Map && body['metas'] is List ? body['metas'] as List : const [];
+          final catalogResponse =
+              await _client.get(request).timeout(_timeout);
+          if (catalogResponse.statusCode != 200) {
+            return const <Map<String, dynamic>>[];
+          }
+          final body = jsonDecode(catalogResponse.body);
+          final metas = body is Map && body['metas'] is List
+              ? body['metas'] as List
+              : const [];
           return metas.whereType<Map>().map((meta) {
-            final rawId = (meta['imdb_id'] ?? meta['id'] ?? '').toString();
             return <String, dynamic>{
-              'id': rawId,
+              'id': (meta['imdb_id'] ?? meta['id'] ?? '').toString(),
               'type': (meta['type'] ?? type).toString(),
               'name': (meta['name'] ?? meta['title'] ?? '').toString(),
             };
-          }).where((meta) => _isImdbIdentity(meta['id'] as String))
-              .toList(growable: false);
+          }).toList(growable: false);
         } catch (_) {
           return const <Map<String, dynamic>>[];
         }
@@ -397,32 +353,47 @@ class StremioSubtitleService {
     String language,
   ) async {
     try {
-      final baseValue = (addon['url'] ?? addon['manifestUrl'] ?? addon['transportUrl'] ?? '').toString().trim();
-      if (baseValue.isEmpty) return const [];
-      var baseUri = Uri.tryParse(baseValue);
-      if (baseUri == null || (baseUri.scheme != 'http' && baseUri.scheme != 'https')) {
+      final rawUrl = (addon['url'] ??
+              addon['manifestUrl'] ??
+              addon['transportUrl'] ??
+              '')
+          .toString()
+          .trim();
+      if (rawUrl.isEmpty) return const [];
+      final parsed = Uri.tryParse(rawUrl);
+      if (parsed == null ||
+          (parsed.scheme != 'http' && parsed.scheme != 'https')) {
         return const [];
       }
-      var path = baseUri.path;
-      if (path.endsWith('/manifest.json')) {
-        path = path.substring(0, path.length - '/manifest.json'.length);
-      } else {
-        path = path.replaceFirst(RegExp(r'/$'), '');
+
+      final basePath = parsed.path.endsWith('/manifest.json')
+          ? parsed.path.substring(0, parsed.path.length - '/manifest.json'.length)
+          : parsed.path.replaceFirst(RegExp(r'/$'), '');
+      final base = parsed
+          .replace(path: basePath, query: null, fragment: null);
+      final type = (identity['type'] ?? '').toString();
+      final id = (identity['id'] ?? '').toString();
+      if ((type != 'movie' && type != 'series') || id.isEmpty) {
+        return const [];
       }
-      baseUri = baseUri.replace(path: path, query: null, fragment: null);
-      final resourceId = identity['type'] == 'series' && identity['season'] != null
-          ? '${identity['id']}:${identity['season']}:${identity['episode']}'
-          : identity['id'].toString();
-      final uri = baseUri.resolve('subtitles/${identity['type']}/${Uri.encodeComponent(resourceId)}.json');
+      final resourceId = type == 'series' &&
+              identity['season'] != null &&
+              identity['episode'] != null
+          ? '$id:${identity['season']}:${identity['episode']}'
+          : id;
+      final uri = base.resolve(
+        'subtitles/$type/${Uri.encodeComponent(resourceId)}.json',
+      );
       final response = await _client.get(uri).timeout(_timeout);
-      if (response.statusCode < 200 || response.statusCode >= 300) return const [];
+      if (response.statusCode != 200) return const [];
       final body = jsonDecode(response.body);
       final rows = body is Map && body['subtitles'] is List
           ? body['subtitles'] as List
           : const [];
       final wanted = _normaliseLanguage(language);
-      final allLanguages = language.trim().toLowerCase() == 'all' || wanted == 'all';
-      final name = (addon['name'] ?? 'Stremio addon').toString();
+      final allLanguages =
+          language.trim().toLowerCase() == 'all' || wanted == 'all';
+      final addonName = (addon['name'] ?? 'Stremio addon').toString();
 
       return rows.whereType<Map>().where((subtitle) {
         final lang = _normaliseLanguage((subtitle['lang'] ?? '').toString());
@@ -435,19 +406,23 @@ class StremioSubtitleService {
           url: url,
           language: lang,
           label: (subtitle['label'] ?? lang).toString(),
-          addon: name,
+          addon: addonName,
         );
       }).where((subtitle) {
         final uri = Uri.tryParse(subtitle.url);
         return uri != null && (uri.scheme == 'http' || uri.scheme == 'https');
-      }).toList();
+      }).toList(growable: false);
     } catch (_) {
       return const [];
     }
   }
 
   Future<String> download(StremioSubtitleResult subtitle) async {
-    final response = await _client.get(Uri.parse(subtitle.url)).timeout(_timeout);
+    final uri = Uri.tryParse(subtitle.url);
+    if (uri == null || (uri.scheme != 'http' && uri.scheme != 'https')) {
+      throw Exception('Invalid subtitle URL.');
+    }
+    final response = await _client.get(uri).timeout(_timeout);
     if (response.statusCode != 200) {
       throw Exception('Subtitle download failed (${response.statusCode}).');
     }
