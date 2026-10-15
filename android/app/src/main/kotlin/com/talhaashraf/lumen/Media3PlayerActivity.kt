@@ -2286,7 +2286,7 @@ class Media3PlayerActivity : Activity() {
         val modes = intArrayOf(AspectRatioFrameLayout.RESIZE_MODE_FIT, AspectRatioFrameLayout.RESIZE_MODE_ZOOM, AspectRatioFrameLayout.RESIZE_MODE_FILL)
         val names = listOf("Fit", "Fill / crop", "Stretch")
         AlertDialog.Builder(this).setTitle("Video fit")
-            .setSingleChoiceItems(names.toTypedArray(), modes.indexOf(selectedResizeMode).coerceAtLeast(0)) { d, index ->
+            .setSingleChoiceItems(names.toTypedArray(), modes.indexOfFirst { it == selectedResizeMode }.coerceAtLeast(0)) { d, index ->
                 selectedResizeMode = modes[index]; applyResizeModeToPlayerViews(); d.dismiss(); showMoreDialog()
             }.setNegativeButton("Back") { d, _ -> d.dismiss(); showMoreDialog() }.show()
     }
@@ -2295,7 +2295,7 @@ class Media3PlayerActivity : Activity() {
         val speeds = floatArrayOf(0.5f, 1.0f, 1.25f, 1.5f, 2.0f)
         val names = speeds.map { "${it}x" }.toTypedArray()
         AlertDialog.Builder(this).setTitle("Playback speed")
-            .setSingleChoiceItems(names, speeds.indexOf(selectedPlaybackSpeed).coerceAtLeast(0)) { d, index ->
+            .setSingleChoiceItems(names, speeds.indexOfFirst { it == selectedPlaybackSpeed }.coerceAtLeast(0)) { d, index ->
                 selectedPlaybackSpeed = speeds[index]; player.setPlaybackSpeed(selectedPlaybackSpeed); secondaryPlayer?.setPlaybackSpeed(selectedPlaybackSpeed)
                 d.dismiss(); showMoreDialog()
             }.setNegativeButton("Back") { d, _ -> d.dismiss(); showMoreDialog() }.show()
@@ -2305,7 +2305,7 @@ class Media3PlayerActivity : Activity() {
         val values = intArrayOf(0, 15, 30, 45, 60)
         val names = values.map { if (it == 0) "Off" else "${it}m" }.toTypedArray()
         AlertDialog.Builder(this).setTitle("Sleep timer")
-            .setSingleChoiceItems(names, values.indexOf(sleepTimerMinutes).coerceAtLeast(0)) { d, index ->
+            .setSingleChoiceItems(names, values.indexOfFirst { it == sleepTimerMinutes }.coerceAtLeast(0)) { d, index ->
                 handler.removeCallbacks(stopPlaybackForSleep)
                 sleepTimerMinutes = values[index]
                 if (sleepTimerMinutes > 0) handler.postDelayed(stopPlaybackForSleep, sleepTimerMinutes * 60_000L)
