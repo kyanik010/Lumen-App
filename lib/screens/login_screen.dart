@@ -602,7 +602,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Eagle X2',
+          'EAGLE X',
           textAlign: TextAlign.center,
           style: kDisplay().copyWith(fontSize: 28, fontWeight: FontWeight.w800),
         ),
