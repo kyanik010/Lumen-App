@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../activation_api.dart';
+import '../device_trial_api.dart';
 import '../device_profile.dart';
 import '../models.dart';
 import '../distribution.dart';
@@ -63,6 +64,8 @@ class _LoginScreenState extends State<LoginScreen> {
   bool get _canPair => DeviceProfile.isTelevision || DeviceProfile.isMobileApp;
   final Map<String, FocusNode> _profileFocus = {};
   bool _busy = false;
+  bool _showSubscriptionForm = false;
+  String? _deviceId;
   bool _passwordVisible = false;
   String? _error;
   String? _status;
@@ -75,6 +78,9 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
+    DeviceTrialApi.deviceId().then((id) {
+      if (mounted) setState(() => _deviceId = id);
+    }).catchError((_) {});
     _urlFocus = _createFocusNode('login-url');
     _userFocus = _createFocusNode('login-username');
     _passFocus = _createFocusNode('login-password');
@@ -395,6 +401,26 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _submitSubscription() async {
+    if (_busy) return;
+    final host = _url.text.trim();
+    final username = _user.text.trim();
+    final password = _pass.text;
+    if (host.isEmpty || Uri.tryParse(host)?.host.isEmpty != false) {
+      setState(() => _error = 'أدخل هوست صالحًا يبدأ بـ http:// أو https://.');
+      return;
+    }
+    if (username.isEmpty || password.isEmpty) {
+      setState(() => _error = 'أدخل اليوزر والباسورد.');
+      return;
+    }
+    await _connect(XtreamCredentials(
+      baseUrl: host,
+      username: username,
+      password: password,
+    ));
+  }
+
   Future<void> _startDemo() => _connect(XtreamCredentials.demoProfile);
 
   Future<void> _pairDevice() async {
@@ -576,128 +602,189 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'EAGLE X',
+          'Eagle X2',
           textAlign: TextAlign.center,
-          style: kDisplay().copyWith(fontSize: 32, fontWeight: FontWeight.w800),
+          style: kDisplay().copyWith(fontSize: 28, fontWeight: FontWeight.w800),
         ),
-        const SizedBox(height: 4),
-        Text(
-          'LIVE · FILMS · SERIES',
-          textAlign: TextAlign.center,
-          style: kSection(color: muted),
-        ),
-        const SizedBox(height: 7),
-        Text(
-          'ترفيهك، في مكان واحد',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: muted, fontSize: 13),
-        ),
-        const SizedBox(height: 24),
-        Text(
-          'تسجيل الدخول',
-          textAlign: TextAlign.right,
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'أدخل بيانات حسابك للمتابعة إلى التطبيق.',
-          textAlign: TextAlign.right,
-          style: TextStyle(color: muted, fontSize: 13, height: 1.5),
-        ),
-        const SizedBox(height: 18),
-        _field(
-          _user,
-          'اسم المستخدم',
-          focusNode: _userFocus,
-          nextFocus: _passFocus,
-          hint: 'اسم المستخدم',
-        ),
-        const SizedBox(height: 12),
-        _field(
-          _pass,
-          'كلمة المرور',
-          focusNode: _passFocus,
-          nextFocus: _submitFocus,
-          hint: 'كلمة المرور',
-          obscure: !_passwordVisible,
-          suffixIcon: IconButton(
-            tooltip: _passwordVisible ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور',
-            onPressed: () => setState(() => _passwordVisible = !_passwordVisible),
-            icon: Icon(
-              _passwordVisible ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-              color: muted,
-            ),
-          ),
-        ),
-        if (_error != null) ...[
-          const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: dangerSurface,
-              borderRadius: BorderRadius.circular(lumenCorner(12)),
-              border: Border.all(color: dangerLine),
-            ),
-            child: Text(
-              _error!,
-              style: TextStyle(color: dangerInk, fontSize: 12.5, height: 1.4),
-            ),
-          ),
-        ],
-        if (_status != null && _error == null) ...[
-          const SizedBox(height: 12),
-          Center(
-            child: Text(
-              _status!,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: muted, fontSize: 12.5),
-            ),
-          ),
-        ],
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: RemoteTap(
-            key: const ValueKey('login-submit'),
-            focusNode: _submitFocus,
-            autofocus: !DeviceProfile.isTelevision,
-            semanticLabel: 'تسجيل الدخول',
-            focusRadius: 14,
-            focusRingColor: Colors.white,
-            onTap: _submitActivation,
-            child: AnimatedContainer(
-              key: const ValueKey('login-submit-surface'),
-              duration: lumenMotionFast,
-              padding: const EdgeInsets.symmetric(vertical: 16),
+        if (!_showSubscriptionForm) ...[
+          const SizedBox(height: 18),
+          if (_deviceId != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
               decoration: BoxDecoration(
-                color: accent,
-                borderRadius: BorderRadius.circular(lumenCorner(14)),
+                border: Border.all(color: line),
+                borderRadius: BorderRadius.circular(28),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(_busy ? Icons.sync_rounded : Icons.login_rounded, size: 19, color: onAccent),
-                  const SizedBox(width: 8),
-                  Text(
-                    _busy ? 'جارٍ التحقق...' : 'تسجيل الدخول',
-                    style: TextStyle(color: onAccent, fontWeight: FontWeight.w800),
-                  ),
-                ],
+              child: SelectableText(
+                'ID :  $_deviceId',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: muted,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.1,
+                ),
+              ),
+            ),
+          const SizedBox(height: 28),
+          const Text(
+            'مرحباً بك',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 27, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 22),
+          Text(
+            'لديك فترة تجريبية 30 يوم',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: muted, fontSize: 18, height: 1.6),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: RemoteTap(
+              key: const ValueKey('login-submit'),
+              focusNode: _submitFocus,
+              autofocus: !DeviceProfile.isTelevision,
+              semanticLabel: 'اضغط هنا لتبدأ',
+              focusRadius: 14,
+              focusRingColor: Colors.white,
+              onTap: () => setState(() {
+                _showSubscriptionForm = true;
+                _error = null;
+              }),
+              child: AnimatedContainer(
+                key: const ValueKey('login-submit-surface'),
+                duration: lumenMotionFast,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: accent,
+                  borderRadius: BorderRadius.circular(lumenCorner(14)),
+                ),
+                child: Text(
+                  'اضغط هنا لتبدأ',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: onAccent, fontWeight: FontWeight.w800, fontSize: 18),
+                ),
               ),
             ),
           ),
-        ),
+        ] else ...[
+          const SizedBox(height: 18),
+          const Text(
+            'إضافة الاشتراك',
+            textAlign: TextAlign.right,
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'أدخل بيانات اشتراك IPTV للمتابعة.',
+            textAlign: TextAlign.right,
+            style: TextStyle(color: muted, fontSize: 13, height: 1.5),
+          ),
+          const SizedBox(height: 18),
+          _field(
+            _url,
+            'هوست',
+            focusNode: _urlFocus,
+            nextFocus: _userFocus,
+            hint: 'http://example.com:8080',
+          ),
+          const SizedBox(height: 12),
+          _field(
+            _user,
+            'يوزر',
+            focusNode: _userFocus,
+            nextFocus: _passFocus,
+            hint: 'يوزر الاشتراك',
+          ),
+          const SizedBox(height: 12),
+          _field(
+            _pass,
+            'باسورد',
+            focusNode: _passFocus,
+            nextFocus: _submitFocus,
+            hint: 'باسورد الاشتراك',
+            obscure: !_passwordVisible,
+            suffixIcon: IconButton(
+              tooltip: _passwordVisible ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور',
+              onPressed: () => setState(() => _passwordVisible = !_passwordVisible),
+              icon: Icon(
+                _passwordVisible ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                color: muted,
+              ),
+            ),
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: dangerSurface,
+                borderRadius: BorderRadius.circular(lumenCorner(12)),
+                border: Border.all(color: dangerLine),
+              ),
+              child: Text(
+                _error!,
+                style: TextStyle(color: dangerInk, fontSize: 12.5, height: 1.4),
+              ),
+            ),
+          ],
+          if (_status != null && _error == null) ...[
+            const SizedBox(height: 12),
+            Center(
+              child: Text(
+                _status!,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: muted, fontSize: 12.5),
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: RemoteTap(
+              key: const ValueKey('login-submit'),
+              focusNode: _submitFocus,
+              autofocus: !DeviceProfile.isTelevision,
+              semanticLabel: 'اتصال',
+              focusRadius: 14,
+              focusRingColor: Colors.white,
+              onTap: _submitSubscription,
+              child: AnimatedContainer(
+                key: const ValueKey('login-submit-surface'),
+                duration: lumenMotionFast,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: accent,
+                  borderRadius: BorderRadius.circular(lumenCorner(14)),
+                ),
+                child: Text(
+                  _busy ? 'جارٍ الاتصال...' : 'اتصال',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: onAccent, fontWeight: FontWeight.w800),
+                ),
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: _busy ? null : () => setState(() {
+              _showSubscriptionForm = false;
+              _error = null;
+              _status = null;
+            }),
+            child: Text('رجوع', style: TextStyle(color: muted)),
+          ),
+        ],
         const SizedBox(height: 22),
         Divider(color: line),
         const SizedBox(height: 16),
         Text(
-          'لتفعيل التطبيق أو الحصول على اشتراك IPTV،',
+          'لتفعيل التطبيق او الحصول على اشتراك IPTV',
           textAlign: TextAlign.center,
           style: TextStyle(color: muted, fontSize: 13, height: 1.5),
         ),
         Text(
-          'تواصل مع الدعم عبر مسح رمز QR.',
+          'تواصل مع الدعم عبر مسح رمز QR',
           textAlign: TextAlign.center,
           style: TextStyle(color: muted, fontSize: 13, height: 1.5),
         ),
