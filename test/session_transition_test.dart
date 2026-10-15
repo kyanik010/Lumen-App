@@ -182,7 +182,7 @@ void main() {
 
     await tester.tap(find.byTooltip('Profile'));
     await tester.pump();
-    await tester.tap(find.text('Accounts & services'));
+    await tester.tap(find.text('الحسابات والخدمات'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     await tester.ensureVisible(find.text('Sign out of Lumen'));
@@ -218,11 +218,11 @@ void main() {
     await tester.pump();
 
     expect(find.byType(LoginScreen), findsOneWidget);
-    expect(find.text('Exit Lumen?'), findsOneWidget);
+    expect(find.text('الخروج من Eagle X؟'), findsOneWidget);
     await tester.tap(find.widgetWithText(TextButton, 'No'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.byType(LoginScreen), findsOneWidget);
-    expect(find.text('Exit Lumen?'), findsNothing);
+    expect(find.text('الخروج من Eagle X؟'), findsNothing);
   });
 }
