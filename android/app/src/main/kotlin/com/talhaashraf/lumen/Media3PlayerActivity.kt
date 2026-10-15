@@ -59,6 +59,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.upstream.DefaultLoadErrorHandlingPolicy
 import androidx.media3.ui.AspectRatioFrameLayout
+import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.PlayerView
 
 /**
@@ -194,6 +195,22 @@ class Media3PlayerActivity : Activity() {
     private var heldSeekAnchorMs = 0L
     private var pendingBufferMessage = ""
     private var selectedResizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+    private var selectedPlaybackSpeed = 1.0f
+    private var sleepTimerMinutes = 0
+    private var subtitleFontIndex = 0
+    private var subtitleColorIndex = 0
+    private var subtitleBackgroundIndex = 0
+    private var subtitleOutlineIndex = 1
+    private var subtitlePositionIndex = 0
+    private var subtitleSizeIndex = 2
+    private var subtitleSyncMs = 0L
+    private val stopPlaybackForSleep = Runnable {
+        if (::player.isInitialized) {
+            player.pause()
+            sleepTimerMinutes = 0
+            Toast.makeText(this, "Sleep timer finished", Toast.LENGTH_SHORT).show()
+        }
+    }
     private var returningToEmbeddedEngine = false
     private var pausedForBackground = false
     private var isInBackground = false
@@ -496,6 +513,8 @@ class Media3PlayerActivity : Activity() {
         errorPanel = buildErrorPanel()
         root.addView(errorPanel)
         setContentView(root)
+        loadSubtitleSettings()
+        applySubtitleStyle()
 
         registerReceiver(screenStateReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF))
         screenReceiverRegistered = true
@@ -2173,49 +2192,198 @@ class Media3PlayerActivity : Activity() {
 
     private fun showMoreDialog() {
         handler.removeCallbacks(hideControls)
-        val modes = intArrayOf(
-            AspectRatioFrameLayout.RESIZE_MODE_FIT,
-            AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-        )
-        val selected = modes.indexOf(selectedResizeMode).coerceAtLeast(0)
         val favoriteKey = playlistFavoriteKeys.getOrNull(playlistIndex).orEmpty()
         val saved = playlistFavoriteStates.getOrNull(playlistIndex) == true
         val labels = buildList {
-            add(if (selected == 0) "✓  Fit to screen" else "Fit to screen")
-            add(if (selected == 1) "✓  Fill screen" else "Fill screen")
-            if (favoriteKey.isNotBlank()) {
-                add(if (saved) "♥  Remove from My List" else "♡  Add to My List")
-            }
+            add(if (player.isPlaying) "Ⅱ  Pause playback" else "▶  Resume playback")
+            add("ⓘ  Playback information")
+            add("◖  Volume")
+            add("▣  Video fit")
+            add("▶  Playback speed · ${selectedPlaybackSpeed}x")
+            add("◷  Sleep timer" + if (sleepTimerMinutes > 0) " · ${sleepTimerMinutes}m" else "")
+            add("♪  Audio")
+            add("CC  Subtitles")
+            add("Aa  Subtitle appearance")
+            add("▣  Picture-in-picture")
+            if (favoriteKey.isNotBlank()) add(if (saved) "♥  Remove from My List" else "♡  Add to My List")
         }.toTypedArray()
-        val dialog = AlertDialog.Builder(this)
-            .setTitle("More")
+        val dialog = AlertDialog.Builder(this).setTitle("More")
             .setItems(labels) { activeDialog, index ->
-                if (index < modes.size) {
-                    selectedResizeMode = modes[index]
-                    applyResizeModeToPlayerViews()
-                } else {
-                    playlistFavoriteStates[playlistIndex] = !saved
-                    updateFavoriteUi()
-                    Toast.makeText(
-                        this,
-                        if (saved) "Removed from My List" else "Added to My List",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
                 activeDialog.dismiss()
-            }
-            .setNegativeButton("Cancel", null)
-            .create()
-        dialog.setOnShowListener {
-            dialog.window?.setBackgroundDrawable(
-                roundedRect(0xFF111511.toInt(), 0xFF596157.toInt(), 1, 18)
-            )
-        }
-        dialog.setOnDismissListener {
-            showControls()
-            moreButton.post { moreButton.requestFocus() }
-        }
+                when (index) {
+                    0 -> if (player.isPlaying) player.pause() else player.play()
+                    1 -> showPlaybackInformation()
+                    2 -> showVolumeDialog()
+                    3 -> showVideoFitDialog()
+                    4 -> showPlaybackSpeedDialog()
+                    5 -> showSleepTimerDialog()
+                    6 -> showTrackDialog(C.TRACK_TYPE_AUDIO, "Audio", allowOff = false)
+                    7 -> showSubtitleDialog()
+                    8 -> showSubtitleAppearanceDialog()
+                    9 -> AlertDialog.Builder(this).setTitle("Picture-in-picture")
+                        .setMessage("Picture-in-picture is not available in this full-screen TV player.")
+                        .setPositiveButton("OK", null).show()
+                    else -> {
+                        playlistFavoriteStates[playlistIndex] = !saved
+                        updateFavoriteUi()
+                        Toast.makeText(this, if (saved) "Removed from My List" else "Added to My List", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }.setNegativeButton("Cancel", null).create()
+        dialog.setOnShowListener { dialog.window?.setBackgroundDrawable(roundedRect(0xFF111511.toInt(), 0xFF596157.toInt(), 1, 18)) }
+        dialog.setOnDismissListener { showControls(); moreButton.post { moreButton.requestFocus() } }
         dialog.show()
+    }
+
+    private fun showPlaybackInformation() {
+        val duration = player.duration.takeIf { it > 0L }?.let { formatTime(it) } ?: "Live / unknown"
+        val video = player.currentTracks.groups.firstOrNull { it.type == C.TRACK_TYPE_VIDEO && it.isSelected }
+            ?.let { group -> group.getTrackFormat(0).let { f -> if (f.width > 0 && f.height > 0) "${f.width} × ${f.height}" else "Unknown" } } ?: "Unknown"
+        AlertDialog.Builder(this).setTitle("Playback information")
+            .setMessage("Title: ${playlistTitles.getOrNull(playlistIndex).orEmpty().ifBlank { titleText.text.toString() }}\nPosition: ${formatTime(player.currentPosition.coerceAtLeast(0L))} / $duration\nVideo: $video\nPlayback speed: ${selectedPlaybackSpeed}x")
+            .setPositiveButton("OK", null).show()
+    }
+
+    private fun showVolumeDialog() {
+        val panel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(28, 12, 28, 8) }
+        val value = TextView(this).apply { text = "${(player.volume * 100).toInt()}%"; textSize = 18f; gravity = Gravity.CENTER; setTextColor(Color.WHITE) }
+        panel.addView(value)
+        val seek = SeekBar(this).apply { max = 100; progress = (player.volume * 100).toInt().coerceIn(0, 100); contentDescription = "Playback volume" }
+        panel.addView(seek)
+        val dialog = AlertDialog.Builder(this).setTitle("Volume").setView(panel).setNegativeButton("Close", null).create()
+        seek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                volumeBeforeMute = progress / 100f
+                keyboardMuted = progress == 0
+                value.text = "$progress%"
+                applySplitVolumes()
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+        dialog.setOnShowListener { dialog.window?.setBackgroundDrawable(roundedRect(0xFF111511.toInt(), 0xFF596157.toInt(), 1, 18)) }
+        dialog.show()
+    }
+
+    private fun showVideoFitDialog() {
+        val modes = intArrayOf(AspectRatioFrameLayout.RESIZE_MODE_FIT, AspectRatioFrameLayout.RESIZE_MODE_ZOOM, AspectRatioFrameLayout.RESIZE_MODE_FILL)
+        val names = listOf("Fit", "Fill / crop", "Stretch")
+        AlertDialog.Builder(this).setTitle("Video fit")
+            .setSingleChoiceItems(names.toTypedArray(), modes.indexOf(selectedResizeMode).coerceAtLeast(0)) { d, index ->
+                selectedResizeMode = modes[index]; applyResizeModeToPlayerViews(); d.dismiss(); showMoreDialog()
+            }.setNegativeButton("Back") { d, _ -> d.dismiss(); showMoreDialog() }.show()
+    }
+
+    private fun showPlaybackSpeedDialog() {
+        val speeds = floatArrayOf(0.5f, 1.0f, 1.25f, 1.5f, 2.0f)
+        val names = speeds.map { "${it}x" }.toTypedArray()
+        AlertDialog.Builder(this).setTitle("Playback speed")
+            .setSingleChoiceItems(names, speeds.indexOf(selectedPlaybackSpeed).coerceAtLeast(0)) { d, index ->
+                selectedPlaybackSpeed = speeds[index]; player.setPlaybackSpeed(selectedPlaybackSpeed); secondaryPlayer?.setPlaybackSpeed(selectedPlaybackSpeed)
+                d.dismiss(); showMoreDialog()
+            }.setNegativeButton("Back") { d, _ -> d.dismiss(); showMoreDialog() }.show()
+    }
+
+    private fun showSleepTimerDialog() {
+        val values = intArrayOf(0, 15, 30, 45, 60)
+        val names = values.map { if (it == 0) "Off" else "${it}m" }.toTypedArray()
+        AlertDialog.Builder(this).setTitle("Sleep timer")
+            .setSingleChoiceItems(names, values.indexOf(sleepTimerMinutes).coerceAtLeast(0)) { d, index ->
+                handler.removeCallbacks(stopPlaybackForSleep)
+                sleepTimerMinutes = values[index]
+                if (sleepTimerMinutes > 0) handler.postDelayed(stopPlaybackForSleep, sleepTimerMinutes * 60_000L)
+                d.dismiss(); showMoreDialog()
+            }.setNegativeButton("Back") { d, _ -> d.dismiss(); showMoreDialog() }.show()
+    }
+
+    private fun showSubtitleAppearanceDialog() {
+        val fonts = listOf("Reem Kufi", "Aref Ruqaa", "Amiri", "Lalezar", "Marhey", "Rakkas", "Changa", "Noto Naskh Arabic", "Lemonada", "Noto Kufi Arabic")
+        val colors = listOf("White", "Yellow", "Cyan", "Green")
+        val backgrounds = listOf("Off", "Translucent", "Black")
+        val outlines = listOf("None", "Soft shadow", "Strong outline")
+        val positions = listOf("Bottom", "Raised", "Middle")
+        val sizes = listOf("S", "M", "L", "XL")
+        val options = arrayOf(
+            "Arabic font: ${fonts[subtitleFontIndex]}", "Subtitle color: ${colors[subtitleColorIndex]}",
+            "Subtitle background: ${backgrounds[subtitleBackgroundIndex]}", "Text outline and shadow: ${outlines[subtitleOutlineIndex]}",
+            "Subtitle position: ${positions[subtitlePositionIndex]}", "Subtitle size: ${sizes[subtitleSizeIndex]}",
+            "Subtitle sync: ${if (subtitleSyncMs >= 0) "+" else ""}${subtitleSyncMs} ms", "Reset subtitle settings"
+        )
+        AlertDialog.Builder(this).setTitle("Subtitle appearance").setItems(options) { d, index ->
+            d.dismiss()
+            when (index) {
+                0 -> chooseSubtitleOption("Arabic font", fonts, subtitleFontIndex) { subtitleFontIndex = it }
+                1 -> chooseSubtitleOption("Subtitle color", colors, subtitleColorIndex) { subtitleColorIndex = it }
+                2 -> chooseSubtitleOption("Subtitle background", backgrounds, subtitleBackgroundIndex) { subtitleBackgroundIndex = it }
+                3 -> chooseSubtitleOption("Text outline and shadow", outlines, subtitleOutlineIndex) { subtitleOutlineIndex = it }
+                4 -> chooseSubtitleOption("Subtitle position", positions, subtitlePositionIndex) { subtitlePositionIndex = it }
+                5 -> chooseSubtitleOption("Subtitle size", sizes, subtitleSizeIndex) { subtitleSizeIndex = it }
+                6 -> chooseSubtitleSync()
+                7 -> {
+                    subtitleFontIndex = 0; subtitleColorIndex = 0; subtitleBackgroundIndex = 0
+                    subtitleOutlineIndex = 1; subtitlePositionIndex = 0; subtitleSizeIndex = 2; subtitleSyncMs = 0L
+                    saveSubtitleSettings(); applySubtitleStyle(); showSubtitleAppearanceDialog()
+                }
+            }
+        }.setNegativeButton("Close", null).show()
+    }
+
+    private fun chooseSubtitleOption(title: String, values: List<String>, selected: Int, onSelected: (Int) -> Unit) {
+        AlertDialog.Builder(this).setTitle(title).setSingleChoiceItems(values.toTypedArray(), selected) { d, index ->
+            onSelected(index); saveSubtitleSettings(); applySubtitleStyle(); d.dismiss(); showSubtitleAppearanceDialog()
+        }.setNegativeButton("Back") { d, _ -> d.dismiss(); showSubtitleAppearanceDialog() }.show()
+    }
+
+    private fun chooseSubtitleSync() {
+        val values = longArrayOf(-2000, -1000, -500, 0, 500, 1000, 2000)
+        val labels = values.map { if (it > 0) "+${it} ms" else "${it} ms" }.toTypedArray()
+        AlertDialog.Builder(this).setTitle("Subtitle sync")
+            .setMessage("Select a timing offset. This setting is stored; native embedded subtitle tracks may not apply it.")
+            .setSingleChoiceItems(labels, values.indexOf(subtitleSyncMs).coerceAtLeast(0)) { d, index ->
+                subtitleSyncMs = values[index]; saveSubtitleSettings(); d.dismiss(); showSubtitleAppearanceDialog()
+            }.setNegativeButton("Back") { d, _ -> d.dismiss(); showSubtitleAppearanceDialog() }.show()
+    }
+
+    private fun saveSubtitleSettings() {
+        getSharedPreferences("FlutterSharedPreferences", MODE_PRIVATE).edit()
+            .putInt("flutter.eagle_x_tv_subtitle_font", subtitleFontIndex)
+            .putInt("flutter.eagle_x_tv_subtitle_color", subtitleColorIndex)
+            .putInt("flutter.eagle_x_tv_subtitle_background", subtitleBackgroundIndex)
+            .putInt("flutter.eagle_x_tv_subtitle_outline", subtitleOutlineIndex)
+            .putInt("flutter.eagle_x_tv_subtitle_position", subtitlePositionIndex)
+            .putInt("flutter.eagle_x_tv_subtitle_size", subtitleSizeIndex)
+            .putLong("flutter.eagle_x_tv_subtitle_sync_ms", subtitleSyncMs).apply()
+    }
+
+    private fun loadSubtitleSettings() {
+        val p = getSharedPreferences("FlutterSharedPreferences", MODE_PRIVATE)
+        subtitleFontIndex = p.getInt("flutter.eagle_x_tv_subtitle_font", 0).coerceIn(0, 9)
+        subtitleColorIndex = p.getInt("flutter.eagle_x_tv_subtitle_color", 0).coerceIn(0, 3)
+        subtitleBackgroundIndex = p.getInt("flutter.eagle_x_tv_subtitle_background", 0).coerceIn(0, 2)
+        subtitleOutlineIndex = p.getInt("flutter.eagle_x_tv_subtitle_outline", 1).coerceIn(0, 2)
+        subtitlePositionIndex = p.getInt("flutter.eagle_x_tv_subtitle_position", 0).coerceIn(0, 2)
+        subtitleSizeIndex = p.getInt("flutter.eagle_x_tv_subtitle_size", 2).coerceIn(0, 3)
+        subtitleSyncMs = p.getLong("flutter.eagle_x_tv_subtitle_sync_ms", 0L).coerceIn(-2000L, 2000L)
+    }
+
+    private fun applySubtitleStyle() {
+        if (!::playerView.isInitialized) return
+        val foreground = intArrayOf(Color.WHITE, Color.YELLOW, Color.CYAN, Color.GREEN)[subtitleColorIndex]
+        val background = when (subtitleBackgroundIndex) { 1 -> 0x88000000.toInt(); 2 -> Color.BLACK; else -> Color.TRANSPARENT }
+        val edge = when (subtitleOutlineIndex) { 1 -> CaptionStyleCompat.EDGE_TYPE_DROP_SHADOW; 2 -> CaptionStyleCompat.EDGE_TYPE_OUTLINE; else -> CaptionStyleCompat.EDGE_TYPE_NONE }
+        val fonts = listOf("Reem Kufi", "Aref Ruqaa", "Amiri", "Lalezar", "Marhey", "Rakkas", "Changa", "Noto Naskh Arabic", "Lemonada", "Noto Kufi Arabic")
+        val typeface = Typeface.create(fonts[subtitleFontIndex], Typeface.NORMAL)
+        val style = CaptionStyleCompat(foreground, background, Color.TRANSPARENT, edge, Color.BLACK, typeface)
+        playerView.subtitleView?.let {
+            it.setStyle(style)
+            it.setFractionalTextSize(floatArrayOf(0.032f, 0.042f, 0.052f, 0.064f)[subtitleSizeIndex], false)
+            it.setBottomPaddingFraction(floatArrayOf(0.04f, 0.12f, 0.40f)[subtitlePositionIndex])
+        }
+        secondaryPlayerView?.subtitleView?.let {
+            it.setStyle(style)
+            it.setFractionalTextSize(floatArrayOf(0.032f, 0.042f, 0.052f, 0.064f)[subtitleSizeIndex], false)
+            it.setBottomPaddingFraction(floatArrayOf(0.04f, 0.12f, 0.40f)[subtitlePositionIndex])
+        }
     }
 
     private fun applyResizeModeToPlayerViews() {
