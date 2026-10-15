@@ -104,7 +104,7 @@ class _EpgSettingsScreenState extends State<EpgSettingsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Clear guide cache?'),
+        title: const Text('هل تريد مسح ذاكرة التخزين المؤقت للدليل؟'),
         content: const Text(
           'This removes downloaded programme data for this account. '
           'Your guide sources and time correction stay saved.',
@@ -116,7 +116,7 @@ class _EpgSettingsScreenState extends State<EpgSettingsScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Clear cache'),
+            child: const Text('مسح ذاكرة التخزين المؤقت'),
           ),
         ],
       ),
@@ -128,7 +128,7 @@ class _EpgSettingsScreenState extends State<EpgSettingsScreen> {
       final diagnostics = await _repository.diagnostics();
       if (!mounted) return;
       setState(() => _diagnostics = diagnostics);
-      _message('Guide cache cleared');
+      _message('تم مسح ذاكرة الدليل المؤقتة');
     } finally {
       if (mounted) setState(() => _clearing = false);
     }
@@ -210,7 +210,7 @@ class _EpgSettingsScreenState extends State<EpgSettingsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'TV guide setup',
+                'إعداد دليل التلفاز',
                 style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800),
               ),
               Text(
@@ -362,7 +362,7 @@ class _EpgSettingsScreenState extends State<EpgSettingsScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          _metric('Sources cached', '${data?.sourceCount ?? 0}'),
+          _metric('المصادر المخزنة مؤقتًا', '${data?.sourceCount ?? 0}'),
           _metric('Sources ready', '${data?.readySourceCount ?? 0}'),
           _metric('Channels indexed', '${data?.channelCount ?? 0}'),
           _metric('Programmes indexed', '${data?.programmeCount ?? 0}'),
@@ -440,7 +440,7 @@ class _EpgSettingsScreenState extends State<EpgSettingsScreen> {
   }
 
   String _dateLabel(DateTime? value) {
-    if (value == null) return 'Never';
+    if (value == null) return 'أبدًا';
     final local = value.toLocal();
     String two(int part) => part.toString().padLeft(2, '0');
     return '${local.year}-${two(local.month)}-${two(local.day)} '
