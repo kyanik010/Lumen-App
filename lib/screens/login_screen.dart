@@ -1,3 +1,7 @@
+// The Eagle X login UI is intentionally a branded placeholder while activation-panel
+// authentication is pending; legacy login helpers remain for the integration follow-up.
+// ignore_for_file: unused_field, unused_element
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
