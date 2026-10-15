@@ -2252,48 +2252,150 @@ class Media3PlayerActivity : Activity() {
     )
 
     private fun showOnlineSubtitleSearch() {
-        val title = playlistTitles.getOrNull(playlistIndex).orEmpty().ifBlank { titleText.text.toString() }
-        val progress = AlertDialog.Builder(this)
+        val currentTitle = playlistTitles.getOrNull(playlistIndex).orEmpty()
+            .ifBlank { titleText.text.toString() }
+        val cleanedTitle = currentTitle
+            .replace(Regex("""\((?:19|20)\d{2}\)"""), "")
+            .replace(Regex("""\b(?:4K|UHD|FHD|HD|SD|HQ|1080p|720p|2160p|HEVC|x26[45]|DV|HDR)\b""", RegexOption.IGNORE_CASE), "")
+            .replace(Regex("""[._]+"""), " ")
+            .replace(Regex("""\(\s*\)|\[\s*\]"""), "")
+            .replace(Regex("""\s{2,}"""), " ")
+            .trim()
+            .ifBlank { currentTitle }
+
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(28, 12, 28, 4)
+        }
+        val queryInput = android.widget.EditText(this).apply {
+            setSingleLine(true)
+            hint = "Movie or series title…"
+            setText(cleanedTitle)
+            textSize = 18f
+            setSelectAllOnFocus(false)
+            contentDescription = "Subtitle search title"
+        }
+        panel.addView(queryInput, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+        ))
+
+        val languageLabels = listOf("Hindi", "Urdu", "Arabic", "English", "All")
+        val languageCodes = listOf("hin", "urd", "ara", "eng", "all")
+        var selectedLanguage = "all"
+        val languageRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            setPadding(0, 16, 0, 8)
+        }
+        val languageButtons = mutableListOf<TextView>()
+        fun refreshLanguageButtons() {
+            languageButtons.forEachIndexed { index, button ->
+                val selected = languageCodes[index] == selectedLanguage
+                button.setTextColor(if (selected) Color.BLACK else Color.WHITE)
+                button.background = roundedRect(
+                    if (selected) accentColor else 0xFF252A25.toInt(),
+                    if (selected) accentColor else 0xFF596157.toInt(),
+                    1
+                )
+            }
+        }
+        languageLabels.forEachIndexed { index, label ->
+            val button = TextView(this).apply {
+                text = label
+                textSize = 13f
+                gravity = Gravity.CENTER
+                isFocusable = true
+                isClickable = true
+                setPadding(10, 12, 10, 12)
+                contentDescription = "$label subtitle language filter"
+                setOnClickListener {
+                    selectedLanguage = languageCodes[index]
+                    refreshLanguageButtons()
+                }
+            }
+            languageButtons.add(button)
+            languageRow.addView(button, LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f
+            ).apply {
+                if (index > 0) marginStart = 6
+            })
+        }
+        panel.addView(languageRow)
+        panel.addView(TextView(this).apply {
+            text = "Powered by OpenSubtitles"
+            textSize = 12f
+            gravity = Gravity.CENTER
+            setTextColor(0xFFB5BDB2.toInt())
+            setPadding(0, 8, 0, 2)
+        })
+        refreshLanguageButtons()
+
+        val dialog = AlertDialog.Builder(this)
             .setTitle("Search online")
-            .setMessage("Searching subtitle sources…")
+            .setView(panel)
+            .setPositiveButton("Search", null)
             .setNegativeButton("Cancel", null)
             .create()
-        progress.show()
-        Thread {
-            var failure: String? = null
-            val results = try {
-                findOnlineSubtitles(title)
-            } catch (error: Exception) {
-                failure = error.message ?: "Unable to search subtitle sources."
-                emptyList()
-            }
-            runOnUiThread {
-                if (isFinishing || isDestroyed) return@runOnUiThread
-                progress.dismiss()
-                if (results.isEmpty()) {
-                    AlertDialog.Builder(this)
-                        .setTitle("Search online")
-                        .setMessage(failure ?: "No online subtitles found for this title.")
-                        .setPositiveButton("OK", null)
-                        .show()
-                    subtitleButton.post { subtitleButton.requestFocus() }
-                    return@runOnUiThread
+        dialog.setOnShowListener {
+            dialog.window?.setBackgroundDrawable(roundedRect(0xFF111511.toInt(), 0xFF596157.toInt(), 1))
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val query = queryInput.text?.toString()?.trim().orEmpty()
+                if (query.isBlank()) {
+                    queryInput.error = "Enter a movie or series title"
+                    queryInput.requestFocus()
+                    return@setOnClickListener
                 }
-                val labels = results.map { it.label }.toTypedArray()
-                AlertDialog.Builder(this)
-                    .setTitle("Online subtitles (" + results.size + ")")
-                    .setItems(labels) { dialog, index ->
-                        dialog.dismiss()
-                        if (index in results.indices) downloadAndApplyOnlineSubtitle(results[index])
-                    }
+                dialog.dismiss()
+                val progress = AlertDialog.Builder(this)
+                    .setTitle("Search online")
+                    .setMessage("Searching subtitles…")
                     .setNegativeButton("Cancel", null)
-                    .setOnCancelListener { subtitleButton.post { subtitleButton.requestFocus() } }
-                    .show()
+                    .create()
+                progress.show()
+                Thread {
+                    var failure: String? = null
+                    val results = try {
+                        findOnlineSubtitles(query, selectedLanguage)
+                    } catch (error: Exception) {
+                        failure = error.message ?: "Unable to search subtitle sources."
+                        emptyList()
+                    }
+                    runOnUiThread {
+                        if (isFinishing || isDestroyed) return@runOnUiThread
+                        progress.dismiss()
+                        if (results.isEmpty()) {
+                            val selectedLabel = languageLabels[languageCodes.indexOf(selectedLanguage)]
+                            AlertDialog.Builder(this)
+                                .setTitle("Search online")
+                                .setMessage(failure ?: "No subtitles found for “$query” in $selectedLabel.")
+                                .setPositiveButton("Search again") { _, _ -> showOnlineSubtitleSearch() }
+                                .setNegativeButton("OK", null)
+                                .show()
+                            subtitleButton.post { subtitleButton.requestFocus() }
+                            return@runOnUiThread
+                        }
+                        val labels = results.map { it.label }.toTypedArray()
+                        AlertDialog.Builder(this)
+                            .setTitle("Subtitles (" + results.size + ")")
+                            .setItems(labels) { resultDialog, index ->
+                                resultDialog.dismiss()
+                                if (index in results.indices) downloadAndApplyOnlineSubtitle(results[index])
+                            }
+                            .setNegativeButton("Search again") { _, _ -> showOnlineSubtitleSearch() }
+                            .setOnCancelListener { subtitleButton.post { subtitleButton.requestFocus() } }
+                            .show()
+                    }
+                }.start()
             }
-        }.start()
+        }
+        dialog.setOnDismissListener {
+            showControls()
+            subtitleButton.post { subtitleButton.requestFocus() }
+        }
+        dialog.show()
     }
 
-    private fun findOnlineSubtitles(title: String): List<OnlineSubtitleChoice> {
+    private fun findOnlineSubtitles(title: String, languageFilter: String = "all"): List<OnlineSubtitleChoice> {
         val episode = Regex("""(?:S(\d{1,2})E(\d{1,3})|(\d{1,2})x(\d{1,3}))""", RegexOption.IGNORE_CASE).find(title)
         val season = episode?.groupValues?.getOrNull(1)?.takeIf { it.isNotBlank() }?.toIntOrNull()
             ?: episode?.groupValues?.getOrNull(3)?.takeIf { it.isNotBlank() }?.toIntOrNull()
@@ -2406,7 +2508,17 @@ class Media3PlayerActivity : Activity() {
                 val subtitleUrl = row.optString("url").trim()
                 if ((!subtitleUrl.startsWith("https://") && !subtitleUrl.startsWith("http://")) ||
                     !seen.add(subtitleUrl)) continue
-                val language = row.optString("lang").ifBlank { "Unknown language" }
+                val languageCode = row.optString("lang").trim().lowercase()
+                val language = languageCode.ifBlank { "Unknown language" }
+                val wantedCodes = when (languageFilter) {
+                    "hin" -> setOf("hin", "hi", "hindi")
+                    "urd" -> setOf("urd", "ur", "urdu")
+                    "ara" -> setOf("ara", "ar", "arabic")
+                    "eng" -> setOf("eng", "en", "english")
+                    else -> emptySet()
+                }
+                if (wantedCodes.isNotEmpty() && languageCode !in wantedCodes &&
+                    !wantedCodes.any { languageCode.startsWith(it + "-") }) continue
                 val label = row.optString("label").ifBlank { language }
                 results.add(OnlineSubtitleChoice(label + " · " + language + " · " + addonName, subtitleUrl, addonName))
             }
