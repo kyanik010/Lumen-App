@@ -31,7 +31,7 @@ void main() {
     await pumpSplash(tester, const Size(1920, 1080));
 
     expect(find.byType(Lottie), findsOneWidget);
-    expect(find.text('LUMEN'), findsOneWidget);
+    expect(find.text('EAGLE X'), findsOneWidget);
     expect(find.text('YOUR SCREEN. YOUR SIGNAL.'), findsOneWidget);
     expect(find.text('TUNING YOUR EXPERIENCE'), findsOneWidget);
     expect(find.byType(ScaleTransition), findsNothing);
@@ -42,7 +42,7 @@ void main() {
     await pumpSplash(tester, const Size(390, 844));
 
     expect(find.byType(Lottie), findsOneWidget);
-    expect(find.text('LUMEN'), findsOneWidget);
+    expect(find.text('EAGLE X'), findsOneWidget);
     expect(find.text('LIVE   •   FILMS   •   SERIES'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
