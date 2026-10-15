@@ -119,9 +119,10 @@ void main() {
   testWidgets('sign in becomes a two-pane welcome on TV', (tester) async {
     await pumpAt(tester, LoginScreen(onLogin: (_) {}), const Size(1280, 900));
     await tester.pump();
-    expect(find.text('Your screen.\nYour signal.'), findsOneWidget);
-    expect(find.text('Welcome to Lumen'), findsOneWidget);
-    expect(find.text('Enter Lumen'), findsOneWidget);
+    expect(find.text('EAGLE X'), findsOneWidget);
+    expect(find.text('LIVE · FILMS · SERIES'), findsOneWidget);
+    expect(find.text('تسجيل الدخول'), findsNWidgets(2));
+    expect(find.byType(TextField), findsNWidgets(2));
     expect(tester.takeException(), isNull);
     await disposeUi(tester);
   });
