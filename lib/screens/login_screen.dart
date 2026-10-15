@@ -219,7 +219,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {
       _busy = true;
       _error = null;
-      _status = c.isDemo ? 'Opening offline demo…' : 'Checking provider…';
+      _status = c.isDemo ? 'جارٍ فتح العرض التجريبي دون اتصال…' : 'جارٍ التحقق من مزوّد الخدمة…';
     });
     var authenticated = false;
     try {
@@ -233,8 +233,8 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted || attempt != _connectAttempt) return;
       setState(
         () => _status = c.isDemo
-            ? 'Preparing sample library…'
-            : 'Securing this account…',
+            ? 'جارٍ تجهيز المكتبة التجريبية…'
+            : 'جارٍ تأمين هذا الحساب…',
       );
       final save = widget.credentialSaver ?? Store.setActive;
       await _bounded(
@@ -245,7 +245,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       if (!mounted || attempt != _connectAttempt) return;
       authenticated = true;
-      setState(() => _status = 'Opening your library…');
+      setState(() => _status = 'جارٍ فتح مكتبتك…');
       widget.onLogin(c);
       if (mounted && attempt == _connectAttempt) {
         setState(() {
@@ -287,7 +287,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   String _durationLabel(Duration value) {
     final seconds = value.inSeconds.clamp(1, 999);
-    return '$seconds ${seconds == 1 ? 'second' : 'seconds'}';
+    return '$seconds ${seconds == 1 ? 'ثانية' : 'ثوانٍ'}';
   }
 
   Future<T> _bounded<T>(
@@ -334,16 +334,16 @@ class _LoginScreenState extends State<LoginScreen> {
     if (credentials.isM3u) {
       final value = credentials.m3uUrl?.trim() ?? '';
       if (value.isEmpty || Uri.tryParse(value)?.host.isEmpty != false) {
-        return 'Enter a valid playlist URL.';
+        return 'أدخل رابط قائمة تشغيل صالحًا.';
       }
       return null;
     }
     if (credentials.baseUrl.trim().isEmpty ||
         Uri.tryParse(credentials.baseUrl)?.host.isEmpty != false) {
-      return 'Enter a valid server address.';
+      return 'أدخل عنوان خادم صالحًا.';
     }
     if (credentials.username.trim().isEmpty || credentials.password.isEmpty) {
-      return 'Enter both the username and password.';
+      return 'أدخل اسم المستخدم وكلمة المرور.';
     }
     return null;
   }
@@ -357,7 +357,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {
       _busy = false;
       _status = null;
-      _error = 'Connection cancelled. Check the details and try again.';
+      _error = 'تم إلغاء الاتصال. تحقق من البيانات وحاول مجددًا.';
     });
   }
 
@@ -443,7 +443,7 @@ class _LoginScreenState extends State<LoginScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocal) => AlertDialog(
           backgroundColor: surface,
-          title: const Text('Add M3U / playlist'),
+          title: const Text('إضافة قائمة تشغيل M3U'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -459,14 +459,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   minLines: 1,
                   maxLines: 3,
                   decoration: const InputDecoration(
-                    labelText: 'Playlist URL',
+                    labelText: 'رابط قائمة التشغيل',
                     hintText: 'https://…/playlist.m3u  or  get.php?username=…',
                   ),
                 ),
               ),
               const SizedBox(height: 6),
               Text(
-                'Tip: Xtream links bring the full catalog. Plain .m3u links load live channels.',
+                'ملاحظة: روابط Xtream تعرض المكتبة كاملة، بينما روابط M3U العادية تعرض القنوات المباشرة.',
                 style: TextStyle(color: subtle, fontSize: 11.5),
               ),
               if (err != null)
@@ -482,7 +482,7 @@ class _LoginScreenState extends State<LoginScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text('Cancel', style: TextStyle(color: muted)),
+              child: Text('إلغاء', style: TextStyle(color: muted)),
             ),
             FilledButton(
               style: FilledButton.styleFrom(
@@ -492,11 +492,11 @@ class _LoginScreenState extends State<LoginScreen> {
               onPressed: () {
                 final raw = urlCtrl.text.trim();
                 if (raw.isEmpty) {
-                  setLocal(() => err = 'Enter a playlist URL.');
+                  setLocal(() => err = 'أدخل رابط قائمة تشغيل.');
                   return;
                 }
                 if (!isAllowedProviderUrl(raw)) {
-                  setLocal(() => err = 'Enter a valid HTTP or HTTPS URL.');
+                  setLocal(() => err = 'أدخل رابط HTTP أو HTTPS صالحًا.');
                   return;
                 }
                 // Xtream-backed link → full login.
@@ -516,7 +516,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 );
               },
-              child: const Text('Connect'),
+              child: const Text('اتصال'),
             ),
           ],
         ),
