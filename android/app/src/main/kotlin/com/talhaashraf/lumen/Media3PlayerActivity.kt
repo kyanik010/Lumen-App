@@ -2889,6 +2889,9 @@ class Media3PlayerActivity : Activity() {
                     val target = File(cacheDir, "online_subtitle_" + System.currentTimeMillis() + "." + extension)
                     target.outputStream().use { output -> input.copyTo(output) }
                     if (target.length() == 0L) throw IllegalStateException("The subtitle file was empty.")
+                    if (extension == "srt" || extension == "vtt") {
+                        applyOnlineSubtitleDelay(target)
+                    }
                     downloaded = target
                 }
                 connection.disconnect()
@@ -2924,6 +2927,38 @@ class Media3PlayerActivity : Activity() {
                 subtitleButton.requestFocus()
             }
         }.start()
+    }
+
+    /**
+     * Apply the selected subtitle offset to downloaded SRT/WebVTT files.
+     * Positive values delay captions; negative values advance them.
+     * Native embedded tracks and formats with different timestamp syntax are
+     * intentionally left untouched rather than silently corrupting the file.
+     */
+    private fun applyOnlineSubtitleDelay(file: File) {
+        val offsetMs = subtitleSyncMs
+        if (offsetMs == 0L) return
+        val source = file.readText(Charsets.UTF_8)
+        val timestamp = Regex("""(?<![\\d:])(\\d{2,}:\\d{2}:\\d{2})[,.](\\d{3})(?!\\d)""")
+        val shifted = timestamp.replace(source) { match ->
+            val parts = match.groupValues[1].split(":").mapNotNull { it.toLongOrNull() }
+            if (parts.size != 3) return@replace match.value
+            val original = ((parts[0] * 3600L + parts[1] * 60L + parts[2]) * 1000L) +
+                (match.groupValues[2].toLongOrNull() ?: 0L)
+            val adjusted = (original + offsetMs).coerceAtLeast(0L)
+            val hours = adjusted / 3_600_000L
+            val minutes = (adjusted / 60_000L) % 60L
+            val seconds = (adjusted / 1_000L) % 60L
+            val millis = adjusted % 1_000L
+            String.format(
+                java.util.Locale.US,
+                "%02d:%02d:%02d%s%03d",
+                hours, minutes, seconds,
+                if (match.value.contains('.')) "." else ",",
+                millis
+            )
+        }
+        if (shifted != source) file.writeText(shifted, Charsets.UTF_8)
     }
 
     private fun showSubtitleDialog() {
