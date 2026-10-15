@@ -11,6 +11,7 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
 import android.provider.OpenableColumns
+import android.provider.Settings
 import android.text.InputType
 import android.util.Rational
 import android.view.KeyEvent
@@ -201,6 +202,7 @@ class MainActivity : FlutterActivity() {
             deviceChannelName
         ).setMethodCallHandler { call, result ->
             when (call.method) {
+                "readAndroidId" -> result.success(Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID))
                 "isTelevision" -> result.success(isTelevision())
                 "displaySize" -> {
                     val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
