@@ -228,7 +228,7 @@ class _TvPairingScreenState extends State<TvPairingScreen>
         OutlinedButton(
           focusNode: _rejectFocus,
           onPressed: receiver.reject,
-          child: const Text('Reject'),
+          child: const Text('رفض'),
         ),
         const SizedBox(height: 12),
         FilledButton(
@@ -436,7 +436,7 @@ class _PhonePairingScreenState extends State<PhonePairingScreen>
   }
 
   @override
-  Widget build(BuildContext context) => _page(context, 'Set up a TV', [
+  Widget build(BuildContext context) => _page(context, 'إعداد التلفاز', [
     _message(
       'On the TV login screen, choose Connect using phone. Connect both devices to the same home network, then scan its QR below.',
     ),
@@ -484,7 +484,7 @@ class _PhonePairingScreenState extends State<PhonePairingScreen>
                       : Icons.radio_button_off,
                 ),
                 label: Text(
-                  '${profile.username}\n${Uri.tryParse(profile.m3uUrl ?? profile.baseUrl)?.host ?? 'Saved service'}',
+                  '${profile.username}\n${Uri.tryParse(profile.m3uUrl ?? profile.baseUrl)?.host ?? 'الخدمة المحفوظة'}',
                   textAlign: TextAlign.center,
                 ),
                 onPressed: () => setState(() => _selected = profile),
@@ -498,14 +498,14 @@ class _PhonePairingScreenState extends State<PhonePairingScreen>
         if (_selected == null) ...[
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Use a playlist URL'),
+            title: const Text('استخدام رابط قائمة تشغيل'),
             value: _m3u,
             onChanged: (v) => setState(() => _m3u = v),
           ),
           if (_m3u)
-            _field(_playlist, 'M3U / playlist URL', secret: true)
+            _field(_playlist, 'رابط M3U أو قائمة التشغيل', secret: true)
           else ...[
-            _field(_url, 'Server URL'),
+            _field(_url, 'رابط الخادم'),
             _field(_user, 'Username'),
             _field(_pass, 'Password', secret: true),
           ],
@@ -520,7 +520,7 @@ class _PhonePairingScreenState extends State<PhonePairingScreen>
     const SizedBox(height: 12),
     TextButton(
       onPressed: () => Navigator.pop(context),
-      child: Text(_busy ? 'Leave setup' : 'Done'),
+      child: Text(_busy ? 'مغادرة الإعداد' : 'Done'),
     ),
     if (_busy)
       _message(
