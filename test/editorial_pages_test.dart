@@ -137,7 +137,7 @@ void main() {
       const Size(1280, 900),
     );
     await tester.pump();
-    expect(find.text('أنشئ صفك الأول'), findsOneWidget);
+    expect(find.text('Choose the collections that deserve a place on Home.'), findsOneWidget);
     expect(find.text('سينما جديدة'), findsOneWidget);
     expect(tester.takeException(), isNull);
 

@@ -461,7 +461,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('القصة'), findsOneWidget);
-    expect(find.text('طاقم العمل'), findsOneWidget);
+    expect(find.text('طاقم التمثيل'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await disposeUi(tester);
   });

@@ -53,10 +53,10 @@ void main() {
       // Establish a previous Home focus before opening the search keyboard.
       await tab('الأفلام');
       await tab('الرئيسية');
-      await tab('Search');
+      await tab('بحث');
       await tester.enterText(find.byType(TextField), 'Aerial Night');
       await tester.pump(const Duration(milliseconds: 500));
-      await tab('Live');
+      await tab('مباشر');
       expect(find.byKey(const ValueKey('shell-page-6')), findsOneWidget);
       expect(tester.testTextInput.isVisible, isFalse);
       await tester.tap(find.byTooltip('Category'));
@@ -90,12 +90,12 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.byKey(const ValueKey('shell-page-6')), findsOneWidget);
-      await tab('Search');
+      await tab('بحث');
       expect(
         tester.widget<TextField>(find.byType(TextField)).controller!.text,
         'Aerial Night',
       );
-      await tab('Live');
+      await tab('مباشر');
       expect(find.text('Culture'), findsOneWidget);
 
       // Restored focus is not a navigation command. Hardware activation is.
@@ -157,8 +157,8 @@ void main() {
     for (final (label, page) in [
       ('الأفلام', 4),
       ('المسلسلات', 5),
-      ('Live', 6),
-      ('Search', 1),
+      ('مباشر', 6),
+      ('بحث', 1),
       ('الرئيسية', 0),
     ]) {
       await tester.tap(find.byTooltip(label));
@@ -212,7 +212,7 @@ void main() {
     );
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
-    await tester.tap(find.byTooltip('Live'));
+    await tester.tap(find.byTooltip('مباشر'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     final home = tester.widget<FocusableActionDetector>(

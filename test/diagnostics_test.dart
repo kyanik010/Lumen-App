@@ -100,7 +100,7 @@ void main() {
     }
 
     expect(find.text('التشخيص والملاحظات'), findsOneWidget);
-    expect(find.text('تبقى البيانات خاصة حتى تختار مشاركتها'), findsOneWidget);
+    expect(find.text('بياناتك خاصة حتى تختار مشاركتها'), findsOneWidget);
     expect(find.text('نسخ التقرير'), findsOneWidget);
     expect(find.text('مشاركة التقرير'), findsOneWidget);
     expect(find.text('مراسلة الدعم'), findsOneWidget);

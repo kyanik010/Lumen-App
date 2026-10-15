@@ -107,7 +107,7 @@ void main() {
 
     expect(find.text('الإعدادات'), findsOneWidget);
     expect(find.text('CURRENT ACCOUNT'), findsNothing);
-    expect(find.text('Appearance'), findsOneWidget);
+    expect(find.text('المظهر'), findsOneWidget);
     expect(find.text('Playback'), findsOneWidget);
     expect(find.text('Help & about'), findsNothing);
     expect(find.text('Your Lumen'), findsNothing);
@@ -442,7 +442,7 @@ void main() {
     );
 
     final accountsTopLeft = tester.getTopLeft(find.text('الحسابات والخدمات'));
-    final settingsTopLeft = tester.getTopLeft(find.text('Appearance'));
+    final settingsTopLeft = tester.getTopLeft(find.text('المظهر'));
     expect(settingsTopLeft.dy, greaterThan(accountsTopLeft.dy));
     expect(find.text('Profile'), findsNothing);
     expect(tester.takeException(), isNull);

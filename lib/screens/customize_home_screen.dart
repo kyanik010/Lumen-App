@@ -80,8 +80,8 @@ class _CustomizeHomeScreenState extends State<CustomizeHomeScreen> {
                     eyebrow: 'تخصيص الرئيسية',
                     title: 'Build your own front row',
                     subtitle: HomeConfig.instance.isCustom
-                        ? '${HomeConfig.instance.shelves.length} shelves will appear in this order on Home.'
-                        : 'Choose the collections that deserve a place on Home.',
+                        ? 'ستظهر ${HomeConfig.instance.shelves.length} رفوف بهذا الترتيب في الرئيسية.'
+                        : 'اختر المجموعات التي تريد عرضها في الرئيسية.',
                     icon: Icons.dashboard_customize_rounded,
                     onBack: () => Navigator.of(context).maybePop(),
                     trailing: HomeConfig.instance.isCustom
