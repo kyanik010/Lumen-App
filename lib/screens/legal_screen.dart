@@ -294,7 +294,7 @@ class LegalScreen extends StatelessWidget {
                                             : double.infinity,
                                         child: _LinkTile(
                                           icon: Icons.movie_filter_outlined,
-                                          title: 'The Movie Database',
+                                          title: 'قاعدة بيانات الأفلام',
                                           subtitle: 'themoviedb.org',
                                           onTap: () => _open(
                                             'https://www.themoviedb.org',
