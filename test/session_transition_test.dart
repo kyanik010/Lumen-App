@@ -180,7 +180,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.byType(HomeShell), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Profile'));
+    await tester.tap(find.byTooltip('الملف الشخصي'));
     await tester.pump();
     await tester.tap(find.text('الحسابات والخدمات'));
     await tester.pump();
@@ -219,7 +219,7 @@ void main() {
 
     expect(find.byType(LoginScreen), findsOneWidget);
     expect(find.text('الخروج من Eagle X؟'), findsOneWidget);
-    await tester.tap(find.widgetWithText(TextButton, 'No'));
+    await tester.tap(find.widgetWithText(TextButton, 'لا'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.byType(LoginScreen), findsOneWidget);

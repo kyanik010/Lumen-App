@@ -111,7 +111,7 @@ void main() {
 
     await pumpAt(tester, const LegalScreen(), const Size(1280, 900));
     expect(find.text('Clear terms, private by design'), findsOneWidget);
-    expect(find.text('THE IMPORTANT PARTS'), findsOneWidget);
+    expect(find.text('المعلومات المهمة'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await disposeUi(tester);
   });
@@ -137,8 +137,8 @@ void main() {
       const Size(1280, 900),
     );
     await tester.pump();
-    expect(find.text('Choose the collections that deserve a place on Home.'), findsOneWidget);
-    expect(find.text('سينما جديدة'), findsOneWidget);
+    expect(find.text('اختر المجموعات التي تريد عرضها في الرئيسية.'), findsOneWidget);
+    expect(find.text('New cinema'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await pumpAt(tester, StatsScreen(client: client), const Size(1280, 900));

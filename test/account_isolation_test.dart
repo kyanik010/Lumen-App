@@ -356,7 +356,7 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
 
     expect(find.byTooltip('الرئيسية'), findsOneWidget);
-    expect(find.byTooltip('الإعدادات'), findsOneWidget);
+    expect(find.byTooltip('الملف الشخصي'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -525,7 +525,7 @@ void main() {
     }
     await tester.sendKeyEvent(LogicalKeyboardKey.select);
     await tester.pump();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'Search library');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'البحث في المكتبة');
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
     await tester.pump();
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'Command refresh');
@@ -541,7 +541,7 @@ void main() {
     );
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
     await tester.pump();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'Search library');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'البحث في المكتبة');
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
     await tester.pump();
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'Command refresh');
@@ -720,13 +720,13 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
 
     final routes = <(String, (String, String))>[
-      ('Search', ('Search library', 'Command refresh')),
-      ('My List', ('My List filter 0', 'Command find anything')),
-      ('Profile', ('Profile add account', 'Command find anything')),
-      ('Movies', ('movie category all', 'Command find anything')),
-      ('Series', ('series category all', 'Command find anything')),
-      ('Live', ('live category all', 'Command find anything')),
-      ('Guide', ('Guide first category', 'Command find anything')),
+      ('بحث', ('البحث في المكتبة', 'Command refresh')),
+      ('قائمتي', ('My List filter 0', 'Command find anything')),
+      ('الملف الشخصي', ('Profile add account', 'Command find anything')),
+      ('الأفلام', ('movie category all', 'Command find anything')),
+      ('المسلسلات', ('series category all', 'Command find anything')),
+      ('مباشر', ('live category all', 'Command find anything')),
+      ('الدليل', ('Guide first category', 'Command find anything')),
       ('Downloads', ('Downloads filter 0', 'Command find anything')),
     ];
 
@@ -760,10 +760,10 @@ void main() {
         route.$2.$2,
         reason: '${route.$1} must reach the global command bar with Up.',
       );
-      if (route.$1 == 'Movies' ||
-          route.$1 == 'Series' ||
-          route.$1 == 'Live' ||
-          route.$1 == 'Guide') {
+      if (route.$1 == 'الأفلام' ||
+          route.$1 == 'المسلسلات' ||
+          route.$1 == 'مباشر' ||
+          route.$1 == 'الدليل') {
         await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
         await tester.pump(const Duration(milliseconds: 80));
         expect(
@@ -872,7 +872,7 @@ void main() {
       final profileControl = tester.widget<FocusableActionDetector>(
         find
             .descendant(
-              of: find.byTooltip('الإعدادات'),
+              of: find.byTooltip('الملف الشخصي'),
               matching: find.byType(FocusableActionDetector),
             )
             .first,
@@ -1025,7 +1025,7 @@ void main() {
     expect(find.text('الخروج من Eagle X؟'), findsOneWidget);
     expect(find.widgetWithText(TextButton, 'لا'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'نعم'), findsOneWidget);
-    await tester.tap(find.widgetWithText(TextButton, 'No'));
+    await tester.tap(find.widgetWithText(TextButton, 'لا'));
     await tester.pump();
     await homeBack;
     expect(find.text('الخروج من Eagle X؟'), findsNothing);
@@ -1070,7 +1070,7 @@ void main() {
     expect(find.text('المسلسلات'), findsOneWidget);
     expect(find.text('مباشر'), findsOneWidget);
     expect(find.byTooltip('الدليل'), findsNothing);
-    expect(find.text('Search'), findsOneWidget);
+    expect(find.text('بحث'), findsOneWidget);
     expect(find.text('My List'), findsNothing);
     expect(find.text('Profile'), findsNothing);
     expect(find.text('Discover'), findsNothing);

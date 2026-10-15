@@ -717,7 +717,7 @@ void main() {
     await tester.tap(find.text('تخصيص'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('Build your own front row'), findsOneWidget);
+    expect(find.text('أنشئ صفك الرئيسي بنفسك'), findsOneWidget);
     await disposeUi(tester);
   });
 

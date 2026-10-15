@@ -78,7 +78,7 @@ class _CustomizeHomeScreenState extends State<CustomizeHomeScreen> {
                   animation: HomeConfig.instance,
                   builder: (_, child) => EditorialPageHeader(
                     eyebrow: 'تخصيص الرئيسية',
-                    title: 'Build your own front row',
+                    title: 'أنشئ صفك الرئيسي بنفسك',
                     subtitle: HomeConfig.instance.isCustom
                         ? 'ستظهر ${HomeConfig.instance.shelves.length} رفوف بهذا الترتيب في الرئيسية.'
                         : 'اختر المجموعات التي تريد عرضها في الرئيسية.',

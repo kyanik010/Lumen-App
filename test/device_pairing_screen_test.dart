@@ -121,7 +121,7 @@ void main() {
         );
       });
       await tester.pump();
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
       expect(find.byType(QrImageView), findsNothing);
       final reject = tester.widget<OutlinedButton>(
         find.widgetWithText(OutlinedButton, 'رفض'),

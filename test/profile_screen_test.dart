@@ -474,7 +474,7 @@ void main() {
     expect(find.text('تسجيل الخروج من Eagle X؟'), findsOneWidget);
     expect(calls, 0);
 
-    await tester.tap(find.text('Sign out of Lumen'));
+    await tester.tap(find.text('تسجيل الخروج'));
     await tester.pump();
     expect(calls, 1);
     expect(find.text('جارٍ تسجيل الخروج…'), findsOneWidget);
@@ -660,7 +660,7 @@ void main() {
         .requestFocus();
     await tester.pump();
     await move(LogicalKeyboardKey.arrowRight, 'فاتح appearance');
-    await move(LogicalKeyboardKey.arrowRight, 'System appearance');
+    await move(LogicalKeyboardKey.arrowRight, 'النظام appearance');
     await move(LogicalKeyboardKey.arrowDown, 'Lumen font');
     await move(LogicalKeyboardKey.arrowRight, 'Inter font');
     await move(LogicalKeyboardKey.arrowRight, 'Device font');
@@ -683,7 +683,7 @@ void main() {
     final expected = <String>{
       'Dark appearance',
       'المظهر الفاتح',
-      'System appearance',
+      'النظام appearance',
       for (final option in LumenFont.values) '${option.label} font',
       for (final option in LumenCornerStyle.values) '${option.label} corners',
       for (final option in LumenFocusStyle.values) '${option.label} focus',

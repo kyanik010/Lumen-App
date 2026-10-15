@@ -305,7 +305,7 @@ class _CatalogOrganizationScreenState extends State<CatalogOrganizationScreen> {
       appBar: AppBar(
         backgroundColor: bg,
         title: const Text(
-          'Organize library',
+          'تنظيم المكتبة',
           style: TextStyle(fontWeight: FontWeight.w900),
         ),
         actions: [
@@ -334,7 +334,7 @@ class _CatalogOrganizationScreenState extends State<CatalogOrganizationScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          'Shape the guide without changing your IPTV services.',
+                          'نظّم دليل القنوات دون تغيير خدمات IPTV.',
                           style: TextStyle(color: muted, fontSize: 13),
                         ),
                         const SizedBox(height: 14),
