@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../widgets.dart';
 
 /// Stremio TV catalog browser. Addon installation remains in
 /// [StremioAddonsScreen]; this screen only consumes enabled installed addons.
@@ -274,8 +275,9 @@ class _StremioScreenState extends State<StremioScreen> {
           final c = _catalogs[index];
           return Card(
             clipBehavior: Clip.antiAlias,
-            child: InkWell(
+            child: RemoteTap(
               onTap: () => _openCatalog(c),
+              semanticLabel: 'فتح كتالوج ${c.name}',
               child: Padding(
                 padding: const EdgeInsets.all(14),
                 child: Row(children: [
