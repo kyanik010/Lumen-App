@@ -67,7 +67,7 @@ class DeviceTrialApi {
       final preferences = await SharedPreferences.getInstance();
       rawId = preferences.getString(_fallbackPreferenceKey);
       if (rawId == null || rawId.isEmpty) {
-        rawId = 'fallback:${const Uuid().v4()}';
+        rawId = 'fallback:${Uuid().v4()}';
         await preferences.setString(_fallbackPreferenceKey, rawId);
       }
     }
