@@ -273,9 +273,9 @@ class _StremioAddonsScreenState extends State<StremioAddonsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Text('Stremio', style: theme.textTheme.titleLarge),
+      Text('Addons', style: theme.textTheme.titleLarge),
       const SizedBox(height: 6),
-      Text('ابحث عن الإضافات الرسمية والمجتمعية وثبّتها وأدر إضافاتك المثبّتة.',
+      Text('تصفّح الإضافات الرسمية والمجتمعية، وثبّت الإضافات وأدرها من هنا.',
         style: theme.textTheme.bodyMedium),
       const SizedBox(height: 16),
       RemoteTextInput(child: TextField(
