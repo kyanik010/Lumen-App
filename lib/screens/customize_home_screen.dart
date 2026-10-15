@@ -77,7 +77,7 @@ class _CustomizeHomeScreenState extends State<CustomizeHomeScreen> {
                 AnimatedBuilder(
                   animation: HomeConfig.instance,
                   builder: (_, child) => EditorialPageHeader(
-                    eyebrow: 'Home studio',
+                    eyebrow: 'تخصيص الرئيسية',
                     title: 'Build your own front row',
                     subtitle: HomeConfig.instance.isCustom
                         ? '${HomeConfig.instance.shelves.length} shelves will appear in this order on Home.'
@@ -104,7 +104,7 @@ class _CustomizeHomeScreenState extends State<CustomizeHomeScreen> {
                                 border: Border.all(color: line),
                               ),
                               child: const Text(
-                                'Use default',
+                                'استخدام الافتراضي',
                                 style: TextStyle(fontWeight: FontWeight.w700),
                               ),
                             ),
@@ -151,7 +151,7 @@ class _CustomizeHomeScreenState extends State<CustomizeHomeScreen> {
           children: [
             if (widget.client.supportsMovieCatalog) ...[
               LumenFilterPill(
-                label: 'Films',
+                label: 'الأفلام',
                 icon: Icons.movie_outlined,
                 selected: _type == 'movie',
                 onTap: () => _selectType('movie'),
@@ -160,7 +160,7 @@ class _CustomizeHomeScreenState extends State<CustomizeHomeScreen> {
             ],
             if (widget.client.supportsSeriesCatalog) ...[
               LumenFilterPill(
-                label: 'Series',
+                label: 'المسلسلات',
                 icon: Icons.video_library_outlined,
                 selected: _type == 'series',
                 onTap: () => _selectType('series'),
@@ -168,7 +168,7 @@ class _CustomizeHomeScreenState extends State<CustomizeHomeScreen> {
               const SizedBox(width: 8),
             ],
             LumenFilterPill(
-              label: 'Live TV',
+              label: 'التلفاز المباشر',
               icon: Icons.cell_tower_rounded,
               selected: _type == 'live',
               onTap: () => _selectType('live'),
@@ -282,7 +282,7 @@ class _CustomizeHomeScreenState extends State<CustomizeHomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('YOUR HOME', style: kSection(color: accentInk)),
+            Text('رئيسيتك', style: kSection(color: accentInk)),
             const SizedBox(height: 7),
             Text(
               shelves.isEmpty
@@ -414,10 +414,10 @@ class _CustomizeHomeScreenState extends State<CustomizeHomeScreen> {
               ),
               Text(
                 shelf.type == 'movie'
-                    ? 'Films'
+                    ? 'الأفلام'
                     : shelf.type == 'series'
-                    ? 'Series'
-                    : 'Live TV',
+                    ? 'المسلسلات'
+                    : 'التلفاز المباشر',
                 style: TextStyle(color: subtle, fontSize: 10.5),
               ),
             ],
@@ -429,7 +429,7 @@ class _CustomizeHomeScreenState extends State<CustomizeHomeScreen> {
               : () => HomeConfig.instance.reorder(index, index - 1),
           icon: const Icon(Icons.keyboard_arrow_up_rounded),
           visualDensity: VisualDensity.compact,
-          tooltip: 'Move up',
+          tooltip: 'تحريك للأعلى',
         ),
         IconButton(
           onPressed: index == total - 1
@@ -443,7 +443,7 @@ class _CustomizeHomeScreenState extends State<CustomizeHomeScreen> {
           onPressed: () => HomeConfig.instance.toggle(shelf),
           icon: Icon(Icons.close_rounded, color: muted, size: 18),
           visualDensity: VisualDensity.compact,
-          tooltip: 'Remove shelf',
+          tooltip: 'إزالة القسم',
         ),
       ],
     ),
