@@ -112,6 +112,8 @@ flutter:
 
   assets:
     - assets/lumen_loader.json
+    - assets/eagle_x_logo.png
+    - assets/eagle_x_qr.png
     - assets/demo/
 
   # Bundle Lumen's editorial typeface so the interface stays consistent on

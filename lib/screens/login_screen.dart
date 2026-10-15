@@ -52,6 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool get _canPair => DeviceProfile.isTelevision || DeviceProfile.isMobileApp;
   final Map<String, FocusNode> _profileFocus = {};
   bool _busy = false;
+  bool _passwordVisible = false;
   String? _error;
   String? _status;
   List<XtreamCredentials> _profiles = [];
@@ -482,7 +483,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final wide = isWide(context);
     return Scaffold(
       body: Stack(
         children: [
@@ -501,17 +501,8 @@ class _LoginScreenState extends State<LoginScreen> {
             child: SingleChildScrollView(
               padding: pageInsets(context),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1080),
-                child: wide
-                    ? Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Expanded(child: _brandPanel()),
-                          const SizedBox(width: 56),
-                          SizedBox(width: 440, child: _formCard()),
-                        ],
-                      )
-                    : _formCard(showWordmark: true),
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: _formCard(showWordmark: true),
               ),
             ),
           ),
@@ -520,159 +511,80 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _brandPanel() => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 18),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Wordmark(size: 46),
-        const SizedBox(height: 34),
-        Text(
-          'Your screen.\nYour signal.',
-          style: kDisplay().copyWith(fontSize: 52, height: 0.98),
-        ),
-        const SizedBox(height: 18),
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 470),
-          child: Text(
-            'Bring an authorized provider or playlist and turn it into a calm, personal cinema across phone, desktop and TV.',
-            style: TextStyle(color: muted, fontSize: 15, height: 1.55),
-          ),
-        ),
-        const SizedBox(height: 30),
-        const Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: [
-            _TrustPill(
-              icon: Icons.lock_outline_rounded,
-              label: 'Private by default',
-            ),
-            _TrustPill(icon: Icons.tv_rounded, label: 'Remote ready'),
-            _TrustPill(icon: Icons.download_rounded, label: 'Offline playback'),
-          ],
-        ),
-      ],
-    ),
-  );
-
   Widget _formCard({bool showWordmark = false}) => Glass(
     radius: 28,
     padding: const EdgeInsets.all(24),
     child: Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (showWordmark) ...[
-          const Center(child: Wordmark(size: 38)),
-          const SizedBox(height: 24),
-        ],
-        Text('CONNECT YOUR LIBRARY', style: kSection(color: accentInk)),
-        const SizedBox(height: 7),
-        const Text(
-          'Welcome to Lumen',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.5,
+        Center(
+          child: Image.asset(
+            'assets/eagle_x_logo.png',
+            width: 94,
+            height: 94,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => const Icon(
+              Icons.image_not_supported_outlined,
+              size: 64,
+            ),
           ),
         ),
-        const SizedBox(height: 5),
+        const SizedBox(height: 8),
         Text(
-          'Use provider credentials or bring a playlist URL.',
+          'EAGLE X',
+          textAlign: TextAlign.center,
+          style: kDisplay().copyWith(fontSize: 32, fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'LIVE · FILMS · SERIES',
+          textAlign: TextAlign.center,
+          style: kSection(color: muted),
+        ),
+        const SizedBox(height: 7),
+        Text(
+          'ترفيهك، في مكان واحد',
+          textAlign: TextAlign.center,
           style: TextStyle(color: muted, fontSize: 13),
         ),
-        const SizedBox(height: 20),
-        if (_profiles.isNotEmpty) ...[
-          Text('SAVED ACCOUNTS', style: kSection()),
-          const SizedBox(height: 9),
-          ..._profiles.map(
-            (profile) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _ProfileTile(
-                profile: profile,
-                busy: _busy,
-                focusNode: _profileFocus[_profileKey(profile)],
-                onTap: () => _connect(profile),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Row(
-              children: [
-                Expanded(child: Divider(color: line)),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  child: Text('OR NEW ACCOUNT', style: kSection()),
-                ),
-                Expanded(child: Divider(color: line)),
-              ],
-            ),
-          ),
-        ],
+        const SizedBox(height: 24),
+        Text(
+          'تسجيل الدخول',
+          textAlign: TextAlign.start,
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'أدخل بيانات حسابك للمتابعة إلى التطبيق.',
+          textAlign: TextAlign.start,
+          style: TextStyle(color: muted, fontSize: 13, height: 1.5),
+        ),
+        const SizedBox(height: 18),
         _field(
-          _url,
-          'Server URL',
-          focusNode: _urlFocus,
-          nextFocus: _userFocus,
-          hint: 'https://host:443',
-          autofocus: DeviceProfile.isTelevision,
+          _user,
+          'اسم المستخدم',
+          focusNode: _userFocus,
+          nextFocus: _passFocus,
+          hint: 'اسم المستخدم',
         ),
-        const SizedBox(height: 11),
-        Row(
-          children: [
-            Expanded(
-              child: _field(
-                _user,
-                'Username',
-                focusNode: _userFocus,
-                nextFocus: _passFocus,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _field(
-                _pass,
-                'Password',
-                focusNode: _passFocus,
-                nextFocus: _submitFocus,
-                obscure: true,
-              ),
-            ),
-          ],
-        ),
-        if (_url.text.trim().toLowerCase().startsWith('http://')) ...[
-          const SizedBox(height: 10),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: warningSurface,
-              borderRadius: BorderRadius.circular(lumenCorner(12)),
-              border: Border.all(color: warningLine),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.warning_amber_rounded, color: warningInk, size: 18),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Legacy HTTP is supported, but it does not encrypt your '
-                    'provider credentials or viewing traffic.',
-                    style: TextStyle(
-                      color: warningInk,
-                      fontSize: 11.5,
-                      height: 1.35,
-                    ),
-                  ),
-                ),
-              ],
+        const SizedBox(height: 12),
+        _field(
+          _pass,
+          'كلمة المرور',
+          focusNode: _passFocus,
+          nextFocus: _submitFocus,
+          hint: 'كلمة المرور',
+          obscure: !_passwordVisible,
+          suffixIcon: IconButton(
+            tooltip: _passwordVisible ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور',
+            onPressed: () => setState(() => _passwordVisible = !_passwordVisible),
+            icon: Icon(
+              _passwordVisible ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+              color: muted,
             ),
           ),
-        ],
+        ),
         if (_error != null) ...[
           const SizedBox(height: 12),
           Container(
@@ -685,163 +597,89 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             child: Text(
               _error!,
-              style: TextStyle(color: dangerInk, fontSize: 12.5),
+              style: TextStyle(color: dangerInk, fontSize: 12.5, height: 1.4),
             ),
           ),
         ],
-        const SizedBox(height: 15),
+        const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,
           child: RemoteTap(
             key: const ValueKey('login-submit'),
             focusNode: _submitFocus,
             autofocus: !DeviceProfile.isTelevision,
-            semanticLabel: _status ?? 'Enter Lumen',
+            semanticLabel: 'تسجيل الدخول',
             focusRadius: 14,
-            // The lime button and the normal lime focus ring blended together
-            // on a television. A white ring is unambiguous from across a room.
             focusRingColor: Colors.white,
-            onTap: _busy
-                ? null
-                : () => _connect(
-                    XtreamCredentials(
-                      baseUrl: normalizeBaseUrl(_url.text),
-                      username: _user.text.trim(),
-                      password: _pass.text.trim(),
-                    ),
-                  ),
+            onTap: () {
+              setState(() {
+                _error = _user.text.trim().isEmpty || _pass.text.isEmpty
+                    ? 'أدخل اسم المستخدم وكلمة المرور.'
+                    : 'سيتم تفعيل تسجيل الدخول بعد ربط لوحة التفعيلات.';
+              });
+            },
             child: AnimatedContainer(
               key: const ValueKey('login-submit-surface'),
               duration: lumenMotionFast,
               padding: const EdgeInsets.symmetric(vertical: 16),
               decoration: BoxDecoration(
-                color: _busy ? accent.withValues(alpha: .58) : accent,
+                color: accent,
                 borderRadius: BorderRadius.circular(lumenCorner(14)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (_busy)
-                    SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: onAccent,
-                      ),
-                    )
-                  else
-                    Icon(
-                      Icons.arrow_forward_rounded,
-                      size: 19,
-                      color: onAccent,
-                    ),
+                  Icon(Icons.login_rounded, size: 19, color: onAccent),
                   const SizedBox(width: 8),
                   Text(
-                    _status ?? 'Enter Lumen',
-                    style: TextStyle(
-                      color: onAccent,
-                      fontWeight: FontWeight.w800,
-                    ),
+                    'تسجيل الدخول',
+                    style: TextStyle(color: onAccent, fontWeight: FontWeight.w800),
                   ),
                 ],
               ),
             ),
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 22),
+        Divider(color: line),
+        const SizedBox(height: 16),
+        Text(
+          'لتفعيل التطبيق أو الحصول على اشتراك IPTV،',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: muted, fontSize: 13, height: 1.5),
+        ),
+        Text(
+          'تواصل مع الدعم عبر مسح رمز QR.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: muted, fontSize: 13, height: 1.5),
+        ),
+        const SizedBox(height: 16),
         Center(
-          child: TextButton.icon(
-            focusNode: _playlistFocus,
-            onPressed: _busy ? _cancelConnect : _pasteUrl,
-            icon: Icon(
-              _busy ? Icons.close_rounded : Icons.link_rounded,
-              size: 18,
-              color: _busy ? muted : accentInk,
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
             ),
-            label: Text(
-              _busy ? 'Cancel connection' : 'Connect a playlist URL instead',
-              style: TextStyle(
-                color: _busy ? muted : accentInk,
-                fontWeight: FontWeight.w700,
+            child: Image.asset(
+              'assets/eagle_x_qr.png',
+              width: 220,
+              height: 220,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+              errorBuilder: (_, __, ___) => const Icon(
+                Icons.qr_code_2_rounded,
+                size: 220,
+                color: Colors.black,
               ),
             ),
           ),
         ),
-        if (!_busy) ...[
-          if (_canPair)
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                focusNode: _pairingFocus,
-                onPressed: _pairDevice,
-                icon: const Icon(Icons.qr_code_scanner),
-                label: Text(
-                  DeviceProfile.isTelevision
-                      ? 'Connect using phone'
-                      : 'Set up a TV',
-                ),
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              children: [
-                Expanded(child: Divider(color: line)),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  child: Text('NO PROVIDER YET?', style: kSection()),
-                ),
-                Expanded(child: Divider(color: line)),
-              ],
-            ),
-          ),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              focusNode: _demoFocus,
-              onPressed: _startDemo,
-              icon: const Icon(Icons.auto_awesome_rounded, size: 18),
-              label: const Text('Explore offline demo'),
-              style:
-                  OutlinedButton.styleFrom(
-                    foregroundColor: accentInk,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(lumenCorner(14)),
-                    ),
-                  ).copyWith(
-                    side: lumenControlSide(
-                      resting: BorderSide(
-                        color: accentInk.withValues(alpha: .45),
-                      ),
-                    ),
-                  ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Center(
-            child: Text(
-              'A fictional sample library. No account or internet required.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: subtle, fontSize: 11.5),
-            ),
-          ),
-        ],
         const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.lock_rounded, color: subtle, size: 12),
-            const SizedBox(width: 5),
-            Flexible(
-              child: Text(
-                'Credentials stay encrypted on this device.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: subtle, fontSize: 11.5),
-              ),
-            ),
-          ],
+        Text(
+          'امسح الرمز للتواصل مع الدعم',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: muted, fontSize: 12),
         ),
       ],
     ),
@@ -855,6 +693,7 @@ class _LoginScreenState extends State<LoginScreen> {
     String? hint,
     bool obscure = false,
     bool autofocus = false,
+    Widget? suffixIcon,
   }) {
     return RemoteTextInput(
       child: TextField(
@@ -869,7 +708,7 @@ class _LoginScreenState extends State<LoginScreen> {
         textInputAction: TextInputAction.next,
         onChanged: (_) => setState(() {}),
         onSubmitted: (_) => nextFocus.requestFocus(),
-        decoration: InputDecoration(labelText: label, hintText: hint),
+        decoration: InputDecoration(labelText: label, hintText: hint, suffixIcon: suffixIcon),
       ),
     );
   }
