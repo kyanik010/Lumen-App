@@ -75,18 +75,17 @@ class _LoginScreenState extends State<LoginScreen> {
         _moveFromField(event, up: _lastProfileFocus, down: _userFocus);
     _userFocus.onKeyEvent = (_, event) => _moveFromField(
       event,
-      up: _urlFocus,
       right: _passFocus,
       down: _submitFocus,
     );
     _passFocus.onKeyEvent = (_, event) => _moveFromField(
       event,
-      up: _urlFocus,
+      up: _userFocus,
       left: _userFocus,
       down: _submitFocus,
     );
     _submitFocus.onKeyEvent = (_, event) =>
-        _moveFromControl(event, up: _userFocus, down: _playlistFocus);
+        _moveFromControl(event, up: _passFocus);
     _playlistFocus.onKeyEvent = (_, event) => _moveFromControl(
       event,
       up: _submitFocus,
