@@ -80,7 +80,6 @@ class StremioSubtitleService {
         // Recover from malformed older storage with the built-in defaults.
       }
     }
-
     var changed = false;
     for (final seed in _defaultSubtitleAddons) {
       final index = stored.indexWhere(
@@ -96,12 +95,8 @@ class StremioSubtitleService {
       if (!_resourceNames(merged['resources']).contains('subtitles')) {
         merged['resources'] = seed['resources'];
       }
-      if ((merged['url'] ?? '').toString().trim().isEmpty) {
-        merged['url'] = seed['url'];
-      }
-      if ((merged['name'] ?? '').toString().trim().isEmpty) {
-        merged['name'] = seed['name'];
-      }
+      if ((merged['url'] ?? '').toString().trim().isEmpty) merged['url'] = seed['url'];
+      if ((merged['name'] ?? '').toString().trim().isEmpty) merged['name'] = seed['name'];
       if (merged['enabled'] is! bool) merged['enabled'] = true;
       if (jsonEncode(existing) != jsonEncode(merged)) {
         stored[index] = merged;
@@ -111,7 +106,6 @@ class StremioSubtitleService {
     if (changed || raw == null || raw.isEmpty) {
       await prefs.setString(_key, jsonEncode(stored));
     }
-
     final addons = stored.where((addon) {
       if (addon['enabled'] == false) return false;
       final resources = _resourceNames(addon['resources']);
@@ -209,6 +203,11 @@ class StremioSubtitleService {
   String _normaliseTitle(String value) =>
       value.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
 
+  bool _isImdbIdentity(String id) {
+    if (!id.startsWith('tt') || id.length < 9 || id.length > 12) return false;
+    return int.tryParse(id.substring(2)) != null;
+  }
+
   Future<Map<String, dynamic>?> _searchConfiguredIdentity(
     String query, {
     required bool series,
@@ -221,7 +220,6 @@ class StremioSubtitleService {
       if (raw == null || raw.isEmpty) return null;
       final decoded = jsonDecode(raw);
       if (decoded is! List) return null;
-
       final addons = decoded
           .whereType<Map>()
           .map((e) => Map<String, dynamic>.from(e))
@@ -234,74 +232,9 @@ class StremioSubtitleService {
       final candidates = batches.expand((batch) => batch).where((item) {
         final id = (item['id'] ?? '').toString();
         final type = (item['type'] ?? '').toString().toLowerCase();
-        return RegExp(r'^tt\d{7,10}
-    Map<String, dynamic> addon,
-    Map<String, dynamic> identity,
-    String language,
-  ) async {
-    try {
-      final baseValue = (addon['url'] ?? addon['manifestUrl'] ?? addon['transportUrl'] ?? '').toString().trim();
-      if (baseValue.isEmpty) return const [];
-      var baseUri = Uri.tryParse(baseValue);
-      if (baseUri == null || (baseUri.scheme != 'http' && baseUri.scheme != 'https')) {
-        return const [];
-      }
-      var path = baseUri.path;
-      if (path.endsWith('/manifest.json')) {
-        path = path.substring(0, path.length - '/manifest.json'.length);
-      } else {
-        path = path.replaceFirst(RegExp(r'/$'), '');
-      }
-      baseUri = baseUri.replace(path: path, query: null, fragment: null);
-      final resourceId = identity['type'] == 'series' && identity['season'] != null
-          ? '${identity['id']}:${identity['season']}:${identity['episode']}'
-          : identity['id'].toString();
-      final uri = baseUri.resolve('subtitles/${identity['type']}/${Uri.encodeComponent(resourceId)}.json');
-      final response = await _client.get(uri).timeout(_timeout);
-      if (response.statusCode < 200 || response.statusCode >= 300) return const [];
-      final body = jsonDecode(response.body);
-      final rows = body is Map && body['subtitles'] is List
-          ? body['subtitles'] as List
-          : const [];
-      final wanted = _normaliseLanguage(language);
-      final allLanguages = language.trim().toLowerCase() == 'all' || wanted == 'all';
-      final name = (addon['name'] ?? 'Stremio addon').toString();
-
-      return rows.whereType<Map>().where((subtitle) {
-        final lang = _normaliseLanguage((subtitle['lang'] ?? '').toString());
-        return allLanguages || lang == wanted || lang.startsWith('$wanted-');
-      }).map((subtitle) {
-        final url = (subtitle['url'] ?? '').toString();
-        final lang = (subtitle['lang'] ?? '').toString();
-        return StremioSubtitleResult(
-          id: (subtitle['id'] ?? url).toString(),
-          url: url,
-          language: lang,
-          label: (subtitle['label'] ?? lang).toString(),
-          addon: name,
-        );
-      }).where((subtitle) {
-        final uri = Uri.tryParse(subtitle.url);
-        return uri != null && (uri.scheme == 'http' || uri.scheme == 'https');
-      }).toList();
-    } catch (_) {
-      return const [];
-    }
-  }
-
-  Future<String> download(StremioSubtitleResult subtitle) async {
-    final response = await _client.get(Uri.parse(subtitle.url)).timeout(_timeout);
-    if (response.statusCode != 200) {
-      throw Exception('Subtitle download failed (${response.statusCode}).');
-    }
-    return utf8.decode(response.bodyBytes, allowMalformed: true);
-  }
-}
-).hasMatch(id) &&
-            (type == 'movie' || type == 'series');
+        return _isImdbIdentity(id) && (type == 'movie' || type == 'series');
       }).toList();
       if (candidates.isEmpty) return null;
-
       final queryKey = _normaliseTitle(query);
       candidates.sort((a, b) {
         final aKey = _normaliseTitle((a['name'] ?? '').toString());
@@ -350,7 +283,6 @@ class StremioSubtitleService {
       if (response.statusCode != 200) return const [];
       final manifest = jsonDecode(response.body);
       if (manifest is! Map || manifest['catalogs'] is! List) return const [];
-
       final manifestUri = Uri.parse(manifestUrl);
       final basePath = manifestUri.path.endsWith('/manifest.json')
           ? manifestUri.path.substring(0, manifestUri.path.length - '/manifest.json'.length)
@@ -427,7 +359,6 @@ class StremioSubtitleService {
         final extras = catalog['extra'] is List ? catalog['extra'] as List : const [];
         return extras.whereType<Map>().any((extra) => extra['name'] == 'search');
       }).toList(growable: false);
-
       final results = await Future.wait(catalogs.map((catalog) async {
         try {
           final type = (catalog['type'] ?? '').toString();
@@ -448,70 +379,7 @@ class StremioSubtitleService {
               'type': (meta['type'] ?? type).toString(),
               'name': (meta['name'] ?? meta['title'] ?? '').toString(),
             };
-          }).where((meta) => RegExp(r'^tt\d{7,10}
-    Map<String, dynamic> addon,
-    Map<String, dynamic> identity,
-    String language,
-  ) async {
-    try {
-      final baseValue = (addon['url'] ?? addon['manifestUrl'] ?? addon['transportUrl'] ?? '').toString().trim();
-      if (baseValue.isEmpty) return const [];
-      var baseUri = Uri.tryParse(baseValue);
-      if (baseUri == null || (baseUri.scheme != 'http' && baseUri.scheme != 'https')) {
-        return const [];
-      }
-      var path = baseUri.path;
-      if (path.endsWith('/manifest.json')) {
-        path = path.substring(0, path.length - '/manifest.json'.length);
-      } else {
-        path = path.replaceFirst(RegExp(r'/$'), '');
-      }
-      baseUri = baseUri.replace(path: path, query: null, fragment: null);
-      final resourceId = identity['type'] == 'series' && identity['season'] != null
-          ? '${identity['id']}:${identity['season']}:${identity['episode']}'
-          : identity['id'].toString();
-      final uri = baseUri.resolve('subtitles/${identity['type']}/${Uri.encodeComponent(resourceId)}.json');
-      final response = await _client.get(uri).timeout(_timeout);
-      if (response.statusCode < 200 || response.statusCode >= 300) return const [];
-      final body = jsonDecode(response.body);
-      final rows = body is Map && body['subtitles'] is List
-          ? body['subtitles'] as List
-          : const [];
-      final wanted = _normaliseLanguage(language);
-      final allLanguages = language.trim().toLowerCase() == 'all' || wanted == 'all';
-      final name = (addon['name'] ?? 'Stremio addon').toString();
-
-      return rows.whereType<Map>().where((subtitle) {
-        final lang = _normaliseLanguage((subtitle['lang'] ?? '').toString());
-        return allLanguages || lang == wanted || lang.startsWith('$wanted-');
-      }).map((subtitle) {
-        final url = (subtitle['url'] ?? '').toString();
-        final lang = (subtitle['lang'] ?? '').toString();
-        return StremioSubtitleResult(
-          id: (subtitle['id'] ?? url).toString(),
-          url: url,
-          language: lang,
-          label: (subtitle['label'] ?? lang).toString(),
-          addon: name,
-        );
-      }).where((subtitle) {
-        final uri = Uri.tryParse(subtitle.url);
-        return uri != null && (uri.scheme == 'http' || uri.scheme == 'https');
-      }).toList();
-    } catch (_) {
-      return const [];
-    }
-  }
-
-  Future<String> download(StremioSubtitleResult subtitle) async {
-    final response = await _client.get(Uri.parse(subtitle.url)).timeout(_timeout);
-    if (response.statusCode != 200) {
-      throw Exception('Subtitle download failed (${response.statusCode}).');
-    }
-    return utf8.decode(response.bodyBytes, allowMalformed: true);
-  }
-}
-).hasMatch(meta['id'] as String))
+          }).where((meta) => _isImdbIdentity(meta['id'] as String))
               .toList(growable: false);
         } catch (_) {
           return const <Map<String, dynamic>>[];
