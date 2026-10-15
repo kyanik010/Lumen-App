@@ -2807,9 +2807,12 @@ class _PlayerHostState extends State<PlayerHost> {
       _subResults = [];
     });
     try {
-      final isSeries = RegExp(r'(?:S\d{1,2}E\d{1,3}|\d{1,2}x\d{1,3})', caseSensitive: false).hasMatch(_item.title);
+      final isSeries =
+          RegExp(r'(?:S\d{1,2}E\d{1,3}|\d{1,2}x\d{1,3})', caseSensitive: false)
+              .hasMatch(_item.title) ||
+          (_item.progressKey?.startsWith('ep:') ?? false);
       final addonResults = await StremioSubtitleService.instance.search(
-        title: _item.title,
+        title: q,
         language: _subLang,
         series: isSeries,
       );
