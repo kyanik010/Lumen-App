@@ -12,6 +12,7 @@ import '../android_subtitle_picker.dart';
 import '../device_profile.dart';
 import '../library.dart';
 import '../opensubtitles.dart';
+import '../services/stremio_subtitle_service.dart';
 import '../pip.dart';
 import '../playback.dart';
 import '../player_chrome.dart';
@@ -277,6 +278,7 @@ class _PlayerHostState extends State<PlayerHost> {
   String? _appliedSubName; // label of an applied online or local subtitle
   SubtitleTrack? _appliedSubTrack;
   List<SubResult> _subResults = [];
+  List<StremioSubtitleResult> _stremioSubResults = [];
   final TextEditingController _subQueryCtrl = TextEditingController();
 
   // hold-to-speed
@@ -952,6 +954,7 @@ class _PlayerHostState extends State<PlayerHost> {
     _appliedSubTrack = null;
     _subtitlesDisabled = false;
     _subResults = [];
+    _stremioSubResults = [];
     _subQueryCtrl.text = _subCleanTitle(pc.item.title);
     pc.player?.setRate(1.0);
   }
@@ -2804,21 +2807,35 @@ class _PlayerHostState extends State<PlayerHost> {
       _subResults = [];
     });
     try {
-      final r = await OpenSubs.search(q, lang: _subLang);
+      final isSeries = RegExp(r'(?:S\d{1,2}E\d{1,3}|\d{1,2}x\d{1,3})', caseSensitive: false).hasMatch(_item.title);
+      final addonResults = await StremioSubtitleService.instance.search(
+        title: q,
+        language: _subLang,
+        series: isSeries,
+      );
+      List<SubResult> openResults = const [];
+      String? openError;
+      if (OpenSubs.isConfigured) {
+        try {
+          openResults = await OpenSubs.search(q, lang: _subLang);
+        } on OpenSubtitlesException catch (e) {
+          openError = e.message;
+        }
+      }
       if (!mounted) return;
       setState(() {
-        _subResults = r;
+        _stremioSubResults = addonResults;
+        _subResults = openResults;
         _subBusy = false;
-        if (r.isEmpty) _subError = 'No subtitles found.';
+        if (addonResults.isEmpty && openResults.isEmpty) {
+          _subError = openError ?? 'No subtitles found in enabled Stremio addons.';
+        }
       });
     } catch (e) {
-      if (mounted)
-        setState(() {
-          _subBusy = false;
-          _subError = e is OpenSubtitlesException
-              ? e.message
-              : 'Search failed. Check your connection.';
-        });
+      if (mounted) setState(() {
+        _subBusy = false;
+        _subError = 'Subtitle search failed. Check the connection or enabled Addons.';
+      });
     }
   }
 
@@ -2854,6 +2871,33 @@ class _PlayerHostState extends State<PlayerHost> {
               ? e.message
               : 'Couldn’t load that subtitle. Try another.';
         });
+    }
+  }
+
+  Future<void> _applyStremioSub(StremioSubtitleResult subtitle) async {
+    if (_subBusy) return;
+    setState(() { _subBusy = true; _subError = null; });
+    try {
+      final data = await StremioSubtitleService.instance.download(subtitle);
+      final track = SubtitleTrack.data(
+        data,
+        title: '${subtitle.addon} · ${subtitle.label}',
+        language: subtitle.language.isEmpty ? null : subtitle.language,
+      );
+      await pc.player!.setSubtitleTrack(track);
+      if (!mounted) return;
+      setState(() {
+        _appliedSubName = '${subtitle.addon} · ${subtitle.label}';
+        _appliedSubTrack = track;
+        _subtitlesDisabled = false;
+        _subBusy = false;
+      });
+      _closePanel();
+    } catch (_) {
+      if (mounted) setState(() {
+        _subBusy = false;
+        _subError = 'Could not download/apply this addon subtitle. Try another result.';
+      });
     }
   }
 
@@ -3067,8 +3111,7 @@ class _PlayerHostState extends State<PlayerHost> {
               style: TextStyle(color: Colors.white54, fontSize: 12),
             ),
           ),
-        if (OpenSubs.isConfigured)
-          ListTile(
+        ListTile(
             onTap: () => setState(() => _subsOnline = !_subsOnline),
             leading: Icon(Icons.travel_explore_rounded, color: accent),
             title: const Text(
@@ -3082,15 +3125,7 @@ class _PlayerHostState extends State<PlayerHost> {
               color: Colors.white54,
             ),
           ),
-        if (!OpenSubs.isConfigured)
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 4, 20, 8),
-            child: Text(
-              'Online subtitle search is not available in this build.',
-              style: TextStyle(color: Colors.white54, fontSize: 12),
-            ),
-          ),
-        if (OpenSubs.isConfigured && _subsOnline) _subsOnlinePanel(),
+        if (_subsOnline) _subsOnlinePanel(),
         const SizedBox(height: 12),
       ],
     );
@@ -3203,7 +3238,19 @@ class _PlayerHostState extends State<PlayerHost> {
                 style: const TextStyle(color: Colors.white54, fontSize: 13),
               ),
             )
-          else
+          else ...[
+            for (final s in _stremioSubResults.take(40))
+              ListTile(
+                dense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                onTap: () => _applyStremioSub(s),
+                leading: Icon(Icons.extension_rounded, color: accent, size: 20),
+                title: Text(s.label.isEmpty ? s.language : s.label,
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                subtitle: Text('Stremio · ${s.addon} · ${s.language}',
+                  style: const TextStyle(color: Colors.white38, fontSize: 11.5)),
+              ),
             for (final s in _subResults.take(20))
               ListTile(
                 dense: true,
@@ -3232,6 +3279,7 @@ class _PlayerHostState extends State<PlayerHost> {
                   style: const TextStyle(color: Colors.white38, fontSize: 11.5),
                 ),
               ),
+          ],
           Padding(
             padding: const EdgeInsets.only(top: 8, bottom: 4),
             child: Text(
