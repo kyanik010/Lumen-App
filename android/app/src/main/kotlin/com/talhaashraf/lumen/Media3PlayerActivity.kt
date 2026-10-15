@@ -2939,7 +2939,7 @@ class Media3PlayerActivity : Activity() {
         val offsetMs = subtitleSyncMs
         if (offsetMs == 0L) return
         val source = file.readText(Charsets.UTF_8)
-        val timestamp = Regex("""(?<![\\d:])(\\d{2,}:\\d{2}:\\d{2})[,.](\\d{3})(?!\\d)""")
+        val timestamp = Regex("""(?<![\d:])(\d{2,}:\d{2}:\d{2})[,.](\d{3})(?!\d)""")
         val shifted = timestamp.replace(source) { match ->
             val parts = match.groupValues[1].split(":").mapNotNull { it.toLongOrNull() }
             if (parts.size != 3) return@replace match.value
