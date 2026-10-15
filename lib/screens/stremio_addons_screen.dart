@@ -16,7 +16,28 @@ class StremioAddonsScreen extends StatefulWidget {
 class _StremioAddonsScreenState extends State<StremioAddonsScreen> {
   static const _storageKey = 'eagle_x_stremio_addons_v1';
   static const _officialUrl = 'https://api.strem.io/addonscollection.json';
-  static const _communityUrl = 'https://stremio-addons.net/api/v0/addons?page=1&limit=100';
+  static const _communityUrl = 'https://stremio-addons.net/api/v0/addons?sort_by=stars&order=desc&limit=100&page=1';
+  static const _legacyCommunityUrl = 'https://stremio-addons.com/addon_catalog/all/community.json';
+  static const _defaultAddons = <Map<String, dynamic>>[
+    {
+      'id': 'com.linvo.cinemeta', 'name': 'Cinemeta', 'version': '3.0.14',
+      'description': 'The official addon for movie and series catalogs',
+      'url': 'https://v3-cinemeta.strem.io/manifest.json',
+      'types': ['movie', 'series'], 'resources': ['catalog', 'meta', 'addon_catalog'], 'enabled': true,
+    },
+    {
+      'id': 'org.stremio.opensubtitlesv3', 'name': 'OpenSubtitles V3', 'version': '1.0.0',
+      'description': 'Official OpenSubtitles v3 subtitle addon',
+      'url': 'https://opensubtitles-v3.strem.io/manifest.json',
+      'types': ['movie', 'series'], 'resources': ['subtitles'], 'enabled': true,
+    },
+    {
+      'id': 'opensubtitles-pro', 'name': 'OpenSubtitles PRO', 'version': '0.1.0',
+      'description': 'Community subtitle addon',
+      'url': 'https://opensubtitlesv3-pro.dexter21767.com/manifest.json',
+      'types': ['movie', 'series'], 'resources': ['subtitles'], 'enabled': true,
+    },
+  ];
   final _search = TextEditingController();
   final _url = TextEditingController();
   final _client = http.Client();
@@ -50,7 +71,19 @@ class _StremioAddonsScreenState extends State<StremioAddonsScreen> {
       try {
         final parsed = (jsonDecode(raw) as List).whereType<Map>().map((e) =>
           Map<String, dynamic>.from(e)).toList();
-        if (mounted) setState(() => _installed = parsed);
+        final merged = [...parsed];
+        for (final seed in _defaultAddons) {
+          if (!merged.any((e) => e['id'] == seed['id'] || e['url'] == seed['url'])) {
+            merged.add(Map<String, dynamic>.from(seed));
+          }
+        }
+        if (merged.length != parsed.length) {
+          _installed = merged;
+          await prefs.setString(_storageKey, jsonEncode(_installed));
+        } else {
+          _installed = parsed;
+        }
+        if (mounted) setState(() {});
       } catch (_) {}
     }
   }
@@ -85,7 +118,7 @@ class _StremioAddonsScreenState extends State<StremioAddonsScreen> {
   }
 
   Future<List<Map<String, dynamic>>> _getJsonList(String url) async {
-    final response = await _client.get(Uri.parse(url)).timeout(const Duration(seconds: 15));
+    final response = await _client.get(Uri.parse(url)).timeout(const Duration(seconds: 25));
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('HTTP ${response.statusCode}');
     }
@@ -99,10 +132,15 @@ class _StremioAddonsScreenState extends State<StremioAddonsScreen> {
   Future<void> _loadMarket() async {
     if (mounted) setState(() { _loading = true; _error = null; });
     try {
-      final results = await Future.wait([
-        _getJsonList(_officialUrl),
-        _getJsonList(_communityUrl),
-      ]);
+      final officialFuture = _getJsonList(_officialUrl);
+      Future<List<Map<String, dynamic>>> communityFuture() async {
+        try {
+          final first = await _getJsonList(_communityUrl);
+          if (first.isNotEmpty) return first;
+        } catch (_) {}
+        return _getJsonList(_legacyCommunityUrl);
+      }
+      final results = await Future.wait([officialFuture, communityFuture()]);
       if (!mounted) return;
       setState(() {
         _official = results[0];
@@ -139,13 +177,146 @@ class _StremioAddonsScreenState extends State<StremioAddonsScreen> {
         throw Exception('رابط Manifest غير صالح');
       }
       // Validate the actual manifest endpoint before saving it.
-      final response = await _client.get(uri).timeout(const Duration(seconds: 15));
+      final response = await _client.get(uri).timeout(const Duration(seconds: 30));
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw Exception('تعذر قراءة Manifest (${response.statusCode})');
       }
       final manifest = jsonDecode(response.body);
       if (manifest is! Map || manifest['id'] == null || manifest['name'] == null) {
         throw Exception('بيانات Manifest غير مكتملة');
+      }
+      final hints = manifest['behaviorHints'];
+      final configRequired = hints is Map && hints['configurationRequired'] == true;
+      if (configRequired || uri.toString().contains('/[config]/')) {
+        final configureUrl = uri.toString().replaceFirst('/[config]', '').replaceFirst(RegExp(r'/manifest\.json
+      final entry = Map<String, dynamic>.from(item);
+      entry['id'] = manifest['id'].toString();
+      entry['name'] = manifest['name'].toString();
+      entry['description'] = manifest['description']?.toString() ?? '';
+      entry['version'] = manifest['version']?.toString() ?? '';
+      entry['logo'] = manifest['logo']?.toString() ?? '';
+      entry['types'] = _stringList(manifest['types']);
+      entry['resources'] = _stringList(manifest['resources']);
+      entry['enabled'] = true;
+      _installed.add(entry);
+      await _save();
+      if (mounted) {
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم تثبيت ${entry['name']}')));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('لم يتم التثبيت: $e')));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _addByUrl() async {
+    final value = _url.text.trim();
+    if (value.isEmpty) return;
+    final uri = Uri.tryParse(value);
+    if (uri == null || !uri.hasScheme || (uri.scheme != 'https' && uri.scheme != 'http')) {
+      setState(() => _error = 'أدخل رابط Manifest صالحًا يبدأ بـ https:// أو http://');
+      return;
+    }
+    await _install({
+      'id': value, 'name': value, 'description': '', 'version': '',
+      'logo': '', 'url': value, 'types': <String>[], 'resources': <String>[],
+      'enabled': true,
+    });
+    _url.clear();
+  }
+
+  Future<void> _toggle(Map<String, dynamic> item) async {
+    item['enabled'] = !(item['enabled'] == true);
+    await _save();
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _remove(Map<String, dynamic> item) async {
+    _installed.remove(item);
+    await _save();
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Text('Stremio', style: theme.textTheme.titleLarge),
+      const SizedBox(height: 6),
+      Text('ابحث عن الإضافات الرسمية والمجتمعية وثبّتها وأدر إضافاتك المثبّتة.',
+        style: theme.textTheme.bodyMedium),
+      const SizedBox(height: 16),
+      RemoteTextInput(child: TextField(
+        controller: _search,
+        onChanged: (_) => setState(() {}),
+        decoration: const InputDecoration(
+          prefixIcon: Icon(Icons.search), hintText: 'البحث عن إضافة...',
+          border: OutlineInputBorder()),
+      )),
+      const SizedBox(height: 12),
+      SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: [
+        for (final entry in const [
+          ('installed', 'المثبتة'), ('official', 'الرسمية'), ('community', 'المجتمع')
+        ]) Padding(padding: const EdgeInsets.only(right: 8), child: ChoiceChip(
+          label: Text(entry.$2), selected: _tab == entry.$1,
+          onSelected: (_) => setState(() => _tab = entry.$1))),
+      ])),
+      if (_tab != 'installed') ...[
+        const SizedBox(height: 12),
+        RemoteTextInput(child: TextField(controller: _url, decoration: const InputDecoration(
+          labelText: 'رابط Manifest لإضافة أخرى', hintText: 'https://example.com/manifest.json',
+          border: OutlineInputBorder()))),
+        Align(alignment: Alignment.centerRight, child: TextButton.icon(
+          onPressed: _busy ? null : _addByUrl,
+          icon: const Icon(Icons.add_link), label: const Text('تثبيت من الرابط'))),
+      ],
+      if (_loading) const Padding(padding: EdgeInsets.all(24),
+        child: Center(child: CircularProgressIndicator())),
+      if (_error != null) Padding(padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Text(_error!, style: TextStyle(color: theme.colorScheme.error))),
+      if (!_loading && _visible.isEmpty) Padding(padding: const EdgeInsets.all(20),
+        child: Text(_tab == 'installed' ? 'لا توجد إضافات مثبتة بعد.' : 'لا توجد نتائج مطابقة.',
+          textAlign: TextAlign.center)),
+      for (final item in _visible) Card(
+        child: Padding(padding: const EdgeInsets.all(12), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          if ((item['logo'] ?? '').toString().isNotEmpty)
+            ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.network(
+              item['logo'].toString(), width: 42, height: 42, fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const Icon(Icons.extension, size: 36)))
+          else const Icon(Icons.extension, size: 36),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(item['name']?.toString() ?? 'Addon', style: theme.textTheme.titleMedium),
+            if ((item['version'] ?? '').toString().isNotEmpty)
+              Text('v${item['version']}', style: theme.textTheme.labelSmall),
+            if ((item['description'] ?? '').toString().isNotEmpty)
+              Padding(padding: const EdgeInsets.only(top: 4),
+                child: Text(item['description'].toString())),
+            if ((item['resources'] as List? ?? []).isNotEmpty)
+              Padding(padding: const EdgeInsets.only(top: 4),
+                child: Text('الموارد: ${(item['resources'] as List).join(', ')}',
+                  style: theme.textTheme.labelSmall)),
+          ])),
+          if (_tab == 'installed') PopupMenuButton<String>(
+            onSelected: (v) => v == 'toggle' ? _toggle(item) : _remove(item),
+            itemBuilder: (_) => [
+              PopupMenuItem(value: 'toggle', child: Text(item['enabled'] == true ? 'تعطيل' : 'تفعيل')),
+              const PopupMenuItem(value: 'remove', child: Text('إزالة')),
+            ],
+            icon: const Icon(Icons.more_vert))
+          else IconButton(
+            tooltip: _isInstalled(item) ? 'مثبتة' : 'تثبيت',
+            onPressed: _busy || _isInstalled(item) ? null : () => _install(item),
+            icon: Icon(_isInstalled(item) ? Icons.check_circle : Icons.download))
+        ]))),
+    ]);
+  }
+}
+), '') + '/configure';
+        throw Exception('هذه الإضافة تحتاج إعدادًا قبل التثبيت. افتح صفحة الإعداد: $configureUrl');
       }
       final entry = Map<String, dynamic>.from(item);
       entry['id'] = manifest['id'].toString();
