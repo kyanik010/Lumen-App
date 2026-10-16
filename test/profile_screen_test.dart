@@ -234,7 +234,7 @@ void main() {
     );
     accountEntry.requestFocus();
     await tester.pump();
-    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
     await tester.pump();
     expect(
       FocusManager.instance.primaryFocus?.debugLabel,
@@ -358,7 +358,7 @@ void main() {
       await tester.pump();
       expect(
         FocusManager.instance.primaryFocus?.debugLabel,
-        'Remove account Bedroom',
+        'Edit service Bedroom',
       );
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
       await tester.pump();
