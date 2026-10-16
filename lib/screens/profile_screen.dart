@@ -400,6 +400,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await widget.onServicesChanged?.call();
   }
 
+  // ignore: unused_element
   Future<void> _edit(XtreamCredentials profile) async {
     if (profile.isDemo) return;
     final replacement = await showDialog<XtreamCredentials>(
@@ -1636,6 +1637,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final key = _profileKey(p);
     final switchFocus = _profileSwitchFocus[key]!;
     final combineFocus = _profileCombineFocus[key]!;
+    // ignore: unused_local_variable
     final editFocus = _profileEditFocus[key]!;
     final deleteFocus = _profileDeleteFocus[key]!;
     FocusNode? switchAt(int target) => target >= 0 && target < profiles.length
@@ -1647,6 +1649,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     FocusNode? combineAt(int target) => target >= 0 && target < profiles.length
         ? _profileCombineFocus[_profileKey(profiles[target])]
         : null;
+    // ignore: unused_element
     FocusNode? editAt(int target) => target >= 0 && target < profiles.length
         ? _profileEditFocus[_profileKey(profiles[target])]
         : null;
