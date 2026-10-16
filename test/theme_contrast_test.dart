@@ -4,6 +4,14 @@ import 'package:lumen_tv/main.dart';
 import 'package:lumen_tv/theme.dart';
 
 void main() {
+  test('Eagle X defaults to royal navy and solar gold', () {
+    expect(defaultAccent, const Color(0xFFD7AD5A));
+    expect(accentSchemes.first.name, 'Solar gold');
+    expect(darkPaletteFor(defaultAccent).bg, const Color(0xFF243858));
+    expect(darkPaletteFor(defaultAccent).accent, const Color(0xFFD7AD5A));
+    expect(darkPaletteFor(defaultAccent).surfaceHi, const Color(0xFF304667));
+  });
+
   test('ships five distinct named accent directions', () {
     expect(accentSchemes, hasLength(5));
     expect(accentSchemes.first.color, defaultAccent);
