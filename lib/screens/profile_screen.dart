@@ -78,7 +78,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _fontEntryFocus = FocusNode(debugLabel: 'Lumen font');
   final _cornerEntryFocus = FocusNode(debugLabel: 'Crisp corners');
   final _focusStyleEntryFocus = FocusNode(debugLabel: 'Outline focus');
-  final _accentEntryFocus = FocusNode(debugLabel: 'Signal lime accent');
+  final _accentEntryFocus = FocusNode(debugLabel: 'Solar gold accent');
   final _playbackModeFocus = FocusNode(debugLabel: 'وضع البث المباشر');
   final _insightsFocus = FocusNode(debugLabel: 'Watch insights');
   final _downloadsFocus = FocusNode(debugLabel: 'Downloads');
