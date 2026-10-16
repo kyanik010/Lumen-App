@@ -83,7 +83,7 @@ void main() {
       MyListScreen(client: testClient()),
       const Size(390, 844),
     );
-    expect(find.text('My list'), findsOneWidget);
+    expect(find.text('قائمتي'), findsOneWidget);
     expect(find.text('Save the good stuff'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
@@ -106,12 +106,12 @@ void main() {
       MyListScreen(client: testClient()),
       const Size(1280, 900),
     );
-    expect(find.text('Saved for later'), findsOneWidget);
+    expect(find.text('محفوظ لوقت لاحق'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await pumpAt(tester, const LegalScreen(), const Size(1280, 900));
     expect(find.text('Clear terms, private by design'), findsOneWidget);
-    expect(find.text('THE IMPORTANT PARTS'), findsOneWidget);
+    expect(find.text('المعلومات المهمة'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await disposeUi(tester);
   });
@@ -119,9 +119,10 @@ void main() {
   testWidgets('sign in becomes a two-pane welcome on TV', (tester) async {
     await pumpAt(tester, LoginScreen(onLogin: (_) {}), const Size(1280, 900));
     await tester.pump();
-    expect(find.text('Your screen.\nYour signal.'), findsOneWidget);
-    expect(find.text('Welcome to Lumen'), findsOneWidget);
-    expect(find.text('Enter Lumen'), findsOneWidget);
+    expect(find.text('EAGLE X'), findsOneWidget);
+    expect(find.text('LIVE · FILMS · SERIES'), findsOneWidget);
+    expect(find.text('تسجيل الدخول'), findsNWidgets(2));
+    expect(find.byType(TextField), findsNWidgets(2));
     expect(tester.takeException(), isNull);
     await disposeUi(tester);
   });
@@ -136,7 +137,7 @@ void main() {
       const Size(1280, 900),
     );
     await tester.pump();
-    expect(find.text('Build your own front row'), findsOneWidget);
+    expect(find.text('اختر المجموعات التي تريد عرضها في الرئيسية.'), findsOneWidget);
     expect(find.text('New cinema'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
@@ -161,7 +162,7 @@ void main() {
 
     await tester.tap(find.text('New cinema'));
     await tester.pump();
-    await tester.tap(find.text('Series'));
+    await tester.tap(find.text('المسلسلات'));
     await tester.pump();
     await tester.tap(find.text('Prestige drama'));
     await tester.pump();
@@ -173,8 +174,8 @@ void main() {
     await tester.tap(find.textContaining('tap to reorder or remove'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
-    await tester.ensureVisible(find.byTooltip('Move up').last);
-    await tester.tap(find.byTooltip('Move up').last);
+    await tester.ensureVisible(find.byTooltip('تحريك للأعلى').last);
+    await tester.tap(find.byTooltip('تحريك للأعلى').last);
     await tester.pump();
     expect(HomeConfig.instance.shelves.map((s) => s.name).toList(), [
       'Prestige drama',

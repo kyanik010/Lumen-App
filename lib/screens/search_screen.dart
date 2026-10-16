@@ -96,7 +96,7 @@ class SearchScreen extends StatefulWidget {
 class SearchScreenState extends State<SearchScreen>
     with AutomaticKeepAliveClientMixin {
   final _ctrl = TextEditingController();
-  final _searchFocus = FocusNode(debugLabel: 'Search library');
+  final _searchFocus = FocusNode(debugLabel: 'البحث في المكتبة');
   final List<FocusNode> _sectionFocus = List.generate(
     4,
     (index) => FocusNode(
@@ -104,16 +104,16 @@ class SearchScreenState extends State<SearchScreen>
           'Search section ${const ['all', 'movie', 'series', 'live'][index]}',
     ),
   );
-  final _categoryButtonFocus = FocusNode(debugLabel: 'Search category');
+  final _categoryButtonFocus = FocusNode(debugLabel: 'البحث في التصنيفات');
   final _categoryMenuKey = GlobalKey<PopupMenuButtonState<String>>();
-  final _sortFocus = FocusNode(debugLabel: 'Catalog sort');
-  final _sourceFocus = FocusNode(debugLabel: 'Catalog service filter');
+  final _sortFocus = FocusNode(debugLabel: 'ترتيب المكتبة');
+  final _sourceFocus = FocusNode(debugLabel: 'تصفية الخدمات');
   final _guideFocus = FocusNode(debugLabel: 'Open TV guide');
   final _sortMenuKey = GlobalKey<PopupMenuButtonState<String>>();
   final _sourceMenuKey = GlobalKey<PopupMenuButtonState<String>>();
   final _gridScroll = ScrollController();
   final _categoryScroll = ScrollController();
-  final _categoryScope = FocusScopeNode(debugLabel: 'Catalog categories');
+  final _categoryScope = FocusScopeNode(debugLabel: 'تصنيفات المكتبة');
   final _gridScope = FocusScopeNode(debugLabel: 'Catalog content grid');
   final List<FocusNode> _gridFocus = <FocusNode>[];
   final Map<String, FocusNode> _categoryFocus = <String, FocusNode>{};
@@ -372,7 +372,7 @@ class SearchScreenState extends State<SearchScreen>
 
   void _requestVisibleCategoryFocus() {
     final categories = <(String, String)>[
-      ('all', 'All categories'),
+      ('all', 'كل التصنيفات'),
       for (final c in _curCats) (c.id, c.name),
     ];
     final index = categories.indexWhere((category) => category.$1 == _cat);
@@ -1472,7 +1472,7 @@ class SearchScreenState extends State<SearchScreen>
         client: widget.client,
         repository: _epg,
         channels: List.unmodifiable(channels),
-        title: _catLabel == 'All categories' ? 'TV Guide' : _catLabel,
+        title: _catLabel == 'كل التصنيفات' ? 'دليل التلفاز' : _catLabel,
       ),
     );
   }
@@ -1500,7 +1500,7 @@ class SearchScreenState extends State<SearchScreen>
     for (final category in _rawCurCats) {
       if (category.sourceScope.isEmpty) continue;
       sources[category.sourceScope] = category.sourceLabel.isEmpty
-          ? 'IPTV service'
+          ? 'خدمة IPTV'
           : category.sourceLabel;
     }
     return sources.entries.map((entry) => (entry.key, entry.value)).toList()
@@ -1549,11 +1549,11 @@ class SearchScreenState extends State<SearchScreen>
   };
 
   String get _catLabel {
-    if (_cat == 'all') return 'All categories';
+    if (_cat == 'all') return 'كل التصنيفات';
     return _curCats
         .firstWhere(
           (c) => c.id == _cat,
-          orElse: () => Category('all', 'All categories'),
+          orElse: () => Category('all', 'كل التصنيفات'),
         )
         .name;
   }
@@ -1564,10 +1564,10 @@ class SearchScreenState extends State<SearchScreen>
   bool get _epgEnabled => !DeviceProfile.isMobileApp;
 
   String get _sectionTitle => switch (_section) {
-    'movie' => 'Movies',
-    'series' => 'Series',
-    'live' => 'Live TV',
-    _ => 'Browse',
+    'movie' => 'الأفلام',
+    'series' => 'المسلسلات',
+    'live' => 'التلفاز المباشر',
+    _ => 'تصفح',
   };
 
   @override
@@ -1662,7 +1662,7 @@ class SearchScreenState extends State<SearchScreen>
                   ? _openGuide
                   : null,
               icon: const Icon(Icons.calendar_view_week_rounded, size: 18),
-              label: const Text('Guide'),
+              label: const Text('الدليل'),
             ),
           ],
         ],
@@ -1679,7 +1679,7 @@ class SearchScreenState extends State<SearchScreen>
     onSubmitted: _onQuerySubmitted,
     trailing: _q.isNotEmpty
         ? RemoteTap(
-            semanticLabel: 'Clear search',
+            semanticLabel: 'مسح البحث',
             focusRadius: 18,
             onTap: () => _changeResults(() {
               _queryTimer?.cancel();
@@ -1786,9 +1786,9 @@ class SearchScreenState extends State<SearchScreen>
 
   Widget _sectionChips() {
     const items = [
-      (id: 'all', label: 'All'),
-      (id: 'movie', label: 'Movies'),
-      (id: 'series', label: 'Series'),
+      (id: 'all', label: 'الكل'),
+      (id: 'movie', label: 'الأفلام'),
+      (id: 'series', label: 'المسلسلات'),
       (id: 'live', label: 'Live'),
     ];
     return SizedBox(
@@ -1835,9 +1835,9 @@ class SearchScreenState extends State<SearchScreen>
   }
 
   static const _sortLabels = {
-    'default': 'Default',
-    'az': 'A–Z',
-    'za': 'Z–A',
+    'default': 'الافتراضي',
+    'az': 'أ–ي',
+    'za': 'ي–أ',
     'rating': 'Top rated',
     'recent': 'Recently added',
     'year': 'Newest',
@@ -1870,7 +1870,7 @@ class SearchScreenState extends State<SearchScreen>
       child: ExcludeFocus(
         child: PopupMenuButton<String>(
           key: _sourceMenuKey,
-          tooltip: 'Filter by service',
+          tooltip: 'تصفية حسب الخدمة',
           color: surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(lumenCorner(16)),
@@ -1878,7 +1878,7 @@ class SearchScreenState extends State<SearchScreen>
           ),
           onSelected: _selectSource,
           itemBuilder: (_) => [
-            _sourceItem('all', 'All services'),
+            _sourceItem('all', 'كل الخدمات'),
             for (final source in _sources) _sourceItem(source.$1, source.$2),
           ],
           child: AnimatedScale(
@@ -1915,7 +1915,7 @@ class SearchScreenState extends State<SearchScreen>
                     ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 140),
                       child: Text(
-                        selected ?? 'All services',
+                        selected ?? 'كل الخدمات',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -1992,7 +1992,7 @@ class SearchScreenState extends State<SearchScreen>
       child: ExcludeFocus(
         child: PopupMenuButton<String>(
           key: _sortMenuKey,
-          tooltip: 'Sort',
+          tooltip: 'ترتيب',
           color: surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(lumenCorner(16)),
@@ -2060,7 +2060,7 @@ class SearchScreenState extends State<SearchScreen>
                   const SizedBox(width: 6),
                   Text(
                     !isWide(context) || _sort == 'default'
-                        ? 'Sort'
+                        ? 'ترتيب'
                         : _sortLabels[_sort]!,
                     style: TextStyle(
                       fontWeight: FontWeight.w500,
@@ -2100,7 +2100,7 @@ class SearchScreenState extends State<SearchScreen>
       child: ExcludeFocus(
         child: PopupMenuButton<String>(
           key: _categoryMenuKey,
-          tooltip: 'Category',
+          tooltip: 'التصنيف',
           color: surface,
           constraints: const BoxConstraints(minWidth: 260, maxHeight: 460),
           shape: RoundedRectangleBorder(
@@ -2109,7 +2109,7 @@ class SearchScreenState extends State<SearchScreen>
           ),
           onSelected: (v) => _selectCategory(v, restoreCategoryFocus: false),
           itemBuilder: (_) => [
-            _catItem('all', 'All categories'),
+            _catItem('all', 'كل التصنيفات'),
             for (final c in _curCats) _catItem(c.id, c.name),
           ],
           child: AnimatedScale(
@@ -2197,7 +2197,7 @@ class SearchScreenState extends State<SearchScreen>
   // Desktop browse: a persistent category list beside the grid (no sheet).
   Widget _catSidebar() {
     final cats = <(String, String)>[
-      ('all', 'All categories'),
+      ('all', 'كل التصنيفات'),
       for (final c in _curCats) (c.id, c.name),
     ];
     return FocusScope(
@@ -2217,7 +2217,7 @@ class SearchScreenState extends State<SearchScreen>
               if (index == 0) {
                 return Padding(
                   padding: const EdgeInsets.fromLTRB(12, 6, 12, 10),
-                  child: Text('CATEGORIES', style: kSection()),
+                  child: Text('التصنيفات', style: kSection()),
                 );
               }
               final categoryIndex = index - 1;
@@ -2354,8 +2354,8 @@ class SearchScreenState extends State<SearchScreen>
         return _empty('No results for “$_q”.');
       }
       final groups = <({String id, String title, List<_Res> items})>[
-        if (mr.isNotEmpty) (id: 'movie', title: 'Movies', items: mr),
-        if (sr.isNotEmpty) (id: 'series', title: 'Series', items: sr),
+        if (mr.isNotEmpty) (id: 'movie', title: 'الأفلام', items: mr),
+        if (sr.isNotEmpty) (id: 'series', title: 'المسلسلات', items: sr),
         if (lr.isNotEmpty) (id: 'live', title: 'Channels', items: lr),
       ];
       _visibleSearchGroups = [for (final group in groups) group.id];
@@ -2367,13 +2367,13 @@ class SearchScreenState extends State<SearchScreen>
         padding: EdgeInsets.only(top: 12, bottom: pageScrollBottom(context)),
         children: [
           if (movies == null)
-            _loadingSearchGroup('Movies', live: false)
+            _loadingSearchGroup('الأفلام', live: false)
           else if (mr.isNotEmpty)
-            _group('movie', 'Movies', mr),
+            _group('movie', 'الأفلام', mr),
           if (series == null)
-            _loadingSearchGroup('Series', live: false)
+            _loadingSearchGroup('المسلسلات', live: false)
           else if (sr.isNotEmpty)
-            _group('series', 'Series', sr),
+            _group('series', 'المسلسلات', sr),
           if (live == null)
             _loadingSearchGroup('Channels', live: true)
           else if (lr.isNotEmpty)

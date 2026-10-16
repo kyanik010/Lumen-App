@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:window_manager/window_manager.dart';
+import 'app_locale.dart';
 import 'catalog_cache.dart';
 import 'demo_catalog.dart';
 import 'downloads.dart';
@@ -23,12 +25,10 @@ import 'stats.dart';
 import 'store.dart';
 import 'viewing_profiles.dart';
 import 'library.dart';
-import 'legal.dart';
 import 'theme.dart';
 import 'widgets.dart';
 import 'xtream.dart';
 import 'screens/login_screen.dart';
-import 'screens/legal_screen.dart';
 import 'screens/player_host.dart';
 import 'screens/shell.dart';
 import 'screens/splash_screen.dart';
@@ -36,6 +36,7 @@ import 'screens/viewer_picker_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AppLocaleController.instance.initialize();
   final previousFlutterError = FlutterError.onError;
   FlutterError.onError = (details) {
     AppDiagnostics.instance.record(
@@ -132,12 +133,22 @@ class LumenApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       // Rebuild on theme-mode AND accent-colour changes.
-      animation: ThemeController.instance.listenable,
+      animation: Listenable.merge([
+        ThemeController.instance.listenable,
+        AppLocaleController.instance,
+      ]),
       builder: (context, _) {
         final mode = ThemeController.instance.mode.value;
         final accent = ThemeController.instance.accent.value;
         return MaterialApp(
-          title: 'Lumen',
+          title: 'Eagle X',
+          locale: AppLocaleController.instance.locale,
+          supportedLocales: const [Locale('ar'), Locale('en')],
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
           debugShowCheckedModeBanner: false,
           navigatorKey: rootNavKey,
           theme: buildTheme(lightPaletteFor(accent)),
@@ -152,8 +163,12 @@ class LumenApp extends StatelessWidget {
           // player isn't painting — so the app stays interactive (e.g. while the
           // mini is docked).
           builder: (context, child) {
-            return TelevisionDensityViewport(
-              child: LumenPaletteScope(
+            return Directionality(
+              textDirection: AppLocaleController.instance.isArabic
+                  ? TextDirection.rtl
+                  : TextDirection.ltr,
+              child: TelevisionDensityViewport(
+                child: LumenPaletteScope(
                 mode: mode,
                 child: FocusTraversalGroup(
                   policy: _remoteFocusPolicy,
@@ -191,6 +206,7 @@ class LumenApp extends StatelessWidget {
                       },
                     ),
                   ),
+                ),
                 ),
               ),
             );
@@ -282,7 +298,6 @@ class SessionGate extends StatefulWidget {
 class _SessionGateState extends State<SessionGate> {
   XtreamCredentials? _creds;
   List<XtreamCredentials> _viewerProfiles = const [];
-  bool _legalAccepted = false;
   bool _loading = true;
   bool _selectingViewer = false;
   String _loadingLabel = 'RESTORING YOUR SESSION';
@@ -298,7 +313,6 @@ class _SessionGateState extends State<SessionGate> {
   Future<void> _bootstrap() async {
     final values = await Future.wait<dynamic>([
       Store.active(),
-      LegalAcceptance.isAccepted(),
       ThemeController.instance.load(),
       PlaybackModeController.instance.load(),
       ViewingProfiles.instance.load(),
@@ -312,7 +326,6 @@ class _SessionGateState extends State<SessionGate> {
     setState(() {
       _creds = credentials;
       _viewerProfiles = viewerProfiles;
-      _legalAccepted = values[1] as bool;
       _loading = false;
       _selectingViewer =
           credentials != null && ViewingProfiles.instance.profiles.length > 1;
@@ -324,11 +337,6 @@ class _SessionGateState extends State<SessionGate> {
           : 'Restored ${AppDiagnostics.sourceLabel(credentials)} session',
     );
     unawaited(_guardProfileState(profileState));
-  }
-
-  Future<void> _acceptLegal() async {
-    await LegalAcceptance.accept();
-    if (mounted) setState(() => _legalAccepted = true);
   }
 
   XtreamClient? _client; // cached so theme rebuilds don't recreate it
@@ -564,9 +572,6 @@ class _SessionGateState extends State<SessionGate> {
             canPop: false,
             child: SessionLoading(message: _loadingLabel),
           );
-        }
-        if (!_legalAccepted) {
-          return _rootExitGuard(LegalWelcomeScreen(onAccepted: _acceptLegal));
         }
         if (_creds == null) {
           return _rootExitGuard(LoginScreen(onLogin: _onLogin));

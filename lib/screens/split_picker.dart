@@ -42,7 +42,7 @@ class _SplitPickerState extends State<SplitPicker> {
   String _query = '';
   String? _error;
   int _generation = 0;
-  final _contentFocus = FocusNode(debugLabel: 'Split browser first result');
+  final _contentFocus = FocusNode(debugLabel: 'أول نتيجة في متصفح الشاشة المنقسمة');
 
   void _focusResults() {
     if (FocusManager.instance.highlightMode != FocusHighlightMode.traditional) {
@@ -97,7 +97,7 @@ class _SplitPickerState extends State<SplitPicker> {
       if (mounted && generation == _generation) setState(() => _cats = cats);
     } catch (_) {
       if (mounted && generation == _generation) {
-        setState(() => _error = 'Could not load categories.');
+        setState(() => _error = 'تعذّر تحميل التصنيفات.');
       }
     }
     if (mounted && generation == _generation) setState(() => _loading = false);
@@ -133,7 +133,7 @@ class _SplitPickerState extends State<SplitPicker> {
       if (mounted && generation == _generation) setState(() => _items = items);
     } catch (_) {
       if (mounted && generation == _generation) {
-        setState(() => _error = 'Could not load this collection.');
+        setState(() => _error = 'تعذّر تحميل هذه المجموعة.');
       }
     }
     if (mounted && generation == _generation) {
@@ -159,7 +159,7 @@ class _SplitPickerState extends State<SplitPicker> {
       if (mounted && generation == _generation) setState(() => _info = info);
     } catch (_) {
       if (mounted && generation == _generation) {
-        setState(() => _error = 'Could not load episodes.');
+        setState(() => _error = 'تعذّر تحميل الحلقات.');
       }
     }
     if (mounted && generation == _generation) {
@@ -227,7 +227,7 @@ class _SplitPickerState extends State<SplitPicker> {
     widget.onPick(
       PlayerItem(
         widget.client.streamUrl('series', e.id, ext: ext),
-        '${_series?.name ?? 'Series'} · $name',
+        '${_series?.name ?? 'المسلسلات'} · $name',
         poster: e.image.isNotEmpty ? e.image : (_info?.cover ?? ''),
         ext: ext,
         favRef: _series == null
@@ -258,7 +258,7 @@ class _SplitPickerState extends State<SplitPicker> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Split view',
+                    'عرض منقسم',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -270,7 +270,7 @@ class _SplitPickerState extends State<SplitPicker> {
                 ),
                 if (widget.onClose != null)
                   IconButton(
-                    tooltip: 'Close split browser',
+                    tooltip: 'إغلاق متصفح العرض المنقسم',
                     onPressed: widget.onClose,
                     icon: const Icon(
                       Icons.close_rounded,
@@ -327,9 +327,9 @@ class _SplitPickerState extends State<SplitPicker> {
               child: Row(
                 children: [
                   for (final s in const [
-                    ('live', 'Live'),
-                    ('movie', 'Movies'),
-                    ('series', 'Series'),
+                    ('live', 'مباشر'),
+                    ('movie', 'الأفلام'),
+                    ('series', 'المسلسلات'),
                   ])
                     Expanded(
                       child: Padding(
@@ -401,7 +401,7 @@ class _SplitPickerState extends State<SplitPicker> {
                   suffixIcon: _search.text.isEmpty
                       ? null
                       : IconButton(
-                          tooltip: 'Clear search',
+                          tooltip: 'مسح البحث',
                           onPressed: () => setState(_clearSearch),
                           icon: const Icon(
                             Icons.close_rounded,
@@ -473,7 +473,7 @@ class _SplitPickerState extends State<SplitPicker> {
                     _loadCats();
                   }
                 },
-                child: Text('Try again', style: TextStyle(color: accent)),
+                child: Text('حاول مرة أخرى', style: TextStyle(color: accent)),
               ),
             ],
           ),
@@ -498,7 +498,7 @@ class _SplitPickerState extends State<SplitPicker> {
             (e) => '${e.title} ${e.episodeNum}'.toLowerCase().contains(_query),
           )
           .toList();
-      if (eps.isEmpty) return _empty('No episodes.');
+      if (eps.isEmpty) return _empty('لا توجد حلقات.');
       return ListView.builder(
         key: ValueKey('episodes-${_series!.seriesId}-$_query'),
         padding: const EdgeInsets.fromLTRB(12, 8, 12, 20),
@@ -525,7 +525,7 @@ class _SplitPickerState extends State<SplitPicker> {
     }
     // category list
     if (_catId == null) {
-      if (_cats.isEmpty) return _empty('No categories.');
+      if (_cats.isEmpty) return _empty('لا توجد تصنيفات.');
       final cats = _cats
           .where((c) => c.name.toLowerCase().contains(_query))
           .toList();

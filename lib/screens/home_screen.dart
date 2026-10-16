@@ -288,7 +288,7 @@ class _HomeScreenState extends State<HomeScreen>
             _HistoryDialogOption(
               autofocus: true,
               icon: Icons.play_arrow_rounded,
-              label: 'Resume',
+              label: 'متابعة المشاهدة',
               onTap: () => Navigator.pop(dialogContext, _ContinueAction.resume),
             ),
             _HistoryDialogOption(
@@ -299,13 +299,13 @@ class _HomeScreenState extends State<HomeScreen>
             ),
             _HistoryDialogOption(
               icon: Icons.check_circle_outline_rounded,
-              label: 'Mark as watched',
+              label: 'تحديد كمُشاهَد',
               onTap: () =>
                   Navigator.pop(dialogContext, _ContinueAction.watched),
             ),
             _HistoryDialogOption(
               icon: Icons.remove_circle_outline_rounded,
-              label: 'Remove from row',
+              label: 'إزالة من الصف',
               onTap: () => Navigator.pop(dialogContext, _ContinueAction.remove),
             ),
           ],
@@ -338,7 +338,7 @@ class _HomeScreenState extends State<HomeScreen>
             _HistoryDialogOption(
               autofocus: true,
               icon: Icons.play_arrow_rounded,
-              label: 'Watch live',
+              label: 'مشاهدة مباشرة',
               onTap: () => Navigator.pop(dialogContext, false),
             ),
             _HistoryDialogOption(
@@ -562,7 +562,7 @@ class _HomeScreenState extends State<HomeScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Your Home', style: kTitle()),
+              Text('الرئيسية', style: kTitle()),
               const SizedBox(height: 3),
               Text(
                 HomeConfig.instance.isCustom
@@ -589,7 +589,7 @@ class _HomeScreenState extends State<HomeScreen>
                 Icon(Icons.tune_rounded, color: accentInk, size: 18),
                 const SizedBox(width: 6),
                 Text(
-                  'Customize',
+                  'تخصيص',
                   style: TextStyle(
                     color: textHi,
                     fontWeight: FontWeight.w500,
@@ -1090,7 +1090,7 @@ class _SpotlightHeroState extends State<_SpotlightHero> {
           ),
           const SizedBox(height: 16),
           Text(
-            'FEATURED',
+            'مميز',
             style: TextStyle(
               color: accentInk,
               fontSize: 11,
@@ -1172,7 +1172,7 @@ class _SpotlightHeroState extends State<_SpotlightHero> {
             children: [
               PillButton(
                 icon: Icons.play_arrow_rounded,
-                label: 'Play',
+                label: 'تشغيل',
                 onTap: () => _play(m),
                 focusNode: widget.entryFocusNode,
               ),
@@ -1180,7 +1180,7 @@ class _SpotlightHeroState extends State<_SpotlightHero> {
               HoverScale(
                 child: RemoteTap(
                   onTap: () => widget.onOpen(m),
-                  semanticLabel: 'Details',
+                  semanticLabel: 'التفاصيل',
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20,
@@ -1206,8 +1206,8 @@ class _SpotlightHeroState extends State<_SpotlightHero> {
                   final fav = Library.instance.isFav(_ref(m).key);
                   return RemoteTap(
                     semanticLabel: fav
-                        ? 'Remove from My List'
-                        : 'Add to My List',
+                        ? 'إزالة من قائمتي'
+                        : 'إضافة إلى قائمتي',
                     onTap: () => Library.instance.toggleFav(_ref(m)),
                     child: Container(
                       padding: const EdgeInsets.all(14),
@@ -1362,7 +1362,7 @@ class _SpotlightHeroState extends State<_SpotlightHero> {
                       children: [
                         Container(width: 28, height: 2, color: accent),
                         const SizedBox(width: 10),
-                        Text('NOW IN FOCUS', style: kSection(color: accentInk)),
+                        Text('في الواجهة الآن', style: kSection(color: accentInk)),
                         const SizedBox(width: 12),
                         Text(
                           '${(_index + 1).toString().padLeft(2, '0')} / ${_items.length.toString().padLeft(2, '0')}',
@@ -1462,7 +1462,7 @@ class _SpotlightHeroState extends State<_SpotlightHero> {
                         const SizedBox(width: 10),
                         PillButton(
                           icon: Icons.arrow_outward_rounded,
-                          label: 'Details',
+                          label: 'التفاصيل',
                           filled: false,
                           onTap: () => widget.onOpen(m),
                         ),
@@ -1994,7 +1994,7 @@ class _RecentChannelCard extends StatelessWidget {
                                   ),
                                 ),
                                 child: const Text(
-                                  'LIVE',
+                                  'مباشر',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 9,
@@ -2037,7 +2037,7 @@ class _RecentChannelCard extends StatelessWidget {
                                   const SizedBox(width: 6),
                                   Expanded(
                                     child: Text(
-                                      'Watch live',
+                                      'مشاهدة مباشرة',
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(

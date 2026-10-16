@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
 
 import '../theme.dart';
 import '../widgets.dart';
@@ -109,7 +108,6 @@ class _LaunchSplashState extends State<LaunchSplash>
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final compact = size.shortestSide < 560;
-    final markSize = compact ? 104.0 : 136.0;
     final brandSize = compact ? 43.0 : 58.0;
     final reducedMotion = MediaQuery.disableAnimationsOf(context);
 
@@ -155,47 +153,13 @@ class _LaunchSplashState extends State<LaunchSplash>
                                 opacity: markIn.clamp(0, 1),
                                 child: SizedBox.square(
                                   dimension: compact ? 184 : 240,
-                                  child: Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      Lottie.asset(
-                                        'assets/lumen_loader.json',
-                                        width: compact ? 184 : 240,
-                                        height: compact ? 184 : 240,
-                                        repeat: !reducedMotion,
-                                        animate: !reducedMotion,
-                                        fit: BoxFit.contain,
-                                        delegates: LottieDelegates(
-                                          values: [
-                                            ValueDelegate.color(const [
-                                              '**',
-                                            ], value: defaultAccent),
-                                          ],
-                                        ),
-                                      ),
-                                      Container(
-                                        width: markSize,
-                                        height: markSize,
-                                        alignment: Alignment.center,
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF0E1210),
-                                          borderRadius: BorderRadius.circular(
-                                            lumenCorner(markSize * .28),
-                                          ),
-                                          border: Border.all(
-                                            color: defaultAccent.withValues(
-                                              alpha: .7,
-                                            ),
-                                            width: 1.5,
-                                          ),
-                                        ),
-                                        child: LumenMark(
-                                          size: markSize * .68,
-                                          signal: defaultAccent,
-                                          frame: const Color(0xFFF4F1E8),
-                                        ),
-                                      ),
-                                    ],
+                                  child: Image.asset(
+                                    'assets/eagle_x_logo.png',
+                                    width: compact ? 184 : 240,
+                                    height: compact ? 184 : 240,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (_, __, ___) =>
+                                        const SizedBox.shrink(),
                                   ),
                                 ),
                               ),
@@ -210,7 +174,7 @@ class _LaunchSplashState extends State<LaunchSplash>
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Text(
-                                      'LUMEN',
+                                      'EAGLE X',
                                       style: TextStyle(
                                         color: const Color(0xFFF4F1E8),
                                         fontFamily: 'SpaceGrotesk',
@@ -255,7 +219,7 @@ class _LaunchSplashState extends State<LaunchSplash>
                                 child: Column(
                                   children: [
                                     Text(
-                                      'YOUR SCREEN. YOUR SIGNAL.',
+                                      'شاشتك. إشارتك.',
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         color: const Color(0xFFF4F1E8),
@@ -267,7 +231,7 @@ class _LaunchSplashState extends State<LaunchSplash>
                                     ),
                                     const SizedBox(height: 10),
                                     Text(
-                                      'LIVE   •   FILMS   •   SERIES',
+                                      'مباشر   •   أفلام   •   مسلسلات',
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         color: const Color(
@@ -324,7 +288,7 @@ class _LaunchSplashState extends State<LaunchSplash>
                                     ),
                                     const SizedBox(height: 12),
                                     const Text(
-                                      'TUNING YOUR EXPERIENCE',
+                                      'نجهّز تجربتك',
                                       style: TextStyle(
                                         color: Color(0xFF747A75),
                                         fontFamily: 'SpaceGrotesk',

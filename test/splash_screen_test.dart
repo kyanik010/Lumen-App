@@ -25,25 +25,25 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
   }
 
-  testWidgets('launch film renders its Lottie brand sequence on TV', (
+  testWidgets('launch splash uses Eagle X branding without the old Lottie loader on TV', (
     tester,
   ) async {
     await pumpSplash(tester, const Size(1920, 1080));
 
-    expect(find.byType(Lottie), findsOneWidget);
-    expect(find.text('LUMEN'), findsOneWidget);
-    expect(find.text('YOUR SCREEN. YOUR SIGNAL.'), findsOneWidget);
-    expect(find.text('TUNING YOUR EXPERIENCE'), findsOneWidget);
+    expect(find.byType(Lottie), findsNothing);
+    expect(find.text('EAGLE X'), findsOneWidget);
+    expect(find.text('شاشتك. إشارتك.'), findsOneWidget);
+    expect(find.text('نجهّز تجربتك'), findsOneWidget);
     expect(find.byType(ScaleTransition), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('launch film remains clean on a narrow phone', (tester) async {
+  testWidgets('launch splash remains clean on a narrow phone without the old loader', (tester) async {
     await pumpSplash(tester, const Size(390, 844));
 
-    expect(find.byType(Lottie), findsOneWidget);
-    expect(find.text('LUMEN'), findsOneWidget);
-    expect(find.text('LIVE   •   FILMS   •   SERIES'), findsOneWidget);
+    expect(find.byType(Lottie), findsNothing);
+    expect(find.text('EAGLE X'), findsOneWidget);
+    expect(find.text('مباشر   •   أفلام   •   مسلسلات'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

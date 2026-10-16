@@ -438,13 +438,13 @@ void main() {
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
     await tester.pump();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'Resume');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'استئناف');
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
     await tester.pump();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'Cancel');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'إلغاء');
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
     await tester.pump();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'Resume');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'استئناف');
 
     _itemFocusAgain:
     for (var i = 0; i < 3; i++) {
@@ -828,9 +828,9 @@ void main() {
     );
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
-    expect(find.text('Exit Lumen?'), findsOneWidget);
+    expect(find.text('الخروج من Eagle X؟'), findsOneWidget);
     final noButton = tester.widget<TextButton>(
-      find.widgetWithText(TextButton, 'No'),
+      find.widgetWithText(TextButton, 'لا'),
     );
     expect(noButton.autofocus, isTrue);
   });
@@ -850,7 +850,7 @@ void main() {
       MaterialApp(
         home: Scaffold(
           body: SearchField(
-            hint: 'Search library',
+            hint: 'البحث في المكتبة',
             focusNode: focusNode,
             onChanged: (value) => query = value,
           ),
@@ -888,7 +888,7 @@ void main() {
               }
               return KeyEventResult.ignored;
             },
-            child: SearchField(hint: 'Search library', focusNode: focusNode),
+            child: SearchField(hint: 'البحث في المكتبة', focusNode: focusNode),
           ),
         ),
       ),

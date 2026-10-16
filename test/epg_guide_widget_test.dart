@@ -254,7 +254,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
 
-    expect(find.text('No programme schedule available'), findsOneWidget);
+    expect(find.text('لا يتوفر جدول للبرامج'), findsOneWidget);
     expect(find.text('Try again'), findsOneWidget);
     expect(find.byType(TableView), findsNothing);
     expect(tester.takeException(), isNull);

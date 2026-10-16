@@ -65,7 +65,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(const SnackBar(content: Text('Redacted report copied')));
+      ..showSnackBar(const SnackBar(content: Text('تم نسخ التقرير بعد إخفاء البيانات الحساسة')));
   }
 
   Future<void> _shareReport(BuildContext originContext) async {
@@ -221,11 +221,11 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Diagnostics & feedback',
+                'التشخيص والملاحظات',
                 style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800),
               ),
               Text(
-                'Review everything before you share it.',
+                'راجع التقرير قبل مشاركته.',
                 style: TextStyle(color: muted, fontSize: 12.5),
               ),
             ],
@@ -257,12 +257,12 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Private until you choose to share',
+                'بياناتك خاصة حتى تختار مشاركتها',
                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
               ),
               const SizedBox(height: 5),
               Text(
-                'Lumen does not upload this report. Provider addresses, usernames, passwords, playlist URLs, media titles and watch history are removed.',
+                'لا يرفع Eagle X هذا التقرير. تُحذف عناوين الخوادم وأسماء المستخدمين وكلمات المرور وروابط القوائم وعناوين الوسائط وسجل المشاهدة.',
                 style: TextStyle(color: muted, height: 1.45, fontSize: 13),
               ),
             ],
@@ -279,12 +279,12 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'What happened?',
+          'ماذا حدث؟',
           style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
         ),
         const SizedBox(height: 4),
         Text(
-          'Optional. Do not enter credentials or private playlist details.',
+          'اختياري. لا تُدخل بيانات الدخول أو تفاصيل قوائم التشغيل الخاصة.',
           style: TextStyle(color: muted, fontSize: 12.5),
         ),
         const SizedBox(height: 12),
@@ -299,7 +299,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
             textInputAction: TextInputAction.newline,
             decoration: const InputDecoration(
               hintText:
-                  'Example: Live playback stalled after about 30 seconds…',
+                  'مثال: توقف البث المباشر بعد نحو 30 ثانية…',
             ),
           ),
         ),
@@ -311,13 +311,13 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     final buttons = <Widget>[
       _actionButton(
         icon: Icons.copy_rounded,
-        label: 'Copy report',
+        label: 'نسخ التقرير',
         onTap: _loading ? null : _copyReport,
       ),
       Builder(
         builder: (buttonContext) => _actionButton(
           icon: Icons.ios_share_rounded,
-          label: _sharing ? 'Sharing…' : 'Share report',
+          label: _sharing ? 'جارٍ المشاركة…' : 'مشاركة التقرير',
           primary: true,
           onTap: _loading || _sharing
               ? null
@@ -327,7 +327,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
       if (!DeviceProfile.isTelevision)
         _actionButton(
           icon: Icons.email_outlined,
-          label: 'Email support',
+          label: 'مراسلة الدعم',
           onTap: _loading ? null : _emailSupport,
         ),
     ];
@@ -395,7 +395,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
             const SizedBox(width: 9),
             const Expanded(
               child: Text(
-                'Report preview',
+                'معاينة التقرير',
                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
               ),
             ),
@@ -440,7 +440,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'TV playback test',
+          'اختبار تشغيل التلفاز',
           style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
         ),
         const SizedBox(height: 6),
@@ -472,12 +472,12 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
           children: [
             _actionButton(
               icon: Icons.refresh_rounded,
-              label: 'Refresh trace',
+              label: 'تحديث سجل التتبع',
               onTap: _refreshTvReport,
             ),
             _actionButton(
               icon: Icons.copy_rounded,
-              label: 'Copy playback trace',
+              label: 'نسخ سجل تتبع التشغيل',
               primary: true,
               onTap: _tvReport == null ? null : _copyTvReport,
             ),

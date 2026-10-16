@@ -35,23 +35,23 @@ class PlayerTransport extends StatelessWidget {
       if (onPrevious != null)
         _TransportButton(
           icon: Icons.skip_previous_rounded,
-          label: live ? 'Previous channel' : 'Previous episode',
+          label: live ? 'القناة السابقة' : 'الحلقة السابقة',
           onTap: onPrevious!,
         ),
       if (!live)
         _TransportButton(
           icon: Icons.replay_10_rounded,
-          label: 'Rewind 10 seconds',
+          label: 'ترجيع ١٠ ثوانٍ',
           onTap: onRewind,
         ),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Tooltip(
-          message: playing ? 'Pause' : 'Play',
+          message: playing ? 'إيقاف مؤقت' : 'تشغيل',
           child: RemoteTap(
             focusNode: playFocusNode,
             focusRadius: 999,
-            semanticLabel: playing ? 'Pause' : 'Play',
+            semanticLabel: playing ? 'إيقاف مؤقت' : 'تشغيل',
             onTap: onPlayPause,
             child: Container(
               width: 60,
@@ -73,13 +73,13 @@ class PlayerTransport extends StatelessWidget {
       if (!live)
         _TransportButton(
           icon: Icons.forward_10_rounded,
-          label: 'Fast forward 10 seconds',
+          label: 'تقديم ١٠ ثوانٍ',
           onTap: onForward,
         ),
       if (onNext != null)
         _TransportButton(
           icon: Icons.skip_next_rounded,
-          label: live ? 'Next channel' : 'Next episode',
+          label: live ? 'القناة التالية' : 'الحلقة التالية',
           onTap: onNext!,
         ),
     ],
@@ -138,21 +138,21 @@ class PlayerActionBar extends StatelessWidget {
             Expanded(
               child: _PlayerAction(
                 icon: Icons.view_list_rounded,
-                label: 'Channels',
+                label: 'القنوات',
                 onTap: onChannels!,
               ),
             ),
           Expanded(
             child: _PlayerAction(
               icon: Icons.closed_caption_outlined,
-              label: 'Subtitles',
+              label: 'الترجمة',
               onTap: onSubtitles,
             ),
           ),
           Expanded(
             child: _PlayerAction(
               icon: Icons.tune_rounded,
-              label: 'More',
+              label: 'المزيد',
               onTap: onMore,
             ),
           ),
@@ -161,7 +161,7 @@ class PlayerActionBar extends StatelessWidget {
               icon: fullscreen
                   ? Icons.fullscreen_exit_rounded
                   : Icons.fullscreen_rounded,
-              label: fullscreen ? 'Exit full screen' : 'Full screen',
+              label: fullscreen ? 'الخروج من ملء الشاشة' : 'ملء الشاشة',
               onTap: onFullscreen,
             ),
           ),
@@ -253,7 +253,7 @@ class PlayerSidePanel extends StatelessWidget {
               color: Colors.black54,
               dismissible: true,
               onDismiss: onClose,
-              semanticsLabel: 'Close playback panel',
+              semanticsLabel: 'إغلاق لوحة التشغيل',
             ),
           ),
           Positioned(

@@ -149,7 +149,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           TextButton(
             autofocus: true,
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text('Keep it', style: TextStyle(color: muted)),
+            child: Text('الاحتفاظ به', style: TextStyle(color: muted)),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
@@ -157,7 +157,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               backgroundColor: accent,
               foregroundColor: onAccent,
             ),
-            child: const Text('Remove'),
+            child: const Text('إزالة'),
           ),
         ],
       ),
@@ -276,7 +276,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       final favorite = Library.instance.isFav(_ref().key);
       return _DetailAction(
         icon: favorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-        label: favorite ? 'Saved' : 'My list',
+        label: favorite ? 'محفوظ' : 'قائمتي',
         selected: favorite,
         onTap: () => Library.instance.toggleFav(_ref()),
       );
@@ -307,14 +307,14 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       if (status == DlStatus.queued) {
         return _DetailAction(
           icon: Icons.schedule_rounded,
-          label: 'Queued',
+          label: 'في قائمة الانتظار',
           onTap: () => Downloads.instance.cancel(_downloadId),
         );
       }
       if (status == DlStatus.paused || status == DlStatus.failed) {
         return _DetailAction(
           icon: Icons.download_rounded,
-          label: 'Resume',
+          label: 'متابعة المشاهدة',
           onTap: () => Downloads.instance.resume(_downloadId),
         );
       }
@@ -534,7 +534,7 @@ class _HeroCopy extends StatelessWidget {
           children: [
             Container(width: 30, height: 2, color: accent),
             const SizedBox(width: 10),
-            Text('FEATURE PRESENTATION', style: kSection()),
+            Text('عرض الفيلم', style: kSection()),
             if (loadingDetails) ...[
               const SizedBox(width: 10),
               SizedBox(
@@ -602,14 +602,14 @@ class _HeroCopy extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             _PrimaryPlay(
-              label: progress == null ? 'Play film' : 'Resume film',
+              label: progress == null ? 'تشغيل الفيلم' : 'متابعة الفيلم',
               progress: progress?.fraction,
               onTap: onPlay,
             ),
             if (hasTrailer)
               _DetailAction(
                 icon: Icons.smart_display_rounded,
-                label: 'Trailer',
+                label: 'الإعلان التشويقي',
                 onTap: onTrailer,
               ),
             downloadAction,
@@ -844,21 +844,21 @@ class _EditorialDetails extends StatelessWidget {
               : 'No synopsis was supplied for this film.'
         : plot;
     final facts = [
-      if (cast.isNotEmpty) ('CAST', cast),
-      if (director.isNotEmpty) ('DIRECTED BY', director),
-      if (genre.isNotEmpty) ('GENRE', genre),
-      if (format.isNotEmpty) ('SOURCE FORMAT', format),
+      if (cast.isNotEmpty) ('طاقم التمثيل', cast),
+      if (director.isNotEmpty) ('إخراج', director),
+      if (genre.isNotEmpty) ('النوع', genre),
+      if (format.isNotEmpty) ('تنسيق المصدر', format),
     ];
 
     final synopsisCard = _DetailPanel(
-      eyebrow: 'THE STORY',
+      eyebrow: 'القصة',
       child: Text(
         synopsis,
         style: TextStyle(color: muted, fontSize: wide ? 17 : 15, height: 1.65),
       ),
     );
     final factsCard = _DetailPanel(
-      eyebrow: 'THE CREDITS',
+      eyebrow: 'الاعتمادات',
       child: facts.isEmpty
           ? Text(
               loading ? 'Loading credits…' : 'Credits were not provided.',

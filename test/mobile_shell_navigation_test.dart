@@ -51,15 +51,15 @@ void main() {
       }
 
       // Establish a previous Home focus before opening the search keyboard.
-      await tab('Movies');
-      await tab('Home');
-      await tab('Search');
+      await tab('الأفلام');
+      await tab('الرئيسية');
+      await tab('بحث');
       await tester.enterText(find.byType(TextField), 'Aerial Night');
       await tester.pump(const Duration(milliseconds: 500));
-      await tab('Live');
+      await tab('مباشر');
       expect(find.byKey(const ValueKey('shell-page-6')), findsOneWidget);
       expect(tester.testTextInput.isVisible, isFalse);
-      await tester.tap(find.byTooltip('Category'));
+      await tester.tap(find.byTooltip('التصنيف'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       await tester.tap(find.text('Culture').last);
@@ -83,26 +83,26 @@ void main() {
       );
 
       // Canceling a popup also must not restore an old destination.
-      await tester.tap(find.byTooltip('Category'));
+      await tester.tap(find.byTooltip('التصنيف'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       await tester.binding.handlePopRoute();
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.byKey(const ValueKey('shell-page-6')), findsOneWidget);
-      await tab('Search');
+      await tab('بحث');
       expect(
         tester.widget<TextField>(find.byType(TextField)).controller!.text,
         'Aerial Night',
       );
-      await tab('Live');
+      await tab('مباشر');
       expect(find.text('Culture'), findsOneWidget);
 
       // Restored focus is not a navigation command. Hardware activation is.
       final homeFocus = tester
           .widget<RemoteTap>(
             find.descendant(
-              of: find.byTooltip('Home'),
+              of: find.byTooltip('الرئيسية'),
               matching: find.byType(RemoteTap),
             ),
           )
@@ -155,11 +155,11 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     for (final (label, page) in [
-      ('Movies', 4),
-      ('Series', 5),
-      ('Live', 6),
-      ('Search', 1),
-      ('Home', 0),
+      ('الأفلام', 4),
+      ('المسلسلات', 5),
+      ('مباشر', 6),
+      ('بحث', 1),
+      ('الرئيسية', 0),
     ]) {
       await tester.tap(find.byTooltip(label));
       await tester.pump();
@@ -212,13 +212,13 @@ void main() {
     );
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
-    await tester.tap(find.byTooltip('Live'));
+    await tester.tap(find.byTooltip('مباشر'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     final home = tester.widget<FocusableActionDetector>(
       find
           .descendant(
-            of: find.byTooltip('Home'),
+            of: find.byTooltip('الرئيسية'),
             matching: find.byType(FocusableActionDetector),
           )
           .first,

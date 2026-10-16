@@ -1648,7 +1648,10 @@ class EditorialPageHeader extends StatelessWidget {
             ],
           ),
         ),
-        if (trailing != null) ...[const SizedBox(width: 14), trailing!],
+        if (trailing != null) ...[
+          const SizedBox(width: 14),
+          Flexible(child: trailing!),
+        ],
       ],
     ),
   );

@@ -291,7 +291,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
               children: [
                 EditorialPageHeader(
                   eyebrow: 'Offline library',
-                  title: canBack ? 'Downloads' : 'Ready when you are',
+                  title: canBack ? 'التنزيلات' : 'Ready when you are',
                   subtitle: ready == 0
                       ? 'Save films and episodes for moments without a connection.'
                       : '$ready ready offline${totalBytes > 0 ? ' · ${_bytes(totalBytes)}' : ''}',
@@ -388,7 +388,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                   child: items.isEmpty
                       ? const LumenEmptyState(
                           icon: Icons.download_for_offline_outlined,
-                          eyebrow: 'Take it with you',
+                          eyebrow: 'اصطحب محتواك معك',
                           title: 'Your offline shelf is empty',
                           message:
                               'Use the download button on a film or episode and Lumen will keep it ready here.',
@@ -443,21 +443,21 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
     final failed = d.status == DlStatus.failed;
     final actions = <(IconData, String, VoidCallback)>[
       if (d.status == DlStatus.downloading)
-        (Icons.pause_rounded, 'Pause', () => Downloads.instance.pause(d.id)),
+        (Icons.pause_rounded, 'إيقاف مؤقت', () => Downloads.instance.pause(d.id)),
       if (d.status == DlStatus.paused || d.status == DlStatus.failed)
         (
           Icons.play_arrow_rounded,
-          'Resume',
+          'استئناف',
           () => Downloads.instance.resume(d.id),
         ),
       if (d.status == DlStatus.completed)
         (
           Icons.delete_outline_rounded,
-          'Remove',
+          'إزالة',
           () => Downloads.instance.delete(d),
         )
       else
-        (Icons.close_rounded, 'Cancel', () => Downloads.instance.cancel(d.id)),
+        (Icons.close_rounded, 'إلغاء', () => Downloads.instance.cancel(d.id)),
     ];
     for (var action = 0; action < actions.length; action++) {
       _actionFocus[index][action].debugLabel = actions[action].$2;
@@ -559,7 +559,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                       children: [
                         Text(
                           d.status == DlStatus.paused
-                              ? 'Paused'
+                              ? 'متوقف مؤقتًا'
                               : (d.total > 0
                                     ? '${(d.progress * 100).round()}%'
                                     : 'Downloading…'),

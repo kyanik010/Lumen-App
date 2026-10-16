@@ -38,7 +38,7 @@ class _CategorySheetState extends State<_CategorySheet> {
               .where((c) => c.name.toLowerCase().contains(q))
               .toList();
     final options = <(String, String)>[
-      ('all', 'All categories'),
+      ('all', 'كل التصنيفات'),
       for (final category in filtered) (category.id, category.name),
     ];
 
@@ -130,7 +130,7 @@ class _CategorySheetState extends State<_CategorySheet> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
                 child: SearchField(
-                  hint: 'Search categories…',
+                  hint: 'ابحث في التصنيفات…',
                   onChanged: (v) => setState(() => _q = v),
                 ),
               ),
@@ -138,7 +138,7 @@ class _CategorySheetState extends State<_CategorySheet> {
                 child: filtered.isEmpty && q.isNotEmpty
                     ? const LumenEmptyState(
                         icon: Icons.search_off_rounded,
-                        eyebrow: 'No match',
+                        eyebrow: 'لا توجد نتائج مطابقة',
                         title: 'Try another category name',
                         message:
                             'The current provider has no collection matching that search.',

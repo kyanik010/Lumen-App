@@ -2,6 +2,7 @@ package com.talhaashraf.lumen
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.app.PictureInPictureParams
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -25,6 +26,8 @@ import android.os.Looper
 import android.os.SystemClock
 import android.provider.OpenableColumns
 import android.util.Log
+import android.util.Base64
+import android.util.Rational
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
@@ -36,6 +39,11 @@ import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
 import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -54,6 +62,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.upstream.DefaultLoadErrorHandlingPolicy
 import androidx.media3.ui.AspectRatioFrameLayout
+import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.PlayerView
 
 /**
@@ -184,11 +193,33 @@ class Media3PlayerActivity : Activity() {
     private var keyboardMuted = false
     private var volumeBeforeMute = 1f
     private var externalSubtitleUri: Uri? = null
+    private var externalSubtitleSourceUri: Uri? = null
     private var externalSubtitleName = ""
+    private var externalSubtitleExtension = ""
+    private var externalSubtitleActive = false
     private var heldSeekKeyCode = KeyEvent.KEYCODE_UNKNOWN
     private var heldSeekAnchorMs = 0L
     private var pendingBufferMessage = ""
     private var selectedResizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+    private var selectedPlaybackSpeed = 1.0f
+    private var sleepTimerMinutes = 0
+    private var subtitleFontIndex = 0
+    private val subtitleTypefaceCache = mutableMapOf<Int, Typeface>()
+    private var subtitleColorIndex = 0
+    private var subtitleBackgroundIndex = 0
+    private var subtitleOutlineIndex = 1
+    private var subtitlePositionIndex = 0
+    private var subtitleSizeIndex = 2
+    private var subtitleSyncMs = 0L
+    private val stopPlaybackForSleep = Runnable {
+        if (::player.isInitialized) {
+            player.pause()
+            // A sleep timer must stop both decoders when split view is active.
+            secondaryPlayer?.pause()
+            sleepTimerMinutes = 0
+            Toast.makeText(this, "Sleep timer finished", Toast.LENGTH_SHORT).show()
+        }
+    }
     private var returningToEmbeddedEngine = false
     private var pausedForBackground = false
     private var isInBackground = false
@@ -491,6 +522,8 @@ class Media3PlayerActivity : Activity() {
         errorPanel = buildErrorPanel()
         root.addView(errorPanel)
         setContentView(root)
+        loadSubtitleSettings()
+        applySubtitleStyle()
 
         registerReceiver(screenStateReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF))
         screenReceiverRegistered = true
@@ -2168,49 +2201,280 @@ class Media3PlayerActivity : Activity() {
 
     private fun showMoreDialog() {
         handler.removeCallbacks(hideControls)
-        val modes = intArrayOf(
-            AspectRatioFrameLayout.RESIZE_MODE_FIT,
-            AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-        )
-        val selected = modes.indexOf(selectedResizeMode).coerceAtLeast(0)
         val favoriteKey = playlistFavoriteKeys.getOrNull(playlistIndex).orEmpty()
         val saved = playlistFavoriteStates.getOrNull(playlistIndex) == true
-        val labels = buildList {
-            add(if (selected == 0) "✓  Fit to screen" else "Fit to screen")
-            add(if (selected == 1) "✓  Fill screen" else "Fill screen")
-            if (favoriteKey.isNotBlank()) {
-                add(if (saved) "♥  Remove from My List" else "♡  Add to My List")
+        val actions = mutableListOf<Pair<String, () -> Unit>>()
+
+        actions += (if (player.isPlaying) "Ⅱ  Pause playback" else "▶  Resume playback") to {
+            if (player.isPlaying) player.pause() else player.play()
+        }
+        actions += "ⓘ  Playback information" to { showPlaybackInformation() }
+        // Split view only works for live channel lists with another channel to show.
+        if (splitActive || (isLive && playlistUrls.size > 1)) {
+            actions += (if (splitActive) "×  Exit split view" else "▣  عرض منقسم") to {
+                if (splitActive) exitSplit() else showSplitChannelDialog()
             }
-        }.toTypedArray()
-        val dialog = AlertDialog.Builder(this)
-            .setTitle("More")
-            .setItems(labels) { activeDialog, index ->
-                if (index < modes.size) {
-                    selectedResizeMode = modes[index]
-                    applyResizeModeToPlayerViews()
-                } else {
-                    playlistFavoriteStates[playlistIndex] = !saved
-                    updateFavoriteUi()
-                    Toast.makeText(
-                        this,
-                        if (saved) "Removed from My List" else "Added to My List",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
+        }
+        actions += "◖  Volume" to { showVolumeDialog() }
+        actions += "▣  Video fit" to { showVideoFitDialog() }
+        actions += "▶  Playback speed · ${selectedPlaybackSpeed}x" to { showPlaybackSpeedDialog() }
+        actions += ("◷  Sleep timer" + if (sleepTimerMinutes > 0) " · ${sleepTimerMinutes}m" else "") to {
+            showSleepTimerDialog()
+        }
+        actions += "♪  Audio" to { showTrackDialog(C.TRACK_TYPE_AUDIO, "Audio", allowOff = false) }
+        actions += "CC  Subtitles" to { showSubtitleDialog() }
+        actions += "Aa  Subtitle appearance" to { showSubtitleAppearanceDialog() }
+        actions += "▣  Picture-in-picture" to { enterPlayerPictureInPicture() }
+        if (favoriteKey.isNotBlank()) {
+            actions += (if (saved) "♥  Remove from My List" else "♡  Add to My List") to {
+                playlistFavoriteStates[playlistIndex] = !saved
+                updateFavoriteUi()
+                Toast.makeText(
+                    this,
+                    if (saved) "Removed from My List" else "Added to My List",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
+        val dialog = AlertDialog.Builder(this).setTitle("More")
+            .setItems(actions.map { it.first }.toTypedArray()) { activeDialog, index ->
                 activeDialog.dismiss()
-            }
-            .setNegativeButton("Cancel", null)
-            .create()
+                actions.getOrNull(index)?.second?.invoke()
+            }.setNegativeButton("Cancel", null).create()
         dialog.setOnShowListener {
-            dialog.window?.setBackgroundDrawable(
-                roundedRect(0xFF111511.toInt(), 0xFF596157.toInt(), 1, 18)
-            )
+            dialog.window?.setBackgroundDrawable(roundedRect(0xFF111511.toInt(), 0xFF596157.toInt(), 1, 18))
         }
-        dialog.setOnDismissListener {
-            showControls()
-            moreButton.post { moreButton.requestFocus() }
-        }
+        dialog.setOnDismissListener { showControls(); moreButton.post { moreButton.requestFocus() } }
         dialog.show()
+    }
+
+    private fun enterPlayerPictureInPicture() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            Toast.makeText(this, "Picture-in-picture requires Android 8 or newer.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        try {
+            val params = PictureInPictureParams.Builder().setAspectRatio(Rational(16, 9)).build()
+            hideControls(force = true)
+            enterPictureInPictureMode(params)
+        } catch (error: Exception) {
+            Toast.makeText(this, "Picture-in-picture is not available on this device.", Toast.LENGTH_SHORT).show()
+            showControls()
+        }
+    }
+
+    private fun showPlaybackInformation() {
+        val duration = player.duration.takeIf { it > 0L }?.let { formatTime(it) } ?: "Live / unknown"
+        val video = player.currentTracks.groups.firstOrNull { it.type == C.TRACK_TYPE_VIDEO && it.isSelected }
+            ?.let { group -> group.getTrackFormat(0).let { f -> if (f.width > 0 && f.height > 0) "${f.width} × ${f.height}" else "Unknown" } } ?: "Unknown"
+        AlertDialog.Builder(this).setTitle("Playback information")
+            .setMessage("Title: ${playlistTitles.getOrNull(playlistIndex).orEmpty().ifBlank { titleText.text.toString() }}\nPosition: ${formatTime(player.currentPosition.coerceAtLeast(0L))} / $duration\nVideo: $video\nPlayback speed: ${selectedPlaybackSpeed}x")
+            .setPositiveButton("OK", null).show()
+    }
+
+    private fun showVolumeDialog() {
+        val panel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(28, 12, 28, 8) }
+        val value = TextView(this).apply { text = "${(player.volume * 100).toInt()}%"; textSize = 18f; gravity = Gravity.CENTER; setTextColor(Color.WHITE) }
+        panel.addView(value)
+        val seek = SeekBar(this).apply { max = 100; progress = (player.volume * 100).toInt().coerceIn(0, 100); contentDescription = "Playback volume" }
+        panel.addView(seek)
+        val dialog = AlertDialog.Builder(this).setTitle("Volume").setView(panel).setNegativeButton("Close", null).create()
+        seek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                volumeBeforeMute = progress / 100f
+                keyboardMuted = progress == 0
+                value.text = "$progress%"
+                applySplitVolumes()
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+        dialog.setOnShowListener { dialog.window?.setBackgroundDrawable(roundedRect(0xFF111511.toInt(), 0xFF596157.toInt(), 1, 18)) }
+        dialog.show()
+    }
+
+    private fun showVideoFitDialog() {
+        val modes = intArrayOf(AspectRatioFrameLayout.RESIZE_MODE_FIT, AspectRatioFrameLayout.RESIZE_MODE_ZOOM, AspectRatioFrameLayout.RESIZE_MODE_FILL)
+        val names = listOf("Fit", "Fill / crop", "Stretch")
+        AlertDialog.Builder(this).setTitle("Video fit")
+            .setSingleChoiceItems(names.toTypedArray(), modes.indexOfFirst { it == selectedResizeMode }.coerceAtLeast(0)) { d, index ->
+                selectedResizeMode = modes[index]; applyResizeModeToPlayerViews(); d.dismiss(); showMoreDialog()
+            }.setNegativeButton("Back") { d, _ -> d.dismiss(); showMoreDialog() }.show()
+    }
+
+    private fun showPlaybackSpeedDialog() {
+        val speeds = floatArrayOf(0.5f, 1.0f, 1.25f, 1.5f, 2.0f)
+        val names = speeds.map { "${it}x" }.toTypedArray()
+        AlertDialog.Builder(this).setTitle("Playback speed")
+            .setSingleChoiceItems(names, speeds.indexOfFirst { it == selectedPlaybackSpeed }.coerceAtLeast(0)) { d, index ->
+                selectedPlaybackSpeed = speeds[index]; player.setPlaybackSpeed(selectedPlaybackSpeed); secondaryPlayer?.setPlaybackSpeed(selectedPlaybackSpeed)
+                d.dismiss(); showMoreDialog()
+            }.setNegativeButton("Back") { d, _ -> d.dismiss(); showMoreDialog() }.show()
+    }
+
+    private fun showSleepTimerDialog() {
+        val values = intArrayOf(0, 15, 30, 45, 60)
+        val names = values.map { if (it == 0) "Off" else "${it}m" }.toTypedArray()
+        AlertDialog.Builder(this).setTitle("Sleep timer")
+            .setSingleChoiceItems(names, values.indexOfFirst { it == sleepTimerMinutes }.coerceAtLeast(0)) { d, index ->
+                handler.removeCallbacks(stopPlaybackForSleep)
+                sleepTimerMinutes = values[index]
+                if (sleepTimerMinutes > 0) handler.postDelayed(stopPlaybackForSleep, sleepTimerMinutes * 60_000L)
+                d.dismiss(); showMoreDialog()
+            }.setNegativeButton("Back") { d, _ -> d.dismiss(); showMoreDialog() }.show()
+    }
+
+    private fun showSubtitleAppearanceDialog() {
+        val fonts = listOf("Reem Kufi", "Aref Ruqaa", "Amiri", "Lalezar", "Marhey", "Rakkas", "Changa", "Noto Naskh Arabic", "Lemonada", "Noto Kufi Arabic")
+        val colors = listOf("White", "Yellow", "Cyan", "Green")
+        val backgrounds = listOf("Off", "Translucent", "Black")
+        val outlines = listOf("None", "Soft shadow", "Strong outline")
+        val positions = listOf("Bottom", "Raised", "Middle")
+        val sizes = listOf("S", "M", "L", "XL")
+        val options = arrayOf(
+            "Arabic font: ${fonts[subtitleFontIndex]}", "Subtitle color: ${colors[subtitleColorIndex]}",
+            "Subtitle background: ${backgrounds[subtitleBackgroundIndex]}", "Text outline and shadow: ${outlines[subtitleOutlineIndex]}",
+            "Subtitle position: ${positions[subtitlePositionIndex]}", "Subtitle size: ${sizes[subtitleSizeIndex]}",
+            "Subtitle sync: ${if (subtitleSyncMs >= 0) "+" else ""}${subtitleSyncMs} ms", "Reset subtitle settings"
+        )
+        AlertDialog.Builder(this).setTitle("Subtitle appearance").setItems(options) { d, index ->
+            d.dismiss()
+            when (index) {
+                0 -> chooseSubtitleOption("Arabic font", fonts, subtitleFontIndex) { subtitleFontIndex = it }
+                1 -> chooseSubtitleOption("Subtitle color", colors, subtitleColorIndex) { subtitleColorIndex = it }
+                2 -> chooseSubtitleOption("Subtitle background", backgrounds, subtitleBackgroundIndex) { subtitleBackgroundIndex = it }
+                3 -> chooseSubtitleOption("Text outline and shadow", outlines, subtitleOutlineIndex) { subtitleOutlineIndex = it }
+                4 -> chooseSubtitleOption("Subtitle position", positions, subtitlePositionIndex) { subtitlePositionIndex = it }
+                5 -> chooseSubtitleOption("Subtitle size", sizes, subtitleSizeIndex) { subtitleSizeIndex = it }
+                6 -> chooseSubtitleSync()
+                7 -> {
+                    subtitleFontIndex = 0; subtitleColorIndex = 0; subtitleBackgroundIndex = 0
+                    subtitleOutlineIndex = 1; subtitlePositionIndex = 0; subtitleSizeIndex = 2; subtitleSyncMs = 0L
+                    saveSubtitleSettings(); applySubtitleStyle(); showSubtitleAppearanceDialog()
+                }
+            }
+        }.setNegativeButton("Close", null).show()
+    }
+
+    private fun chooseSubtitleOption(title: String, values: List<String>, selected: Int, onSelected: (Int) -> Unit) {
+        AlertDialog.Builder(this).setTitle(title).setSingleChoiceItems(values.toTypedArray(), selected) { d, index ->
+            onSelected(index); saveSubtitleSettings(); applySubtitleStyle(); d.dismiss(); showSubtitleAppearanceDialog()
+        }.setNegativeButton("Back") { d, _ -> d.dismiss(); showSubtitleAppearanceDialog() }.show()
+    }
+
+    private fun chooseSubtitleSync() {
+        val values = longArrayOf(-2000, -1000, -500, 0, 500, 1000, 2000)
+        val labels = values.map { if (it > 0) "+${it} ms" else "${it} ms" }.toTypedArray()
+        AlertDialog.Builder(this).setTitle("Subtitle sync")
+            .setMessage("The offset is applied to external SRT/VTT files (local and online). Embedded tracks and other formats may not support it.")
+            .setSingleChoiceItems(labels, values.indexOfFirst { it == subtitleSyncMs }.coerceAtLeast(0)) { d, index ->
+                subtitleSyncMs = values[index]
+                saveSubtitleSettings()
+                refreshExternalSubtitleSync()
+                d.dismiss()
+                showSubtitleAppearanceDialog()
+            }.setNegativeButton("Back") { d, _ -> d.dismiss(); showSubtitleAppearanceDialog() }.show()
+    }
+
+    private fun saveSubtitleSettings() {
+        val sizeScale = floatArrayOf(0.8f, 1.0f, 1.25f, 1.6f)[subtitleSizeIndex]
+        getSharedPreferences("FlutterSharedPreferences", MODE_PRIVATE).edit()
+            .putInt("flutter.subtitle.font", subtitleFontIndex)
+            .putInt("flutter.subtitle.color", subtitleColorIndex)
+            .putInt("flutter.subtitle.background", subtitleBackgroundIndex)
+            .putInt("flutter.subtitle.outline", subtitleOutlineIndex)
+            .putInt("flutter.subtitle.position", subtitlePositionIndex)
+            .putString("flutter.subtitle.scale", sizeScale.toString())
+            .putString("flutter.subtitle.delay", (subtitleSyncMs / 1000.0).toString())
+            .apply()
+    }
+
+    private fun loadSubtitleSettings() {
+        val p = getSharedPreferences("FlutterSharedPreferences", MODE_PRIVATE)
+        subtitleFontIndex = p.getInt("flutter.subtitle.font", 0).coerceIn(0, 9)
+        subtitleColorIndex = p.getInt("flutter.subtitle.color", 0).coerceIn(0, 3)
+        subtitleBackgroundIndex = p.getInt("flutter.subtitle.background", 0).coerceIn(0, 2)
+        subtitleOutlineIndex = p.getInt("flutter.subtitle.outline", 1).coerceIn(0, 2)
+        subtitlePositionIndex = p.getInt("flutter.subtitle.position", 0).coerceIn(0, 2)
+        val savedScale = p.getString("flutter.subtitle.scale", "1.0")?.toFloatOrNull() ?: 1.0f
+        val scales = floatArrayOf(0.8f, 1.0f, 1.25f, 1.6f)
+        subtitleSizeIndex = scales.indices.minByOrNull { kotlin.math.abs(scales[it] - savedScale) } ?: 1
+        val savedDelay = p.getString("flutter.subtitle.delay", "0")?.toDoubleOrNull() ?: 0.0
+        subtitleSyncMs = (savedDelay * 1000.0).toLong().coerceIn(-30000L, 30000L)
+    }
+
+    /**
+     * Loads the actual bundled Arabic typeface selected in More > Subtitle appearance.
+     * The font payloads are stored as Base64 text assets so GitHub's text-only
+     * file editor can version them safely; they are decoded once into app cache.
+     */
+    private fun loadSubtitleTypeface(index: Int): Typeface {
+        subtitleTypefaceCache[index]?.let { return it }
+        val fontSpecs = listOf(
+            "reem_kufi" to "01",
+            "aref_ruqaa" to "02",
+            "amiri" to "01",
+            "lalezar" to "02",
+            "marhey" to "03",
+            "rakkas" to "03",
+            "changa" to "04",
+            "noto_naskh_arabic" to "04",
+            "lemonada" to "05",
+            "noto_kufi_arabic" to "05"
+        )
+        val (fontKey, bundle) = fontSpecs.getOrElse(index.coerceIn(0, fontSpecs.lastIndex)) {
+            fontSpecs[0]
+        }
+        val typeface = runCatching {
+            var collecting = false
+            val encoded = assets.open(
+                "flutter_assets/assets/fonts/subtitles/arabic-fonts-$bundle.b64"
+            ).bufferedReader(Charsets.UTF_8).use { reader ->
+                buildString {
+                    reader.forEachLine { line ->
+                        if (line.startsWith("@@") && line.endsWith("@@")) {
+                            collecting = line == "@@$fontKey@@"
+                        } else if (collecting) {
+                            append(line.trim())
+                        }
+                    }
+                }
+            }
+            check(encoded.isNotEmpty()) { "Bundled font payload not found: $fontKey" }
+            val bytes = Base64.decode(encoded, Base64.DEFAULT)
+            val fontFile = File(cacheDir, "subtitle-font-$fontKey.ttf")
+            if (!fontFile.exists() || fontFile.length() != bytes.size.toLong()) {
+                fontFile.writeBytes(bytes)
+            }
+            Typeface.createFromFile(fontFile)
+        }.onFailure {
+            Log.w("Media3PlayerActivity", "Could not load Arabic subtitle font $fontKey", it)
+        }.getOrElse {
+            Typeface.create("sans-serif", Typeface.NORMAL)
+        }
+        subtitleTypefaceCache[index] = typeface
+        return typeface
+    }
+
+    private fun applySubtitleStyle() {
+        if (!::playerView.isInitialized) return
+        val foreground = intArrayOf(Color.WHITE, Color.YELLOW, 0xFF00FFFF.toInt(), 0xFF69F0AE.toInt())[subtitleColorIndex]
+        val background = when (subtitleBackgroundIndex) { 1 -> 0x88000000.toInt(); 2 -> Color.BLACK; else -> Color.TRANSPARENT }
+        val edge = when (subtitleOutlineIndex) { 1 -> CaptionStyleCompat.EDGE_TYPE_DROP_SHADOW; 2 -> CaptionStyleCompat.EDGE_TYPE_OUTLINE; else -> CaptionStyleCompat.EDGE_TYPE_NONE }
+        val fonts = listOf("Reem Kufi", "Aref Ruqaa", "Amiri", "Lalezar", "Marhey", "Rakkas", "Changa", "Noto Naskh Arabic", "Lemonada", "Noto Kufi Arabic")
+        val typeface = loadSubtitleTypeface(subtitleFontIndex)
+        val style = CaptionStyleCompat(foreground, background, Color.TRANSPARENT, edge, Color.BLACK, typeface)
+        playerView.subtitleView?.let {
+            it.setStyle(style)
+            it.setFractionalTextSize(0.042f * floatArrayOf(0.8f, 1.0f, 1.25f, 1.6f)[subtitleSizeIndex], false)
+            it.setBottomPaddingFraction(floatArrayOf(0.04f, 0.12f, 0.40f)[subtitlePositionIndex])
+        }
+        secondaryPlayerView?.subtitleView?.let {
+            it.setStyle(style)
+            it.setFractionalTextSize(0.042f * floatArrayOf(0.8f, 1.0f, 1.25f, 1.6f)[subtitleSizeIndex], false)
+            it.setBottomPaddingFraction(floatArrayOf(0.04f, 0.12f, 0.40f)[subtitlePositionIndex])
+        }
     }
 
     private fun applyResizeModeToPlayerViews() {
@@ -2232,14 +2496,562 @@ class Media3PlayerActivity : Activity() {
         }
     }
 
+
+    private data class OnlineSubtitleChoice(
+        val label: String,
+        val url: String,
+        val addon: String
+    )
+
+    private data class OnlineSubtitleIdentity(
+        val type: String,
+        val id: String,
+        val season: Int?,
+        val episode: Int?
+    )
+
+    private fun showOnlineSubtitleSearch() {
+        val currentTitle = playlistTitles.getOrNull(playlistIndex).orEmpty()
+            .ifBlank { titleText.text.toString() }
+        val cleanedTitle = currentTitle
+            .replace(Regex("""\((?:19|20)\d{2}\)"""), "")
+            .replace(Regex("""\b(?:4K|UHD|FHD|HD|SD|HQ|1080p|720p|2160p|HEVC|x26[45]|DV|HDR)\b""", RegexOption.IGNORE_CASE), "")
+            .replace(Regex("""[._]+"""), " ")
+            .replace(Regex("""\(\s*\)|\[\s*\]"""), "")
+            .replace(Regex("""\s{2,}"""), " ")
+            .trim()
+            .ifBlank { currentTitle }
+
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(28, 12, 28, 4)
+        }
+        val queryInput = android.widget.EditText(this).apply {
+            setSingleLine(true)
+            hint = "Movie or series title…"
+            setText(cleanedTitle)
+            textSize = 18f
+            setSelectAllOnFocus(false)
+            contentDescription = "Subtitle search title"
+        }
+        panel.addView(queryInput, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+        ))
+        panel.addView(TextView(this).apply {
+            text = "SRT, VTT, SSA, ASS or TTML · no sign-up needed"
+            textSize = 12f
+            setTextColor(0xFF9AA397.toInt())
+            setPadding(0, 6, 0, 0)
+        })
+
+        val languageLabels = listOf("Hindi", "Urdu", "Arabic", "English", "All")
+        val languageCodes = listOf("hin", "urd", "ara", "eng", "all")
+        var selectedLanguage = "all"
+        val languageRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            setPadding(0, 16, 0, 8)
+        }
+        val languageButtons = mutableListOf<TextView>()
+        var runSearch: (() -> Unit)? = null
+        fun refreshLanguageButtons() {
+            languageButtons.forEachIndexed { index, button ->
+                val selected = languageCodes[index] == selectedLanguage
+                button.setTextColor(if (selected) Color.BLACK else Color.WHITE)
+                button.background = roundedRect(
+                    if (selected) accentColor else 0xFF252A25.toInt(),
+                    if (selected) accentColor else 0xFF596157.toInt(),
+                    1
+                )
+            }
+        }
+        languageLabels.forEachIndexed { index, label ->
+            val button = TextView(this).apply {
+                text = label
+                textSize = 13f
+                gravity = Gravity.CENTER
+                isFocusable = true
+                isClickable = true
+                setPadding(10, 12, 10, 12)
+                contentDescription = "$label subtitle language filter"
+                setOnClickListener {
+                    selectedLanguage = languageCodes[index]
+                    refreshLanguageButtons()
+                    runSearch?.invoke()
+                }
+            }
+            languageButtons.add(button)
+            languageRow.addView(button, LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f
+            ).apply {
+                if (index > 0) marginStart = 6
+            })
+        }
+        panel.addView(languageRow)
+        panel.addView(TextView(this).apply {
+            text = "Powered by OpenSubtitles"
+            textSize = 12f
+            gravity = Gravity.CENTER
+            setTextColor(0xFFB5BDB2.toInt())
+            setPadding(0, 8, 0, 2)
+        })
+        refreshLanguageButtons()
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Search online")
+            .setView(panel)
+            .setPositiveButton("Search", null)
+            .setNegativeButton("Cancel", null)
+            .create()
+        dialog.setOnShowListener {
+            dialog.window?.setBackgroundDrawable(roundedRect(0xFF111511.toInt(), 0xFF596157.toInt(), 1))
+            val searchButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            searchButton.setOnClickListener {
+                val query = queryInput.text?.toString()?.trim().orEmpty()
+                if (query.isBlank()) {
+                    queryInput.error = "Enter a movie or series title"
+                    queryInput.requestFocus()
+                    return@setOnClickListener
+                }
+                dialog.dismiss()
+                val progress = AlertDialog.Builder(this)
+                    .setTitle("Search online")
+                    .setMessage("Searching subtitles…")
+                    .setNegativeButton("Cancel", null)
+                    .create()
+                progress.show()
+                Thread {
+                    var failure: String? = null
+                    val results = try {
+                        findOnlineSubtitles(query, selectedLanguage)
+                    } catch (error: Exception) {
+                        failure = error.message ?: "Unable to search subtitle sources."
+                        emptyList()
+                    }
+                    runOnUiThread {
+                        if (isFinishing || isDestroyed) return@runOnUiThread
+                        progress.dismiss()
+                        if (results.isEmpty()) {
+                            val selectedLabel = languageLabels[languageCodes.indexOf(selectedLanguage)]
+                            AlertDialog.Builder(this)
+                                .setTitle("Search online")
+                                .setMessage(failure ?: "No subtitles found for “$query” in $selectedLabel.")
+                                .setPositiveButton("Search again") { _, _ -> showOnlineSubtitleSearch() }
+                                .setNegativeButton("OK", null)
+                                .show()
+                            subtitleButton.post { subtitleButton.requestFocus() }
+                            return@runOnUiThread
+                        }
+                        val labels = results.map { it.label }.toTypedArray()
+                        AlertDialog.Builder(this)
+                            .setTitle("Subtitles (" + results.size + ")")
+                            .setItems(labels) { resultDialog, index ->
+                                resultDialog.dismiss()
+                                if (index in results.indices) downloadAndApplyOnlineSubtitle(results[index])
+                            }
+                            .setNegativeButton("Search again") { _, _ -> showOnlineSubtitleSearch() }
+                            .setOnCancelListener { subtitleButton.post { subtitleButton.requestFocus() } }
+                            .show()
+                    }
+                }.start()
+            }
+            runSearch = { searchButton.performClick() }
+        }
+        dialog.setOnDismissListener {
+            showControls()
+            subtitleButton.post { subtitleButton.requestFocus() }
+        }
+        dialog.show()
+    }
+
+    private fun findOnlineSubtitles(title: String, languageFilter: String = "all"): List<OnlineSubtitleChoice> {
+        val episode = Regex("""(?:S(\d{1,2})E(\d{1,3})|(\d{1,2})x(\d{1,3}))""", RegexOption.IGNORE_CASE).find(title)
+        val season = episode?.groupValues?.getOrNull(1)?.takeIf { it.isNotBlank() }?.toIntOrNull()
+            ?: episode?.groupValues?.getOrNull(3)?.takeIf { it.isNotBlank() }?.toIntOrNull()
+        val episodeNumber = episode?.groupValues?.getOrNull(2)?.takeIf { it.isNotBlank() }?.toIntOrNull()
+            ?: episode?.groupValues?.getOrNull(4)?.takeIf { it.isNotBlank() }?.toIntOrNull()
+        val cleanTitle = title
+            .replace(Regex("""\b(19|20)\d{2}\b"""), "")
+            .replace(Regex("""\bS\d{1,2}E\d{1,3}\b|\b\d{1,2}x\d{1,3}\b""", RegexOption.IGNORE_CASE), "")
+            .replace(Regex("""[._]+"""), " ")
+            .replace(Regex("""\s+"""), " ")
+            .trim()
+        if (cleanTitle.isBlank()) return emptyList()
+
+        val types = if (season != null && episodeNumber != null) listOf("series") else listOf("movie", "series")
+        val candidates = mutableListOf<JSONObject>()
+        for (type in types) {
+            val response = getOnlineJson(
+                "https://v3-cinemeta.strem.io/catalog/" + type + "/top/search=" +
+                    java.net.URLEncoder.encode(cleanTitle, "UTF-8").replace("+", "%20") + ".json"
+            ) ?: continue
+            val metas = response.optJSONArray("metas") ?: continue
+            for (index in 0 until metas.length()) {
+                val meta = metas.optJSONObject(index) ?: continue
+                val id = meta.optString("imdb_id").ifBlank { meta.optString("id") }
+                if (Regex("""^tt\d+$""").matches(id)) candidates.add(meta)
+            }
+            if (candidates.isNotEmpty()) break
+        }
+        if (candidates.isEmpty()) {
+            val addonIdentity = searchConfiguredOnlineIdentity(
+                cleanTitle,
+                series = season != null && episodeNumber != null,
+                season = season,
+                episode = episodeNumber
+            ) ?: return emptyList()
+            candidates.add(addonIdentity)
+        }
+        val queryKey = normaliseOnlineTitle(cleanTitle)
+        candidates.sortBy { meta ->
+            val name = meta.optString("name").ifBlank { meta.optString("title") }
+            val key = normaliseOnlineTitle(name)
+            when {
+                key == queryKey -> 0
+                key.contains(queryKey) || queryKey.contains(key) -> 1
+                else -> 2
+            }
+        }
+        val selected = candidates.first()
+        val identityType = selected.optString("type").ifBlank {
+            if (season != null && episodeNumber != null) "series" else "movie"
+        }
+        val identityId = selected.optString("imdb_id").ifBlank { selected.optString("id") }
+        if (identityType !in listOf("movie", "series") || identityId.isBlank()) return emptyList()
+        val resourceId = if (identityType == "series" && season != null && episodeNumber != null) {
+            identityId + ":" + season + ":" + episodeNumber
+        } else identityId
+
+        val storedAddons = mutableListOf<JSONObject>()
+        val raw = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+            .getString("flutter.eagle_x_stremio_addons_v1", null)
+        if (!raw.isNullOrBlank()) {
+            try {
+                val saved = JSONArray(raw)
+                for (index in 0 until saved.length()) saved.optJSONObject(index)?.let { storedAddons.add(it) }
+            } catch (_: Exception) {
+                // Ignore invalid older preferences and continue with built-in subtitle sources.
+            }
+        }
+        val defaults = listOf(
+            JSONObject().put("id", "org.stremio.opensubtitlesv3")
+                .put("name", "OpenSubtitles V3")
+                .put("version", "1.0.0")
+                .put("url", "https://opensubtitles-v3.strem.io/manifest.json")
+                .put("resources", JSONArray().put("subtitles")).put("enabled", true),
+            JSONObject().put("id", "opensubtitles-pro")
+                .put("name", "OpenSubtitles PRO")
+                .put("version", "0.1.0")
+                .put("url", "https://opensubtitlesv3-pro.dexter21767.com/manifest.json")
+                .put("resources", JSONArray().put("subtitles")).put("enabled", true)
+        )
+        for (seed in defaults) {
+            val seedId = seed.optString("id")
+            val seedUrl = seed.optString("url")
+            if (storedAddons.none { it.optString("id") == seedId || it.optString("url") == seedUrl }) {
+                storedAddons.add(seed)
+            }
+        }
+
+        val results = mutableListOf<OnlineSubtitleChoice>()
+        val seen = mutableSetOf<String>()
+        for (addon in storedAddons) {
+            if (!addon.optBoolean("enabled", true)) continue
+            val resourceList = addon.optJSONArray("resources")
+            val hasSubtitleResource = resourceList == null || (0 until resourceList.length()).any { index ->
+                val item = resourceList.opt(index)
+                if (item is JSONObject) item.optString("name") == "subtitles" else item.toString() == "subtitles"
+            }
+            if (!hasSubtitleResource) continue
+            val rawUrl = addon.optString("url").ifBlank {
+                addon.optString("manifestUrl").ifBlank { addon.optString("transportUrl") }
+            }.trim()
+            if (!rawUrl.startsWith("https://") && !rawUrl.startsWith("http://")) continue
+            val parsed = Uri.parse(rawUrl)
+            var basePath = parsed.encodedPath.orEmpty()
+            if (basePath.endsWith("/manifest.json")) {
+                basePath = basePath.removeSuffix("/manifest.json")
+            } else {
+                basePath = basePath.trimEnd('/')
+            }
+            val base = parsed.buildUpon().encodedPath(basePath).clearQuery().fragment(null).build().toString().trimEnd('/')
+            val subtitlesUrl = base + "/subtitles/" + identityType + "/" +
+                Uri.encode(resourceId) + ".json"
+            val body = getOnlineJson(subtitlesUrl) ?: continue
+            val rows = body.optJSONArray("subtitles") ?: continue
+            val addonName = addon.optString("name").ifBlank { "Stremio addon" }
+            for (index in 0 until rows.length()) {
+                val row = rows.optJSONObject(index) ?: continue
+                val subtitleUrl = row.optString("url").trim()
+                if ((!subtitleUrl.startsWith("https://") && !subtitleUrl.startsWith("http://")) ||
+                    !seen.add(subtitleUrl)) continue
+                val languageCode = row.optString("lang").trim().lowercase()
+                val language = languageCode.ifBlank { "Unknown language" }
+                val wantedCodes = when (languageFilter) {
+                    "hin" -> setOf("hin", "hi", "hindi")
+                    "urd" -> setOf("urd", "ur", "urdu")
+                    "ara" -> setOf("ara", "ar", "arabic")
+                    "eng" -> setOf("eng", "en", "english")
+                    else -> emptySet()
+                }
+                if (wantedCodes.isNotEmpty() && languageCode !in wantedCodes &&
+                    !wantedCodes.any { languageCode.startsWith(it + "-") }) continue
+                val label = row.optString("label").ifBlank { language }
+                results.add(OnlineSubtitleChoice(label + " · " + language + " · " + addonName, subtitleUrl, addonName))
+            }
+        }
+        return results
+    }
+
+
+    /**
+     * Mirrors the phone subtitle service fallback: when Cinemeta cannot resolve
+     * the title, search enabled Stremio add-on catalogs that advertise search.
+     * Only IMDb IDs are accepted as subtitle identities.
+     */
+    private fun searchConfiguredOnlineIdentity(
+        query: String,
+        series: Boolean,
+        season: Int?,
+        episode: Int?
+    ): JSONObject? {
+        val addons = mutableListOf<JSONObject>()
+        val raw = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+            .getString("flutter.eagle_x_stremio_addons_v1", null)
+        if (!raw.isNullOrBlank()) {
+            try {
+                val saved = JSONArray(raw)
+                for (index in 0 until saved.length()) {
+                    saved.optJSONObject(index)?.let { addon ->
+                        if (addon.optBoolean("enabled", true)) addons.add(addon)
+                    }
+                }
+            } catch (_: Exception) {
+                // Keep searching with the built-in subtitle add-ons below.
+            }
+        }
+        val defaultAddons = listOf(
+            JSONObject().put("id", "org.stremio.opensubtitlesv3")
+                .put("name", "OpenSubtitles V3")
+                .put("url", "https://opensubtitles-v3.strem.io/manifest.json")
+                .put("enabled", true),
+            JSONObject().put("id", "opensubtitles-pro")
+                .put("name", "OpenSubtitles PRO")
+                .put("url", "https://opensubtitlesv3-pro.dexter21767.com/manifest.json")
+                .put("enabled", true)
+        )
+        for (seed in defaultAddons) {
+            if (addons.none { it.optString("id") == seed.optString("id") ||
+                    it.optString("url") == seed.optString("url") }) addons.add(seed)
+        }
+
+        val found = mutableListOf<JSONObject>()
+        val queryKey = normaliseOnlineTitle(query)
+        for (addon in addons.take(20)) {
+            if (!addon.optBoolean("enabled", true)) continue
+            val rawUrl = addon.optString("url").ifBlank {
+                addon.optString("manifestUrl").ifBlank { addon.optString("transportUrl") }
+            }.trim()
+            if (!rawUrl.startsWith("https://") && !rawUrl.startsWith("http://")) continue
+            val manifestUrl = if (rawUrl.endsWith("/manifest.json")) rawUrl
+                else rawUrl.trimEnd('/') + "/manifest.json"
+            val manifest = getOnlineJson(manifestUrl) ?: continue
+            val catalogs = manifest.optJSONArray("catalogs") ?: continue
+            val manifestUri = Uri.parse(manifestUrl)
+            val manifestPath = manifestUri.encodedPath.orEmpty()
+            val basePath = if (manifestPath.endsWith("/manifest.json")) {
+                manifestPath.removeSuffix("/manifest.json")
+            } else manifestPath.trimEnd('/')
+            val base = manifestUri.buildUpon().encodedPath(basePath).clearQuery()
+                .fragment(null).build().toString().trimEnd('/')
+
+            for (catalogIndex in 0 until catalogs.length()) {
+                val catalog = catalogs.optJSONObject(catalogIndex) ?: continue
+                val type = catalog.optString("type")
+                if (type != "movie" && type != "series") continue
+                if (series && type != "series") continue
+                val catalogId = catalog.optString("id")
+                if (catalogId.isBlank()) continue
+                val extras = catalog.optJSONArray("extra") ?: continue
+                val supportsSearch = (0 until extras.length()).any { extraIndex ->
+                    extras.optJSONObject(extraIndex)?.optString("name") == "search"
+                }
+                if (!supportsSearch) continue
+                val catalogUrl = base + "/catalog/" + type + "/" + Uri.encode(catalogId) +
+                    "/search=" + java.net.URLEncoder.encode(query, "UTF-8").replace("+", "%20") + ".json"
+                val response = getOnlineJson(catalogUrl) ?: continue
+                val metas = response.optJSONArray("metas") ?: continue
+                for (metaIndex in 0 until metas.length()) {
+                    val meta = metas.optJSONObject(metaIndex) ?: continue
+                    val id = meta.optString("imdb_id").ifBlank { meta.optString("id") }
+                    if (!Regex("""^tt\d+$""").matches(id)) continue
+                    val resultType = meta.optString("type").ifBlank { type }
+                    if (resultType != "movie" && resultType != "series") continue
+                    found.add(JSONObject()
+                        .put("id", id)
+                        .put("imdb_id", id)
+                        .put("type", resultType)
+                        .put("name", meta.optString("name").ifBlank { meta.optString("title") }))
+                }
+            }
+        }
+        if (found.isEmpty()) return null
+        found.sortBy { meta ->
+            val key = normaliseOnlineTitle(meta.optString("name"))
+            when {
+                key == queryKey -> 0
+                key.contains(queryKey) || queryKey.contains(key) -> 1
+                else -> 2
+            }
+        }
+        val selected = found.first()
+        val type = selected.optString("type")
+        if (type == "series" && season != null && episode != null) {
+            selected.put("episodeIdentitySeason", season)
+            selected.put("episodeIdentityNumber", episode)
+        }
+        return selected
+    }
+
+    private fun getOnlineJson(address: String): JSONObject? {
+        var connection: HttpURLConnection? = null
+        return try {
+            connection = URL(address).openConnection() as HttpURLConnection
+            connection.connectTimeout = 9_000
+            connection.readTimeout = 12_000
+            connection.requestMethod = "GET"
+            connection.setRequestProperty("Accept", "application/json")
+            connection.setRequestProperty("User-Agent", "EagleX/1.0")
+            if (connection.responseCode !in 200..299) return null
+            val text = connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+            JSONObject(text)
+        } catch (_: Exception) {
+            null
+        } finally {
+            connection?.disconnect()
+        }
+    }
+
+    private fun normaliseOnlineTitle(value: String): String =
+        value.lowercase().replace(Regex("""[^\p{L}\p{N}]"""), "")
+
+    private fun downloadAndApplyOnlineSubtitle(subtitle: OnlineSubtitleChoice) {
+        val progress = AlertDialog.Builder(this)
+            .setTitle("Downloading subtitle")
+            .setMessage(subtitle.label)
+            .setNegativeButton("Cancel", null)
+            .create()
+        progress.show()
+        Thread {
+            var downloaded: File? = null
+            var failure: String? = null
+            try {
+                val connection = URL(subtitle.url).openConnection() as HttpURLConnection
+                connection.connectTimeout = 9_000
+                connection.readTimeout = 20_000
+                connection.setRequestProperty("User-Agent", "EagleX/1.0")
+                connection.setRequestProperty("Accept-Encoding", "identity")
+                connection.inputStream.use { input ->
+                    val path = Uri.parse(subtitle.url).lastPathSegment.orEmpty().lowercase()
+                    val extension = listOf("srt", "vtt", "ass", "ssa", "ttml", "xml")
+                        .firstOrNull { path.endsWith("." + it) } ?: "srt"
+                    val target = File(cacheDir, "online_subtitle_" + System.currentTimeMillis() + "." + extension)
+                    target.outputStream().use { output -> input.copyTo(output) }
+                    if (target.length() == 0L) throw IllegalStateException("The subtitle file was empty.")
+                    // Keep the downloaded source untouched so the More > Subtitle sync
+                    // setting can be changed later without accumulating offsets.
+                    downloaded = target
+                }
+                connection.disconnect()
+            } catch (error: Exception) {
+                failure = error.message ?: "Unable to download this subtitle."
+            }
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                progress.dismiss()
+                val file = downloaded
+                if (file == null) {
+                    AlertDialog.Builder(this)
+                        .setTitle("Subtitle download failed")
+                        .setMessage(failure ?: "Unable to download this subtitle.")
+                        .setPositiveButton("OK", null)
+                        .show()
+                    return@runOnUiThread
+                }
+                externalSubtitleSourceUri = Uri.fromFile(file)
+                externalSubtitleName = subtitle.label
+                externalSubtitleExtension = file.extension.lowercase()
+                externalSubtitleActive = true
+                externalSubtitleUri = prepareExternalSubtitleWithSync(
+                    externalSubtitleSourceUri!!,
+                    externalSubtitleName,
+                    externalSubtitleExtension
+                )
+                val position = player.currentPosition.coerceAtLeast(0L)
+                val shouldPlay = player.playWhenReady
+                player.setMediaItem(buildMediaItem(), position)
+                player.trackSelectionParameters = player.trackSelectionParameters
+                    .buildUpon()
+                    .clearOverridesOfType(C.TRACK_TYPE_TEXT)
+                    .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+                    .build()
+                player.prepare()
+                player.playWhenReady = shouldPlay
+                Toast.makeText(this, "Added online subtitle", Toast.LENGTH_SHORT).show()
+                showControls()
+                subtitleButton.requestFocus()
+            }
+        }.start()
+    }
+
+    /**
+     * Apply the selected subtitle offset to downloaded SRT/WebVTT files.
+     * Positive values delay captions; negative values advance them.
+     * Native embedded tracks and formats with different timestamp syntax are
+     * intentionally left untouched rather than silently corrupting the file.
+     */
+    private fun applyOnlineSubtitleDelay(file: File) {
+        val offsetMs = subtitleSyncMs
+        if (offsetMs == 0L) return
+        val source = file.readText(Charsets.UTF_8)
+        val timestamp = Regex("""(?<![\d:])(\d{2,}:\d{2}:\d{2})[,.](\d{3})(?!\d)""")
+        val shifted = timestamp.replace(source) { match ->
+            val parts = match.groupValues[1].split(":").mapNotNull { it.toLongOrNull() }
+            if (parts.size != 3) return@replace match.value
+            val original = ((parts[0] * 3600L + parts[1] * 60L + parts[2]) * 1000L) +
+                (match.groupValues[2].toLongOrNull() ?: 0L)
+            val adjusted = (original + offsetMs).coerceAtLeast(0L)
+            val hours = adjusted / 3_600_000L
+            val minutes = (adjusted / 60_000L) % 60L
+            val seconds = (adjusted / 1_000L) % 60L
+            val millis = adjusted % 1_000L
+            String.format(
+                java.util.Locale.US,
+                "%02d:%02d:%02d%s%03d",
+                hours, minutes, seconds,
+                if (match.value.contains('.')) "." else ",",
+                millis
+            )
+        }
+        if (shifted != source) file.writeText(shifted, Charsets.UTF_8)
+    }
+
     private fun showSubtitleDialog() {
         val choices = trackChoices(player.currentTracks, C.TRACK_TYPE_TEXT)
         val canAddFile = !isLive
-        if (choices.isEmpty() && !canAddFile) return
+        if (choices.isEmpty() && !canAddFile) {
+            AlertDialog.Builder(this)
+                .setTitle("Subtitles")
+                .setMessage("No subtitle tracks are available for this live channel.")
+                .setPositiveButton("OK", null)
+                .show()
+            return
+        }
         handler.removeCallbacks(hideControls)
         val labels = buildList {
             add("Off")
             addAll(choices.map { it.label })
+            if (canAddFile) add("Search online…")
             if (canAddFile) add("＋  Add subtitle file…")
         }.toTypedArray()
         val typeDisabled = player.trackSelectionParameters.disabledTrackTypes
@@ -2260,9 +3072,16 @@ class Media3PlayerActivity : Activity() {
                         activeDialog.dismiss()
                         openSubtitlePicker()
                     }
+                    canAddFile && itemIndex == choices.size + 1 -> {
+                        activeDialog.dismiss()
+                        showOnlineSubtitleSearch()
+                    }
                     itemIndex == 0 -> {
                         externalSubtitleUri = null
+                        externalSubtitleSourceUri = null
                         externalSubtitleName = ""
+                        externalSubtitleExtension = ""
+                        externalSubtitleActive = false
                         player.trackSelectionParameters =
                             player.trackSelectionParameters
                                 .buildUpon()
@@ -2274,6 +3093,9 @@ class Media3PlayerActivity : Activity() {
                     }
                     else -> {
                         val choice = choices[itemIndex - 1]
+                        externalSubtitleActive =
+                            externalSubtitleSourceUri != null &&
+                                choice.label == externalSubtitleName
                         player.trackSelectionParameters =
                             player.trackSelectionParameters
                                 .buildUpon()
@@ -2357,8 +3179,15 @@ class Media3PlayerActivity : Activity() {
         } catch (_: SecurityException) {
             // The activity grant still remains valid for this playback.
         }
-        externalSubtitleUri = uri
         externalSubtitleName = subtitleDisplayName(uri)
+        externalSubtitleSourceUri = uri
+        externalSubtitleExtension = externalSubtitleName.substringAfterLast('.', "").lowercase()
+        externalSubtitleActive = true
+        externalSubtitleUri = prepareExternalSubtitleWithSync(
+            uri,
+            externalSubtitleName,
+            externalSubtitleExtension
+        )
         val position = player.currentPosition.coerceAtLeast(0L)
         val shouldPlay = player.playWhenReady
         player.setMediaItem(buildMediaItem(), position)
@@ -2376,6 +3205,59 @@ class Media3PlayerActivity : Activity() {
         ).show()
         showControls()
         subtitleButton.requestFocus()
+    }
+
+    /**
+     * Apply the selected offset to local SRT/WebVTT files as well as online ones.
+     * Other formats are passed through untouched because their timestamp syntax
+     * differs and must not be rewritten blindly.
+     */
+    private fun prepareExternalSubtitleWithSync(
+        uri: Uri,
+        displayName: String,
+        extensionOverride: String = displayName.substringAfterLast('.', "").lowercase()
+    ): Uri {
+        if (subtitleSyncMs == 0L) return uri
+        val extension = extensionOverride
+        if (extension != "srt" && extension != "vtt") return uri
+        return runCatching {
+            val target = File(cacheDir, "local_subtitle_${System.currentTimeMillis()}.$extension")
+            val input = contentResolver.openInputStream(uri)
+                ?: throw IllegalStateException("Could not open the selected subtitle file.")
+            input.use { stream ->
+                target.outputStream().use { output -> stream.copyTo(output) }
+            }
+            check(target.length() > 0L) { "The selected subtitle file was empty." }
+            applyOnlineSubtitleDelay(target)
+            Uri.fromFile(target)
+        }.onFailure { error ->
+            Log.w("Media3PlayerActivity", "Could not apply subtitle sync to local file", error)
+            Toast.makeText(
+                this,
+                "Could not apply sync to this subtitle; using the original file.",
+                Toast.LENGTH_LONG
+            ).show()
+        }.getOrDefault(uri)
+    }
+
+    private fun refreshExternalSubtitleSync() {
+        val source = externalSubtitleSourceUri ?: return
+        if (!externalSubtitleActive || !::player.isInitialized) return
+        val position = player.currentPosition.coerceAtLeast(0L)
+        val shouldPlay = player.playWhenReady
+        externalSubtitleUri = prepareExternalSubtitleWithSync(
+            source,
+            externalSubtitleName,
+            externalSubtitleExtension
+        )
+        player.setMediaItem(buildMediaItem(), position)
+        player.trackSelectionParameters = player.trackSelectionParameters
+            .buildUpon()
+            .clearOverridesOfType(C.TRACK_TYPE_TEXT)
+            .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+            .build()
+        player.prepare()
+        player.playWhenReady = shouldPlay
     }
 
     private fun subtitleDisplayName(uri: Uri): String {
@@ -2436,7 +3318,10 @@ class Media3PlayerActivity : Activity() {
 
     private fun showTrackDialog(type: Int, title: String, allowOff: Boolean) {
         val choices = trackChoices(player.currentTracks, type)
-        if (choices.isEmpty()) return
+        if (choices.isEmpty()) {
+            Toast.makeText(this, "No alternate $title tracks are available.", Toast.LENGTH_SHORT).show()
+            return
+        }
         handler.removeCallbacks(hideControls)
         val offset = if (allowOff) 1 else 0
         val labels = buildList {

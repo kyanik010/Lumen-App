@@ -48,6 +48,8 @@ dependencies:
   mobile_scanner: 7.1.4
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -112,7 +114,10 @@ flutter:
 
   assets:
     - assets/lumen_loader.json
+    - assets/eagle_x_logo.png
+    - assets/eagle_x_qr.png
     - assets/demo/
+    - assets/fonts/subtitles/
 
   # Bundle Lumen's editorial typeface so the interface stays consistent on
   # offline TVs and phones instead of relying on a runtime font download.

@@ -205,7 +205,7 @@ class _EpgChannelMappingScreenState extends State<EpgChannelMappingScreen> {
                       final filter = DropdownButtonFormField<String>(
                         isExpanded: true,
                         initialValue: _filter,
-                        decoration: const InputDecoration(labelText: 'Show'),
+                        decoration: const InputDecoration(labelText: 'عرض'),
                         items: const [
                           DropdownMenuItem(
                             value: 'unresolved',
@@ -543,7 +543,7 @@ class _EpgChannelPickerScreenState extends State<_EpgChannelPickerScreen> {
                       DropdownButtonFormField<String>(
                         initialValue: _sourceKey,
                         decoration: const InputDecoration(
-                          labelText: 'Guide source',
+                          labelText: 'مصدر الدليل',
                         ),
                         items: [
                           for (final source in widget.sources)

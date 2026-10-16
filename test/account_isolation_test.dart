@@ -276,10 +276,10 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
 
-    expect(find.byTooltip('Live'), findsOneWidget);
-    expect(find.byTooltip('Guide'), findsOneWidget);
-    expect(find.byTooltip('Movies'), findsNothing);
-    expect(find.byTooltip('Series'), findsNothing);
+    expect(find.byTooltip('مباشر'), findsOneWidget);
+    expect(find.byTooltip('الدليل'), findsOneWidget);
+    expect(find.byTooltip('الأفلام'), findsNothing);
+    expect(find.byTooltip('المسلسلات'), findsNothing);
     expect(find.byTooltip('Discover'), findsNothing);
     expect(tester.takeException(), isNull);
 
@@ -315,8 +315,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
 
-    expect(find.byTooltip('Home'), findsOneWidget);
-    expect(find.byTooltip('Search'), findsOneWidget);
+    expect(find.byTooltip('الرئيسية'), findsOneWidget);
+    expect(find.byTooltip('بحث'), findsOneWidget);
     expect(find.byTooltip('Discover'), findsNothing);
     expect(tester.takeException(), isNull);
 
@@ -355,8 +355,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
 
-    expect(find.byTooltip('Home'), findsOneWidget);
-    expect(find.byTooltip('Profile'), findsOneWidget);
+    expect(find.byTooltip('الرئيسية'), findsOneWidget);
+    expect(find.byTooltip('الملف الشخصي'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -397,7 +397,7 @@ void main() {
     final searchControl = tester.widget<FocusableActionDetector>(
       find
           .descendant(
-            of: find.byTooltip('Search'),
+            of: find.byTooltip('بحث'),
             matching: find.byType(FocusableActionDetector),
           )
           .first,
@@ -412,7 +412,7 @@ void main() {
     final myListControl = tester.widget<FocusableActionDetector>(
       find
           .descendant(
-            of: find.byTooltip('My List'),
+            of: find.byTooltip('قائمتي'),
             matching: find.byType(FocusableActionDetector),
           )
           .first,
@@ -460,7 +460,7 @@ void main() {
     final homeControl = tester.widget<FocusableActionDetector>(
       find
           .descendant(
-            of: find.byTooltip('Home'),
+            of: find.byTooltip('الرئيسية'),
             matching: find.byType(FocusableActionDetector),
           )
           .first,
@@ -525,7 +525,7 @@ void main() {
     }
     await tester.sendKeyEvent(LogicalKeyboardKey.select);
     await tester.pump();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'Search library');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'البحث في المكتبة');
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
     await tester.pump();
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'Command refresh');
@@ -541,7 +541,7 @@ void main() {
     );
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
     await tester.pump();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'Search library');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'البحث في المكتبة');
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
     await tester.pump();
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'Command refresh');
@@ -549,7 +549,7 @@ void main() {
     final moviesControl = tester.widget<FocusableActionDetector>(
       find
           .descendant(
-            of: find.byTooltip('Movies'),
+            of: find.byTooltip('الأفلام'),
             matching: find.byType(FocusableActionDetector),
           )
           .first,
@@ -658,7 +658,7 @@ void main() {
     final homeControl = tester.widget<FocusableActionDetector>(
       find
           .descendant(
-            of: find.byTooltip('Home'),
+            of: find.byTooltip('الرئيسية'),
             matching: find.byType(FocusableActionDetector),
           )
           .first,
@@ -720,13 +720,13 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
 
     final routes = <(String, (String, String))>[
-      ('Search', ('Search library', 'Command refresh')),
-      ('My List', ('My List filter 0', 'Command find anything')),
-      ('Profile', ('Profile add account', 'Command find anything')),
-      ('Movies', ('movie category all', 'Command find anything')),
-      ('Series', ('series category all', 'Command find anything')),
-      ('Live', ('live category all', 'Command find anything')),
-      ('Guide', ('Guide first category', 'Command find anything')),
+      ('بحث', ('البحث في المكتبة', 'Command refresh')),
+      ('قائمتي', ('My List filter 0', 'Command find anything')),
+      ('الملف الشخصي', ('Profile add account', 'Command find anything')),
+      ('الأفلام', ('movie category all', 'Command find anything')),
+      ('المسلسلات', ('series category all', 'Command find anything')),
+      ('مباشر', ('live category all', 'Command find anything')),
+      ('الدليل', ('Guide first category', 'Command find anything')),
       ('Downloads', ('Downloads filter 0', 'Command find anything')),
     ];
 
@@ -760,10 +760,10 @@ void main() {
         route.$2.$2,
         reason: '${route.$1} must reach the global command bar with Up.',
       );
-      if (route.$1 == 'Movies' ||
-          route.$1 == 'Series' ||
-          route.$1 == 'Live' ||
-          route.$1 == 'Guide') {
+      if (route.$1 == 'الأفلام' ||
+          route.$1 == 'المسلسلات' ||
+          route.$1 == 'مباشر' ||
+          route.$1 == 'الدليل') {
         await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
         await tester.pump(const Duration(milliseconds: 80));
         expect(
@@ -827,7 +827,7 @@ void main() {
       final myListControl = tester.widget<FocusableActionDetector>(
         find
             .descendant(
-              of: find.byTooltip('My List'),
+              of: find.byTooltip('قائمتي'),
               matching: find.byType(FocusableActionDetector),
             )
             .first,
@@ -872,7 +872,7 @@ void main() {
       final profileControl = tester.widget<FocusableActionDetector>(
         find
             .descendant(
-              of: find.byTooltip('Profile'),
+              of: find.byTooltip('الملف الشخصي'),
               matching: find.byType(FocusableActionDetector),
             )
             .first,
@@ -928,7 +928,7 @@ void main() {
       final myListControl = tester.widget<FocusableActionDetector>(
         find
             .descendant(
-              of: find.byTooltip('My List'),
+              of: find.byTooltip('قائمتي'),
               matching: find.byType(FocusableActionDetector),
             )
             .first,
@@ -1002,15 +1002,15 @@ void main() {
     await tester.pump();
     expect(find.byKey(const ValueKey('shell-page-0')), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Movies'));
+    await tester.tap(find.byTooltip('الأفلام'));
     await tester.pump();
     expect(find.byKey(const ValueKey('shell-page-4')), findsOneWidget);
-    expect(find.text('Movies'), findsOneWidget);
+    expect(find.text('الأفلام'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Series'));
+    await tester.tap(find.byTooltip('المسلسلات'));
     await tester.pump();
     expect(find.byKey(const ValueKey('shell-page-5')), findsOneWidget);
-    expect(find.text('Series'), findsOneWidget);
+    expect(find.text('المسلسلات'), findsOneWidget);
 
     await tester.binding.handlePopRoute();
     await tester.pump();
@@ -1022,13 +1022,13 @@ void main() {
 
     final homeBack = tester.binding.handlePopRoute();
     await tester.pump();
-    expect(find.text('Exit Lumen?'), findsOneWidget);
-    expect(find.widgetWithText(TextButton, 'No'), findsOneWidget);
-    expect(find.widgetWithText(FilledButton, 'Yes'), findsOneWidget);
-    await tester.tap(find.widgetWithText(TextButton, 'No'));
+    expect(find.text('الخروج من Eagle X؟'), findsOneWidget);
+    expect(find.widgetWithText(TextButton, 'لا'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'نعم'), findsOneWidget);
+    await tester.tap(find.widgetWithText(TextButton, 'لا'));
     await tester.pump();
     await homeBack;
-    expect(find.text('Exit Lumen?'), findsNothing);
+    expect(find.text('الخروج من Eagle X؟'), findsNothing);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 1));
@@ -1065,39 +1065,39 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
 
-    expect(find.text('Home'), findsOneWidget);
-    expect(find.text('Movies'), findsOneWidget);
-    expect(find.text('Series'), findsOneWidget);
-    expect(find.text('Live'), findsOneWidget);
-    expect(find.byTooltip('Guide'), findsNothing);
-    expect(find.text('Search'), findsOneWidget);
+    expect(find.text('الرئيسية'), findsOneWidget);
+    expect(find.text('الأفلام'), findsOneWidget);
+    expect(find.text('المسلسلات'), findsOneWidget);
+    expect(find.text('مباشر'), findsOneWidget);
+    expect(find.byTooltip('الدليل'), findsNothing);
+    expect(find.text('بحث'), findsOneWidget);
     expect(find.text('My List'), findsNothing);
     expect(find.text('Profile'), findsNothing);
     expect(find.text('Discover'), findsNothing);
     expect(tester.takeException(), isNull);
 
-    await tester.tap(find.byTooltip('Live'));
+    await tester.tap(find.byTooltip('مباشر'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.byTooltip('Guide'), findsNothing);
-    expect(find.byTooltip('You & library'), findsNothing);
+    expect(find.byTooltip('الدليل'), findsNothing);
+    expect(find.byTooltip('حسابك ومكتبتك'), findsNothing);
 
     await tester.binding.handlePopRoute();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.byTooltip('You & library'), findsOneWidget);
-    expect(find.byTooltip('Guide'), findsNothing);
+    expect(find.byTooltip('حسابك ومكتبتك'), findsOneWidget);
+    expect(find.byTooltip('الدليل'), findsNothing);
 
-    final utilityRect = tester.getRect(find.byTooltip('You & library'));
+    final utilityRect = tester.getRect(find.byTooltip('حسابك ومكتبتك'));
     expect(utilityRect.top, lessThan(100));
     expect(utilityRect.right, greaterThan(340));
 
-    await tester.tap(find.byTooltip('You & library'));
+    await tester.tap(find.byTooltip('حسابك ومكتبتك'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.text('Your Lumen'), findsOneWidget);
-    expect(find.text('My List'), findsOneWidget);
+    expect(find.text('قائمتي'), findsOneWidget);
     expect(find.text('Downloads'), findsOneWidget);
     expect(find.text('Profile & settings'), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -1140,9 +1140,9 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
 
-    expect(find.byTooltip('Home'), findsOneWidget);
-    expect(find.byTooltip('Live'), findsOneWidget);
-    expect(find.byTooltip('Guide'), findsNothing);
+    expect(find.byTooltip('الرئيسية'), findsOneWidget);
+    expect(find.byTooltip('مباشر'), findsOneWidget);
+    expect(find.byTooltip('الدليل'), findsNothing);
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());

@@ -89,7 +89,7 @@ class _StatsScreenState extends State<StatsScreen> {
                                   border: Border.all(color: line),
                                 ),
                                 child: Text(
-                                  'Reset stats',
+                                  'إعادة تعيين الإحصاءات',
                                   style: TextStyle(
                                     color: muted,
                                     fontWeight: FontWeight.w700,
@@ -178,7 +178,7 @@ class _StatsScreenState extends State<StatsScreen> {
       children: [
         Row(
           children: [
-            Text('ALL-TIME PLAYBACK', style: kSection(color: accentInk)),
+            Text('إحصاءات التشغيل الإجمالية', style: kSection(color: accentInk)),
             const Spacer(),
             Container(
               width: 36,
@@ -233,7 +233,7 @@ class _StatsScreenState extends State<StatsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'This week',
+            'هذا الأسبوع',
             style: TextStyle(
               color: muted,
               fontWeight: FontWeight.w700,
@@ -289,14 +289,14 @@ class _StatsScreenState extends State<StatsScreen> {
   Widget _split(WatchStats s) {
     final total = (s.movie + s.series + s.live).clamp(1, 1 << 62);
     final values = [
-      ('Films', s.movie, Icons.movie_outlined, accent),
+      ('الأفلام', s.movie, Icons.movie_outlined, accent),
       (
-        'Series',
+        'المسلسلات',
         s.series,
         Icons.video_library_outlined,
         const Color(0xFF22CBA8),
       ),
-      ('Live TV', s.live, Icons.cell_tower_rounded, const Color(0xFFF59E0B)),
+      ('التلفاز المباشر', s.live, Icons.cell_tower_rounded, const Color(0xFFF59E0B)),
     ];
     return Glass(
       radius: 24,
@@ -305,12 +305,12 @@ class _StatsScreenState extends State<StatsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'What you watched',
+            'ما شاهدته',
             style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
           ),
           const SizedBox(height: 4),
           Text(
-            'Your playback mix',
+            'توزيع المشاهدة',
             style: TextStyle(color: subtle, fontSize: 12),
           ),
           const SizedBox(height: 16),
@@ -399,7 +399,7 @@ class _StatsScreenState extends State<StatsScreen> {
                     Expanded(
                       flex: 5,
                       child: Text(
-                        _catNames[e.key] ?? 'Category',
+                        _catNames[e.key] ?? 'التصنيف',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontWeight: FontWeight.w600),

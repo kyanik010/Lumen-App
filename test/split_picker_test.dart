@@ -128,7 +128,7 @@ void main() {
   testWidgets('late categories cannot replace a newer section', (tester) async {
     final client = _Client()..delayedCategories = Completer<List<Category>>();
     await pump(tester, client);
-    await tester.tap(find.text('Movies'));
+    await tester.tap(find.text('الأفلام'));
     await tester.pumpAndSettle();
     expect(find.text('Cinema'), findsOneWidget);
     client.delayedCategories!.complete([Category('old', 'Outdated')]);
@@ -159,14 +159,14 @@ void main() {
     'failed episode loading offers retry instead of spinning forever',
     (tester) async {
       await pump(tester, _Client());
-      await tester.tap(find.text('Series'));
+      await tester.tap(find.text('المسلسلات'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Shows'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Test show'));
       await tester.pumpAndSettle();
-      expect(find.text('Could not load episodes.'), findsOneWidget);
-      expect(find.text('Try again'), findsOneWidget);
+      expect(find.text('تعذّر تحميل الحلقات.'), findsOneWidget);
+      expect(find.text('حاول مرة أخرى'), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsNothing);
     },
   );
@@ -194,7 +194,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       FocusManager.instance.primaryFocus?.debugLabel,
-      'Split browser first result',
+      'أول نتيجة في متصفح الشاشة المنقسمة',
     );
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pumpAndSettle();

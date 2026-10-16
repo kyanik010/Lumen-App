@@ -105,20 +105,20 @@ void main() {
   ) async {
     await pumpProfile(tester, const Size(390, 844), page: ProfilePage.menu);
 
-    expect(find.text('Settings'), findsOneWidget);
+    expect(find.text('الإعدادات'), findsOneWidget);
     expect(find.text('CURRENT ACCOUNT'), findsNothing);
-    expect(find.text('Appearance'), findsOneWidget);
-    expect(find.text('Playback'), findsOneWidget);
+    expect(find.text('المظهر'), findsOneWidget);
+    expect(find.text('التشغيل'), findsOneWidget);
     expect(find.text('Help & about'), findsNothing);
     expect(find.text('Your Lumen'), findsNothing);
     expect(find.byType(LumenAvatar), findsOneWidget);
-    expect(find.text('Your library'), findsOneWidget);
-    expect(find.text('Your experience'), findsOneWidget);
+    expect(find.text('مكتبتك'), findsOneWidget);
+    expect(find.text('تجربتك'), findsOneWidget);
     expect(find.byType(Glass), findsNWidgets(2));
     expect(tester.takeException(), isNull);
 
     expect(find.text('Color mode'), findsNothing);
-    expect(find.text('Sign out of Lumen'), findsNothing);
+    expect(find.text('تسجيل الخروج من Eagle X'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -126,7 +126,7 @@ void main() {
     tester,
   ) async {
     await pumpProfile(tester, const Size(1280, 900), page: ProfilePage.menu);
-    expect(find.text('Accounts & services'), findsOneWidget);
+    expect(find.text('الحسابات والخدمات'), findsOneWidget);
     expect(find.text('Color mode'), findsNothing);
     expect(find.text('Profile'), findsNothing);
     expect(tester.takeException(), isNull);
@@ -173,9 +173,9 @@ void main() {
         if (page != ProfilePage.appearance) {
           expect(find.text('Color mode'), findsNothing);
         }
-        await tester.tap(find.byTooltip('Back to Settings'));
+        await tester.tap(find.byTooltip('العودة إلى الإعدادات'));
         await tester.pumpAndSettle();
-        expect(find.text('Settings'), findsOneWidget);
+        expect(find.text('الإعدادات'), findsOneWidget);
         expect(
           FocusManager.instance.primaryFocus?.debugLabel,
           page == ProfilePage.accounts
@@ -206,18 +206,18 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         FocusManager.instance.primaryFocus?.debugLabel,
-        'Settings Viewing profiles',
+        'Settings ملفات المشاهدة',
       );
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pumpAndSettle();
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pumpAndSettle();
-      expect(find.text('Color mode'), findsOneWidget);
+      expect(find.text('وضع الألوان'), findsOneWidget);
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(
         FocusManager.instance.primaryFocus?.debugLabel,
-        'Settings Appearance',
+        'Settings المظهر',
       );
       expect(tester.takeException(), isNull);
     },
@@ -238,7 +238,7 @@ void main() {
     await tester.pump();
     expect(
       FocusManager.instance.primaryFocus?.debugLabel,
-      'Switch or manage viewers',
+      'التبديل بين المشاهدين أو إدارتهم',
     );
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pumpAndSettle();
@@ -414,7 +414,7 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('edit-current-service')));
     await tester.pumpAndSettle();
-    expect(find.text('Edit server'), findsOneWidget);
+    expect(find.text('تعديل الخادم'), findsOneWidget);
 
     await tester.enterText(
       find.byKey(const ValueKey('edit-service-address')),
@@ -441,8 +441,8 @@ void main() {
       page: ProfilePage.menu,
     );
 
-    final accountsTopLeft = tester.getTopLeft(find.text('Accounts & services'));
-    final settingsTopLeft = tester.getTopLeft(find.text('Appearance'));
+    final accountsTopLeft = tester.getTopLeft(find.text('الحسابات والخدمات'));
+    final settingsTopLeft = tester.getTopLeft(find.text('المظهر'));
     expect(settingsTopLeft.dy, greaterThan(accountsTopLeft.dy));
     expect(find.text('Profile'), findsNothing);
     expect(tester.takeException(), isNull);
@@ -461,21 +461,23 @@ void main() {
         return completion.future;
       },
     );
+    await tester.tap(find.text('الحسابات والخدمات'));
+    await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text('Sign out of Lumen'),
+      find.text('تسجيل الخروج'),
       500,
       scrollable: find.byType(Scrollable).first,
     );
 
-    await tester.tap(find.text('Sign out of Lumen'));
+    await tester.tap(find.text('تسجيل الخروج'));
     await tester.pumpAndSettle();
-    expect(find.text('Sign out of Lumen?'), findsOneWidget);
+    expect(find.text('تسجيل الخروج من Eagle X؟'), findsOneWidget);
     expect(calls, 0);
 
-    await tester.tap(find.text('Sign out'));
+    await tester.tap(find.text('تسجيل الخروج').last);
     await tester.pump();
     expect(calls, 1);
-    expect(find.text('Signing out…'), findsOneWidget);
+    expect(find.text('جارٍ تسجيل الخروج…'), findsOneWidget);
 
     completion.complete();
     await tester.pump();
@@ -528,11 +530,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(activePalette.brightness, Brightness.dark);
 
-    await tester.tap(find.text('Light'));
+    await tester.tap(find.text('فاتح'));
     await tester.pumpAndSettle();
     expect(activePalette.brightness, Brightness.light);
     final lightTile = tester.widget<AnimatedContainer>(
-      find.byKey(const ValueKey('profile-theme-light')),
+      find.byKey(const ValueKey('profile-theme-فاتح')),
     );
     expect((lightTile.decoration! as BoxDecoration).color, accent);
     final unselectedAccent = tester.widget<AnimatedContainer>(
@@ -544,12 +546,12 @@ void main() {
       reason: 'Cached accent tiles must repaint to the light surface.',
     );
 
-    await tester.tap(find.text('System'));
+    await tester.tap(find.text('النظام'));
     await tester.pumpAndSettle();
     expect(ThemeController.instance.mode.value, ThemeMode.system);
     expect(activePalette.brightness, Brightness.light);
     final systemTile = tester.widget<AnimatedContainer>(
-      find.byKey(const ValueKey('profile-theme-system')),
+      find.byKey(const ValueKey('profile-theme-النظام')),
     );
     expect((systemTile.decoration! as BoxDecoration).color, accent);
 
@@ -657,8 +659,8 @@ void main() {
         .firstWhere((node) => node.debugLabel == 'Dark appearance')
         .requestFocus();
     await tester.pump();
-    await move(LogicalKeyboardKey.arrowRight, 'Light appearance');
-    await move(LogicalKeyboardKey.arrowRight, 'System appearance');
+    await move(LogicalKeyboardKey.arrowRight, 'فاتح appearance');
+    await move(LogicalKeyboardKey.arrowRight, 'النظام appearance');
     await move(LogicalKeyboardKey.arrowDown, 'Lumen font');
     await move(LogicalKeyboardKey.arrowRight, 'Inter font');
     await move(LogicalKeyboardKey.arrowRight, 'Device font');
@@ -680,8 +682,8 @@ void main() {
 
     final expected = <String>{
       'Dark appearance',
-      'Light appearance',
-      'System appearance',
+      'فاتح appearance',
+      'النظام appearance',
       for (final option in LumenFont.values) '${option.label} font',
       for (final option in LumenCornerStyle.values) '${option.label} corners',
       for (final option in LumenFocusStyle.values) '${option.label} focus',

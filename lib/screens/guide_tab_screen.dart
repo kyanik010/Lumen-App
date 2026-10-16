@@ -42,13 +42,13 @@ class _GuideTabScreenState extends State<GuideTabScreen>
     with AutomaticKeepAliveClientMixin {
   late final EpgRepository _repository;
   final Map<String, FocusNode> _categoryFocus = <String, FocusNode>{};
-  final FocusNode _sourceFocus = FocusNode(debugLabel: 'Guide service filter');
+  final FocusNode _sourceFocus = FocusNode(debugLabel: 'تصفية خدمات الدليل');
   final GlobalKey<PopupMenuButtonState<String>> _sourceMenuKey = GlobalKey();
   List<Category> _rawCategories = const [];
   List<Category> _categories = const [];
   List<LiveStream> _channels = const [];
   String? _selectedId;
-  String _selectedName = 'TV Guide';
+  String _selectedName = 'دليل التلفاز';
   bool _loadingCategories = true;
   bool _loadingChannels = false;
   String _error = '';
@@ -117,7 +117,7 @@ class _GuideTabScreenState extends State<GuideTabScreen>
     for (final category in _rawCategories) {
       if (category.sourceScope.isEmpty) continue;
       sources[category.sourceScope] = category.sourceLabel.isEmpty
-          ? 'IPTV service'
+          ? 'خدمة IPTV'
           : category.sourceLabel;
     }
     return sources.entries.map((entry) => (entry.key, entry.value)).toList()
@@ -337,7 +337,7 @@ class _GuideTabScreenState extends State<GuideTabScreen>
             children: [
               Expanded(
                 child: Text(
-                  'CHANNEL GROUPS',
+                  'مجموعات القنوات',
                   style: TextStyle(
                     color: muted,
                     fontSize: 10,
@@ -404,7 +404,7 @@ class _GuideTabScreenState extends State<GuideTabScreen>
       children: [
         if (widget.onExit != null) ...[
           IconButton.outlined(
-            tooltip: 'Back from guide',
+            tooltip: 'العودة من الدليل',
             onPressed: widget.onExit,
             icon: const Icon(Icons.arrow_back_rounded, size: 19),
           ),
@@ -478,10 +478,10 @@ class _GuideTabScreenState extends State<GuideTabScreen>
     child: ExcludeFocus(
       child: PopupMenuButton<String>(
         key: _sourceMenuKey,
-        tooltip: 'Filter guide by service',
+        tooltip: 'تصفية الدليل حسب الخدمة',
         onSelected: _selectSource,
         itemBuilder: (_) => [
-          _sourceItem('all', 'All services'),
+          _sourceItem('all', 'كل الخدمات'),
           for (final source in _sources) _sourceItem(source.$1, source.$2),
         ],
         child: Container(

@@ -143,35 +143,35 @@ void main() {
     }
   });
 
-  testWidgets('login enters Demo Mode without provider credentials', (
+  testWidgets('branded login does not expose the removed demo entry point', (
     tester,
   ) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1280, 900);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 1));
+    });
     XtreamCredentials? loggedIn;
 
     await tester.pumpWidget(
       MaterialApp(
         theme: buildTheme(darkPalette),
-        home: LoginScreen(
-          onLogin: (credentials) => loggedIn = credentials,
-          credentialSaver: (_) async {},
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(disableAnimations: true),
+          child: child!,
         ),
+        home: LoginScreen(onLogin: (credentials) => loggedIn = credentials),
       ),
     );
     await tester.pump();
 
-    expect(find.text('Explore offline demo'), findsOneWidget);
-    await tester.tap(find.text('Explore offline demo'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 50));
-
-    expect(loggedIn?.isDemo, isTrue);
-    expect(loggedIn?.password, isEmpty);
-    expect(find.text('Opening your library…'), findsNothing);
-    expect(find.text('Explore offline demo'), findsOneWidget);
+    expect(find.text('Explore offline demo'), findsNothing);
+    expect(find.text('EAGLE X'), findsOneWidget);
+    expect(find.byType(TextField), findsNWidgets(2));
+    expect(loggedIn, isNull);
     expect(tester.takeException(), isNull);
   });
 }

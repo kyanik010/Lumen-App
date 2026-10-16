@@ -2,7 +2,7 @@ name: Build and release Lumen
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, feature/eagle-x-login-branding]
     paths-ignore:
       - '**/*.md'
       - 'docs/**'
@@ -30,9 +30,15 @@ jobs:
         env:
           REQUESTED_BUILD_NUMBER: ${{ inputs.build_number }}
           RUN_NUMBER: ${{ github.run_number }}
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          current="$(curl --fail --silent --show-error https://api.github.com/repos/Talha-Ashraf420/Lumen-App/releases/latest | jq -er '.body | capture("build: (?<number>[0-9]+)").number')"
+          current="$(curl --fail --silent --show-error \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/Talha-Ashraf420/Lumen-App/releases/latest \
+            | jq -er '.body | capture("build: (?<number>[0-9]+)").number')"
           if [ -n "$REQUESTED_BUILD_NUMBER" ]; then
             build="$REQUESTED_BUILD_NUMBER"
           else

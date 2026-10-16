@@ -99,13 +99,13 @@ void main() {
       }
     }
 
-    expect(find.text('Diagnostics & feedback'), findsOneWidget);
-    expect(find.text('Private until you choose to share'), findsOneWidget);
-    expect(find.text('Copy report'), findsOneWidget);
-    expect(find.text('Share report'), findsOneWidget);
-    expect(find.text('Email support'), findsOneWidget);
-    expect(find.text('What happened?'), findsOneWidget);
-    expect(find.text('Report preview'), findsOneWidget);
+    expect(find.text('التشخيص والملاحظات'), findsOneWidget);
+    expect(find.text('بياناتك خاصة حتى تختار مشاركتها'), findsOneWidget);
+    expect(find.text('نسخ التقرير'), findsOneWidget);
+    expect(find.text('مشاركة التقرير'), findsOneWidget);
+    expect(find.text('مراسلة الدعم'), findsOneWidget);
+    expect(find.text('ماذا حدث؟'), findsOneWidget);
+    expect(find.text('معاينة التقرير'), findsOneWidget);
     expect(find.textContaining('provider.example'), findsNothing);
     expect(tester.takeException(), isNull);
   });
@@ -130,10 +130,10 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 250));
 
-    expect(find.text('What happened?'), findsNothing);
-    expect(find.text('Email support'), findsNothing);
-    expect(find.text('Copy report'), findsOneWidget);
-    expect(find.text('Share report'), findsOneWidget);
+    expect(find.text('ماذا حدث؟'), findsNothing);
+    expect(find.text('مراسلة الدعم'), findsNothing);
+    expect(find.text('نسخ التقرير'), findsOneWidget);
+    expect(find.text('مشاركة التقرير'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

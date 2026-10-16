@@ -3,7 +3,9 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:media_kit/media_kit.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:window_manager/window_manager.dart';
@@ -12,6 +14,7 @@ import '../android_subtitle_picker.dart';
 import '../device_profile.dart';
 import '../library.dart';
 import '../opensubtitles.dart';
+import '../services/stremio_subtitle_service.dart';
 import '../pip.dart';
 import '../playback.dart';
 import '../player_chrome.dart';
@@ -263,20 +266,45 @@ class _PlayerHostState extends State<PlayerHost> {
   // sheets since the player isn't inside a Navigator.
   String? _panelKind;
 
-  // subtitle appearance + sync
+  // Subtitle appearance + sync. These values are saved on this device.
+  static const List<String> _subtitleFonts = [
+    'Reem Kufi',
+    'Aref Ruqaa',
+    'Amiri',
+    'Lalezar',
+    'Marhey',
+    'Rakkas',
+    'Changa',
+    'Noto Naskh Arabic',
+    'Lemonada',
+    'Noto Kufi Arabic',
+  ];
+  static const List<String> _subtitleColorLabels = ['أبيض', 'أصفر', 'سماوي', 'أخضر'];
+  static const List<Color> _subtitleColors = [
+    Colors.white,
+    Colors.yellow,
+    Colors.cyanAccent,
+    Colors.greenAccent,
+  ];
   double _subScale = 1.0;
-  bool _subBg = false;
+  int _subFontIndex = 0;
+  int _subColorIndex = 0;
+  int _subBackground = 0; // off, translucent black, solid black
+  int _subOutline = 1; // off, soft shadow, strong outline-like shadow
+  int _subPosition = 0; // bottom, raised, middle
   double _subDelay = 0;
   bool _subtitlesDisabled = false;
 
   // online subtitle search (OpenSubtitles)
   bool _subsOnline = false;
   bool _subBusy = false;
+  int? _focusedSubLangIndex;
   String _subLang = 'en';
   String? _subError;
   String? _appliedSubName; // label of an applied online or local subtitle
   SubtitleTrack? _appliedSubTrack;
   List<SubResult> _subResults = [];
+  List<StremioSubtitleResult> _stremioSubResults = [];
   final TextEditingController _subQueryCtrl = TextEditingController();
 
   // hold-to-speed
@@ -302,6 +330,7 @@ class _PlayerHostState extends State<PlayerHost> {
     sc.addListener(_onSplit);
     Pip.instance.init();
     Pip.instance.active.addListener(_onPip);
+    unawaited(_loadSubtitlePreferences());
     ScreenBrightness.instance.application
         .then((b) => _curBri = b)
         .catchError((_) => _curBri = 0.5);
@@ -794,7 +823,7 @@ class _PlayerHostState extends State<PlayerHost> {
                   cursor: SystemMouseCursors.click,
                   child: RemoteTap(
                     focusNode: _transportFocus,
-                    semanticLabel: playing ? 'Pause' : 'Play',
+                    semanticLabel: playing ? 'إيقاف مؤقت' : 'تشغيل',
                     onTap: () {
                       if (_splitMainIsPc) {
                         pc.togglePlayPause();
@@ -856,7 +885,7 @@ class _PlayerHostState extends State<PlayerHost> {
                         color: Colors.white,
                       ),
                       label: const Text(
-                        'Swap audio',
+                        'تبديل الصوت',
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
@@ -952,6 +981,7 @@ class _PlayerHostState extends State<PlayerHost> {
     _appliedSubTrack = null;
     _subtitlesDisabled = false;
     _subResults = [];
+    _stremioSubResults = [];
     _subQueryCtrl.text = _subCleanTitle(pc.item.title);
     pc.player?.setRate(1.0);
   }
@@ -1192,19 +1222,31 @@ class _PlayerHostState extends State<PlayerHost> {
                               minimized: mini,
                               subtitlesDisabled: _subtitlesDisabled,
                             ),
-                            style: TextStyle(
-                              height: 1.4,
-                              fontSize: 32.0 * _subScale,
-                              color: Colors.white,
-                              backgroundColor: _subBg
-                                  ? Colors.black54
-                                  : Colors.transparent,
-                              fontWeight: FontWeight.w600,
-                              shadows: const [
-                                Shadow(color: Colors.black, blurRadius: 6),
-                              ],
+                            style: GoogleFonts.getFont(
+                              _subtitleFonts[_subFontIndex],
+                              textStyle: TextStyle(
+                                height: 1.4,
+                                fontSize: 32.0 * _subScale,
+                                color: _subtitleColors[_subColorIndex],
+                                backgroundColor: switch (_subBackground) {
+                                  1 => Colors.black54,
+                                  2 => Colors.black,
+                                  _ => Colors.transparent,
+                                },
+                                fontWeight: FontWeight.w600,
+                                shadows: _subtitleShadows,
+                              ),
                             ),
-                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                            padding: EdgeInsets.fromLTRB(
+                              16,
+                              0,
+                              16,
+                              switch (_subPosition) {
+                                1 => 88,
+                                2 => 240,
+                                _ => 24,
+                              },
+                            ),
                           ),
                         ),
                       ),
@@ -1386,7 +1428,7 @@ class _PlayerHostState extends State<PlayerHost> {
                               pc.reconnectAttempt > 0) ...[
                             const SizedBox(width: 9),
                             IconButton(
-                              tooltip: 'Stop automatic retry',
+                              tooltip: 'إيقاف إعادة المحاولة التلقائية',
                               visualDensity: VisualDensity.compact,
                               style: IconButton.styleFrom(
                                 foregroundColor: Colors.white70,
@@ -1561,7 +1603,7 @@ class _PlayerHostState extends State<PlayerHost> {
         case PlayerKeyboardCommand.toggleMute:
           _toggleMute();
           _flashHud(
-            _muted ? 'Muted' : '${_curVol.round()}%',
+            _muted ? 'صامت' : '${_curVol.round()}%',
             _muted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
             value: _muted ? 0 : _curVol / 100,
           );
@@ -1744,7 +1786,7 @@ class _PlayerHostState extends State<PlayerHost> {
     _holding = true;
     _savedRate = _rate;
     pc.player!.setRate(2.0);
-    _flashHud('2× speed', Icons.fast_forward_rounded, persist: true);
+    _flashHud('سرعة 2×', Icons.fast_forward_rounded, persist: true);
   }
 
   void _holdSpeedEnd() {
@@ -1754,16 +1796,152 @@ class _PlayerHostState extends State<PlayerHost> {
     _hideHud();
   }
 
-  Future<void> _setSubDelay(double v) async {
-    _subDelay = double.parse(v.toStringAsFixed(1));
-    try {
-      await (pc.player!.platform as dynamic)?.setProperty(
-        'sub-delay',
-        '$_subDelay',
-      );
-    } catch (_) {}
-    setState(() {});
+  List<Shadow> get _subtitleShadows {
+    if (_subOutline == 0) return const [];
+    if (_subOutline == 1) {
+      return const [Shadow(color: Colors.black, blurRadius: 6)];
+    }
+    return const [
+      Shadow(color: Colors.black, offset: Offset(-1.5, -1.5), blurRadius: 1),
+      Shadow(color: Colors.black, offset: Offset(0, -1.5), blurRadius: 1),
+      Shadow(color: Colors.black, offset: Offset(1.5, -1.5), blurRadius: 1),
+      Shadow(color: Colors.black, offset: Offset(-1.5, 0), blurRadius: 1),
+      Shadow(color: Colors.black, offset: Offset(1.5, 0), blurRadius: 1),
+      Shadow(color: Colors.black, offset: Offset(-1.5, 1.5), blurRadius: 1),
+      Shadow(color: Colors.black, offset: Offset(0, 1.5), blurRadius: 1),
+      Shadow(color: Colors.black, offset: Offset(1.5, 1.5), blurRadius: 1),
+    ];
   }
+
+  Future<void> _loadSubtitlePreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (!mounted) return;
+      setState(() {
+        _subScale = prefs.getDouble('subtitle.scale') ?? 1.0;
+        _subFontIndex = (prefs.getInt('subtitle.font') ?? 0)
+            .clamp(0, _subtitleFonts.length - 1).toInt();
+        _subColorIndex = (prefs.getInt('subtitle.color') ?? 0)
+            .clamp(0, _subtitleColors.length - 1).toInt();
+        _subBackground = (prefs.getInt('subtitle.background') ?? 0)
+            .clamp(0, 2).toInt();
+        _subOutline = (prefs.getInt('subtitle.outline') ?? 1).clamp(0, 2).toInt();
+        _subPosition = (prefs.getInt('subtitle.position') ?? 0).clamp(0, 2).toInt();
+        _subDelay = prefs.getDouble('subtitle.delay') ?? 0;
+      });
+      if (_subDelay != 0) await _applySubtitleDelay(_subDelay);
+    } catch (_) {
+      // Playback must remain usable if local preferences are unavailable.
+    }
+  }
+
+  Future<void> _saveSubtitlePreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble('subtitle.scale', _subScale);
+      await prefs.setInt('subtitle.font', _subFontIndex);
+      await prefs.setInt('subtitle.color', _subColorIndex);
+      await prefs.setInt('subtitle.background', _subBackground);
+      await prefs.setInt('subtitle.outline', _subOutline);
+      await prefs.setInt('subtitle.position', _subPosition);
+      await prefs.setDouble('subtitle.delay', _subDelay);
+    } catch (_) {
+      // Do not interrupt playback if preferences cannot be persisted.
+    }
+  }
+
+  void _changeSubtitlePreferences(VoidCallback change) {
+    setState(change);
+    unawaited(_saveSubtitlePreferences());
+  }
+
+  Future<void> _applySubtitleDelay(double delay) async {
+    try {
+      final player = pc.player;
+      if (player != null) {
+        await (player.platform as dynamic)?.setProperty(
+          'sub-delay',
+          '$delay',
+        );
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _setSubDelay(double v) async {
+    _subDelay = double.parse(v.clamp(-30.0, 30.0).toStringAsFixed(1));
+    await _applySubtitleDelay(_subDelay);
+    if (mounted) setState(() {});
+    unawaited(_saveSubtitlePreferences());
+  }
+
+  Future<void> _resetSubtitlePreferences() async {
+    setState(() {
+      _subScale = 1.0;
+      _subFontIndex = 0;
+      _subColorIndex = 0;
+      _subBackground = 0;
+      _subOutline = 1;
+      _subPosition = 0;
+      _subDelay = 0;
+    });
+    await _applySubtitleDelay(0);
+    await _saveSubtitlePreferences();
+  }
+
+  Widget _subtitleFontChoices() => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16),
+    child: Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (var i = 0; i < _subtitleFonts.length; i++)
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: RemoteTap(
+              onTap: () => _changeSubtitlePreferences(() => _subFontIndex = i),
+              child: Container(
+                width: 132,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+                decoration: BoxDecoration(
+                  color: _subFontIndex == i
+                      ? accent
+                      : Colors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(lumenCorner(12)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'أهلاً وسهلاً',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.getFont(
+                        _subtitleFonts[i],
+                        textStyle: TextStyle(
+                          color: _subFontIndex == i ? onAccent : Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _subtitleFonts[i],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _subFontIndex == i ? onAccent : Colors.white60,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
+    ),
+  );
 
   void _flashHud(
     String text,
@@ -1863,7 +2041,7 @@ class _PlayerHostState extends State<PlayerHost> {
             : CrossAxisAlignment.center,
         children: [
           Text(
-            _isLive ? 'Live feed paused' : 'Playback paused',
+            _isLive ? 'تم إيقاف البث المباشر مؤقتًا' : 'تم إيقاف التشغيل مؤقتًا',
             textAlign: constraints.maxWidth >= 560
                 ? TextAlign.left
                 : TextAlign.center,
@@ -1907,11 +2085,11 @@ class _PlayerHostState extends State<PlayerHost> {
               setState(() {});
             },
             icon: const Icon(Icons.refresh_rounded, size: 17),
-            label: const Text('Retry stream'),
+            label: const Text('إعادة محاولة البث'),
           ),
           if (_isAndroid)
             IconButton(
-              tooltip: 'Open Android compatibility player',
+              tooltip: 'فتح مشغّل أندرويد البديل',
               style:
                   IconButton.styleFrom(
                     foregroundColor: Colors.white,
@@ -1938,7 +2116,7 @@ class _PlayerHostState extends State<PlayerHost> {
                   _close();
                 } else {
                   _flashHud(
-                    'Android player is unavailable',
+                    'مشغّل أندرويد غير متاح',
                     Icons.error_outline_rounded,
                   );
                 }
@@ -1946,7 +2124,7 @@ class _PlayerHostState extends State<PlayerHost> {
               icon: const Icon(Icons.android_rounded, size: 19),
             ),
           IconButton(
-            tooltip: 'Playback information',
+            tooltip: 'معلومات التشغيل',
             style:
                 IconButton.styleFrom(
                   foregroundColor: Colors.white,
@@ -1962,7 +2140,7 @@ class _PlayerHostState extends State<PlayerHost> {
           ),
           if (_hasNext)
             IconButton(
-              tooltip: 'Next channel',
+              tooltip: 'القناة التالية',
               style:
                   IconButton.styleFrom(
                     foregroundColor: Colors.white,
@@ -1979,7 +2157,7 @@ class _PlayerHostState extends State<PlayerHost> {
           TextButton(
             style: TextButton.styleFrom(foregroundColor: Colors.white70),
             onPressed: _minimize,
-            child: const Text('Browse'),
+            child: const Text('تصفح'),
           ),
         ],
       );
@@ -2130,7 +2308,7 @@ class _PlayerHostState extends State<PlayerHost> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Skip to 1:30',
+                  'الانتقال إلى 1:30',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
@@ -2220,7 +2398,7 @@ class _PlayerHostState extends State<PlayerHost> {
                 RemoteTap(
                   onTap: pc.cancelAutoAdvance,
                   child: const Text(
-                    'Dismiss',
+                    'إغلاق',
                     style: TextStyle(
                       color: Colors.white70,
                       fontWeight: FontWeight.w700,
@@ -2309,7 +2487,7 @@ class _PlayerHostState extends State<PlayerHost> {
                     ),
                     const SizedBox(width: 5),
                     Text(
-                      'LIVE',
+                      'مباشر',
                       style: TextStyle(
                         color: foregroundFor(const Color(0xFFFF3B5C)),
                         fontSize: 11,
@@ -2356,7 +2534,7 @@ class _PlayerHostState extends State<PlayerHost> {
                 },
               ),
             IconButton(
-              tooltip: 'Close player',
+              tooltip: 'إغلاق المشغل',
               onPressed: _close,
               icon: const Icon(Icons.close_rounded, color: Colors.white),
             ),
@@ -2408,20 +2586,20 @@ class _PlayerHostState extends State<PlayerHost> {
           if (_isLive)
             _channelBtn(
               Icons.skip_previous_rounded,
-              'Previous channel',
+              'القناة السابقة',
               _hasPrev ? () => _go(pc.index - 1) : null,
             )
           else
             _smallBtn(
               Icons.skip_previous_rounded,
-              'Previous episode',
+              'الحلقة السابقة',
               _hasPrev ? () => _go(pc.index - 1) : null,
             ),
           if (!_isLive) ...[
             const SizedBox(width: 5),
             _roundBtn(
               Icons.replay_10_rounded,
-              'Rewind 10 seconds',
+              'ترجيع ١٠ ثوانٍ',
               () => _seekBy(-10),
             ),
           ],
@@ -2435,7 +2613,7 @@ class _PlayerHostState extends State<PlayerHost> {
                 cursor: SystemMouseCursors.click,
                 child: RemoteTap(
                   focusNode: _transportFocus,
-                  semanticLabel: playing ? 'Pause' : 'Play',
+                  semanticLabel: playing ? 'إيقاف مؤقت' : 'تشغيل',
                   onTap: () {
                     pc.togglePlayPause();
                     _scheduleHide();
@@ -2467,7 +2645,7 @@ class _PlayerHostState extends State<PlayerHost> {
             const SizedBox(width: 9),
             _roundBtn(
               Icons.forward_10_rounded,
-              'Fast forward 10 seconds',
+              'تقديم ١٠ ثوانٍ',
               () => _seekBy(10),
             ),
           ],
@@ -2475,13 +2653,13 @@ class _PlayerHostState extends State<PlayerHost> {
           if (_isLive)
             _channelBtn(
               Icons.skip_next_rounded,
-              'Next channel',
+              'القناة التالية',
               _hasNext ? () => _go(pc.index + 1) : null,
             )
           else
             _smallBtn(
               Icons.skip_next_rounded,
-              'Next episode',
+              'الحلقة التالية',
               _hasNext ? () => _go(pc.index + 1) : null,
             ),
         ],
@@ -2594,45 +2772,45 @@ class _PlayerHostState extends State<PlayerHost> {
                             ? Icons.volume_off_rounded
                             : Icons.volume_up_rounded,
                         _toggleMute,
-                        tooltip: _muted ? 'Unmute' : 'Mute',
+                        tooltip: _muted ? 'إلغاء كتم الصوت' : 'كتم الصوت',
                         compact: compact,
                       ),
                       _bottomIcon(
                         Icons.closed_caption_rounded,
                         _pickSubtitles,
-                        tooltip: 'Subtitles',
+                        tooltip: 'الترجمة',
                         compact: compact,
                       ),
                       if (activeClient != null && !compact)
                         _bottomIcon(
                           Icons.splitscreen_rounded,
                           _openSplitPicker,
-                          tooltip: 'Split view',
+                          tooltip: 'عرض منقسم',
                         ),
                       _bottomIcon(
                         Icons.tune_rounded,
                         _openSettings,
-                        tooltip: 'Playback settings',
+                        tooltip: 'إعدادات التشغيل',
                         compact: compact,
                       ),
                       if (!compact)
                         _bottomIcon(
                           Icons.info_outline_rounded,
                           _openDiagnostics,
-                          tooltip: 'Playback information',
+                          tooltip: 'معلومات التشغيل',
                         ),
                       if (_isAndroid && !DeviceProfile.isTelevision && !compact)
                         _bottomIcon(
                           Icons.picture_in_picture_alt_rounded,
                           () => Pip.instance.enter(),
-                          tooltip: 'Picture-in-picture',
+                          tooltip: 'صورة داخل صورة',
                         ),
                       const Spacer(),
                       if (_isLive)
                         _bottomIcon(
                           Icons.view_sidebar_rounded,
                           _openLiveHub,
-                          tooltip: 'Live control hub (G)',
+                          tooltip: 'لوحة التحكم بالبث المباشر (G)',
                           compact: compact,
                         ),
                       if (_isLive)
@@ -2648,7 +2826,7 @@ class _PlayerHostState extends State<PlayerHost> {
                               ),
                               SizedBox(width: 6),
                               Text(
-                                'LIVE',
+                                'مباشر',
                                 style: TextStyle(fontWeight: FontWeight.w700),
                               ),
                             ],
@@ -2660,8 +2838,8 @@ class _PlayerHostState extends State<PlayerHost> {
                             : Icons.fullscreen_rounded,
                         _toggleFullscreen,
                         tooltip: _fullscreen
-                            ? 'Exit full screen'
-                            : 'Full screen',
+                            ? 'الخروج من ملء الشاشة'
+                            : 'ملء الشاشة',
                         compact: compact,
                       ),
                     ],
@@ -2804,21 +2982,38 @@ class _PlayerHostState extends State<PlayerHost> {
       _subResults = [];
     });
     try {
-      final r = await OpenSubs.search(q, lang: _subLang);
+      final isSeries =
+          RegExp(r'(?:S\d{1,2}E\d{1,3}|\d{1,2}x\d{1,3})', caseSensitive: false)
+              .hasMatch(_item.title) ||
+          (_item.progressKey?.startsWith('ep:') ?? false);
+      final addonResults = await StremioSubtitleService.instance.search(
+        title: q,
+        language: _subLang,
+        series: isSeries,
+      );
+      List<SubResult> openResults = const [];
+      String? openError;
+      if (OpenSubs.isConfigured) {
+        try {
+          openResults = await OpenSubs.search(q, lang: _subLang);
+        } on OpenSubtitlesException catch (e) {
+          openError = e.message;
+        }
+      }
       if (!mounted) return;
       setState(() {
-        _subResults = r;
+        _stremioSubResults = addonResults;
+        _subResults = openResults;
         _subBusy = false;
-        if (r.isEmpty) _subError = 'No subtitles found.';
+        if (addonResults.isEmpty && openResults.isEmpty) {
+          _subError = openError ?? 'No subtitles found in enabled Stremio addons.';
+        }
       });
     } catch (e) {
-      if (mounted)
-        setState(() {
-          _subBusy = false;
-          _subError = e is OpenSubtitlesException
-              ? e.message
-              : 'Search failed. Check your connection.';
-        });
+      if (mounted) setState(() {
+        _subBusy = false;
+        _subError = 'Subtitle search failed. Check the connection or enabled Addons.';
+      });
     }
   }
 
@@ -2854,6 +3049,33 @@ class _PlayerHostState extends State<PlayerHost> {
               ? e.message
               : 'Couldn’t load that subtitle. Try another.';
         });
+    }
+  }
+
+  Future<void> _applyStremioSub(StremioSubtitleResult subtitle) async {
+    if (_subBusy) return;
+    setState(() { _subBusy = true; _subError = null; });
+    try {
+      final data = await StremioSubtitleService.instance.download(subtitle);
+      final track = SubtitleTrack.data(
+        data,
+        title: '${subtitle.addon} · ${subtitle.label}',
+        language: subtitle.language.isEmpty ? null : subtitle.language,
+      );
+      await pc.player!.setSubtitleTrack(track);
+      if (!mounted) return;
+      setState(() {
+        _appliedSubName = '${subtitle.addon} · ${subtitle.label}';
+        _appliedSubTrack = track;
+        _subtitlesDisabled = false;
+        _subBusy = false;
+      });
+      _closePanel();
+    } catch (_) {
+      if (mounted) setState(() {
+        _subBusy = false;
+        _subError = 'Could not download/apply this addon subtitle. Try another result.';
+      });
     }
   }
 
@@ -2967,7 +3189,7 @@ class _PlayerHostState extends State<PlayerHost> {
                   )
                 : _panelKind == 'split'
                 ? (activeClient == null
-                      ? const Center(child: Text('Not available.'))
+                      ? const Center(child: Text('غير متاح.'))
                       : SplitPicker(
                           client: activeClient!,
                           onClose: _closePanel,
@@ -3012,12 +3234,12 @@ class _PlayerHostState extends State<PlayerHost> {
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              'Subtitles',
+              'الترجمة',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
             ),
           ),
         ),
-        _subRow('Off', _subtitlesDisabled || current.id == 'no', () {
+        _subRow('إيقاف', _subtitlesDisabled || current.id == 'no', () {
           unawaited(_disableSubtitles(closePanel: true));
         }),
         if (_appliedSubName != null && _appliedSubTrack != null)
@@ -3033,7 +3255,7 @@ class _PlayerHostState extends State<PlayerHost> {
             t.language,
           ].whereType<String>().where((e) => e.isNotEmpty).join(' · ');
           return _subRow(
-            label.isEmpty ? 'Track ${t.id}' : label,
+            label.isEmpty ? 'مسار ${t.id}' : label,
             !_subtitlesDisabled && current.id == t.id,
             () {
               unawaited(_selectSubtitle(t, closePanel: true));
@@ -3059,7 +3281,7 @@ class _PlayerHostState extends State<PlayerHost> {
             onTap: _pickLocalSubtitle,
             leading: Icon(Icons.folder_open_rounded, color: accent),
             title: const Text(
-              'Add subtitle file',
+              'إضافة ملف ترجمة',
               style: TextStyle(fontWeight: FontWeight.w700),
             ),
             subtitle: const Text(
@@ -3067,8 +3289,7 @@ class _PlayerHostState extends State<PlayerHost> {
               style: TextStyle(color: Colors.white54, fontSize: 12),
             ),
           ),
-        if (OpenSubs.isConfigured)
-          ListTile(
+        ListTile(
             onTap: () => setState(() => _subsOnline = !_subsOnline),
             leading: Icon(Icons.travel_explore_rounded, color: accent),
             title: const Text(
@@ -3082,15 +3303,7 @@ class _PlayerHostState extends State<PlayerHost> {
               color: Colors.white54,
             ),
           ),
-        if (!OpenSubs.isConfigured)
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 4, 20, 8),
-            child: Text(
-              'Online subtitle search is not available in this build.',
-              style: TextStyle(color: Colors.white54, fontSize: 12),
-            ),
-          ),
-        if (OpenSubs.isConfigured && _subsOnline) _subsOnlinePanel(),
+        if (_subsOnline) _subsOnlinePanel(),
         const SizedBox(height: 12),
       ],
     );
@@ -3113,7 +3326,7 @@ class _PlayerHostState extends State<PlayerHost> {
               onSubmitted: (_) => _searchSubs(),
               decoration: InputDecoration(
                 isDense: true,
-                hintText: 'Movie or show title…',
+                hintText: 'عنوان الفيلم أو المسلسل…',
                 hintStyle: const TextStyle(color: Colors.white38),
                 filled: true,
                 fillColor: Colors.white.withValues(alpha: 0.08),
@@ -3152,7 +3365,18 @@ class _PlayerHostState extends State<PlayerHost> {
               itemBuilder: (_, i) {
                 final (label, code) = OpenSubs.langs[i];
                 final sel = code == _subLang;
+                final focused = _focusedSubLangIndex == i;
                 return RemoteTap(
+                  semanticLabel: 'Subtitle language: $label',
+                  onFocusChange: (hasFocus) {
+                    setState(() {
+                      if (hasFocus) {
+                        _focusedSubLangIndex = i;
+                      } else if (_focusedSubLangIndex == i) {
+                        _focusedSubLangIndex = null;
+                      }
+                    });
+                  },
                   onTap: () {
                     setState(() => _subLang = code);
                     _searchSubs();
@@ -3163,9 +3387,26 @@ class _PlayerHostState extends State<PlayerHost> {
                     decoration: BoxDecoration(
                       color: sel
                           ? accent
+                          : focused
+                          ? Colors.cyanAccent.withValues(alpha: 0.18)
                           : Colors.white.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(lumenCorner(16)),
-                      border: Border.all(color: sel ? accent : Colors.white24),
+                      border: Border.all(
+                        color: focused
+                            ? Colors.cyanAccent
+                            : sel
+                            ? accent
+                            : Colors.white24,
+                        width: focused ? 2.5 : sel ? 1.5 : 1,
+                      ),
+                      boxShadow: focused
+                          ? [
+                              BoxShadow(
+                                color: Colors.cyanAccent.withValues(alpha: 0.4),
+                                blurRadius: 8,
+                              ),
+                            ]
+                          : null,
                     ),
                     child: Text(
                       label,
@@ -3203,7 +3444,19 @@ class _PlayerHostState extends State<PlayerHost> {
                 style: const TextStyle(color: Colors.white54, fontSize: 13),
               ),
             )
-          else
+          else ...[
+            for (final s in _stremioSubResults.take(40))
+              ListTile(
+                dense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                onTap: () => _applyStremioSub(s),
+                leading: Icon(Icons.extension_rounded, color: accent, size: 20),
+                title: Text(s.label.isEmpty ? s.language : s.label,
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                subtitle: Text('Stremio · ${s.addon} · ${s.language}',
+                  style: const TextStyle(color: Colors.white38, fontSize: 11.5)),
+              ),
             for (final s in _subResults.take(20))
               ListTile(
                 dense: true,
@@ -3232,10 +3485,11 @@ class _PlayerHostState extends State<PlayerHost> {
                   style: const TextStyle(color: Colors.white38, fontSize: 11.5),
                 ),
               ),
+          ],
           Padding(
             padding: const EdgeInsets.only(top: 8, bottom: 4),
             child: Text(
-              'Powered by OpenSubtitles',
+              'بدعم من OpenSubtitles',
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.28),
                 fontSize: 10.5,
@@ -3251,7 +3505,7 @@ class _PlayerHostState extends State<PlayerHost> {
       n >= 1000 ? '${(n / 1000).toStringAsFixed(n >= 10000 ? 0 : 1)}k' : '$n';
 
   Widget _subRow(String label, bool sel, VoidCallback onTap) => ListTile(
-    autofocus: label == 'Off',
+    autofocus: label == 'إيقاف',
     onTap: onTap,
     leading: Icon(
       sel ? Icons.check_circle_rounded : Icons.subtitles_outlined,
@@ -3287,7 +3541,7 @@ class _PlayerHostState extends State<PlayerHost> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Playback information',
+                        'معلومات التشغيل',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
@@ -3295,7 +3549,7 @@ class _PlayerHostState extends State<PlayerHost> {
                       ),
                       SizedBox(height: 3),
                       Text(
-                        'Safe details—credentials are never shown.',
+                        'تفاصيل آمنة؛ لا يتم عرض بيانات الدخول.',
                         style: TextStyle(color: Colors.white54, fontSize: 11.5),
                       ),
                     ],
@@ -3348,7 +3602,7 @@ class _PlayerHostState extends State<PlayerHost> {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          pc.failure?.message ?? 'The stream is responding.',
+                          pc.failure?.message ?? 'البث يعمل بشكل طبيعي.',
                           style: const TextStyle(
                             color: Colors.white60,
                             fontSize: 12,
@@ -3362,20 +3616,20 @@ class _PlayerHostState extends State<PlayerHost> {
               ),
             ),
           ),
-          _diagnosticRow('Endpoint', pc.endpointLabel),
-          _diagnosticRow('Format', pc.sourceFormat),
-          _diagnosticRow('Source', '${pc.sourceNumber} of ${pc.sourceCount}'),
+          _diagnosticRow('عنوان المصدر', pc.endpointLabel),
+          _diagnosticRow('التنسيق', pc.sourceFormat),
+          _diagnosticRow('المصدر', '${pc.sourceNumber} من ${pc.sourceCount}'),
           _diagnosticRow(
-            'Buffered',
-            '${pc.bufferedAhead.inSeconds}s · '
+            'المخزّن مؤقتًا',
+            '${pc.bufferedAhead.inSeconds} ثانية · '
                 '${pc.bufferingPercentage.toStringAsFixed(0)}%',
           ),
           _diagnosticRow(
-            'Recovery',
-            '${pc.reconnectAttempt} of ${pc.retryLimit} attempts',
+            'الاستعادة',
+            '${pc.reconnectAttempt} من ${pc.retryLimit} محاولة',
           ),
           if (pc.failure != null) ...[
-            _diagnosticRow('Failure code', pc.failure!.code),
+            _diagnosticRow('رمز الخطأ', pc.failure!.code),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
               child: Text(
@@ -3401,7 +3655,7 @@ class _PlayerHostState extends State<PlayerHost> {
                   ),
                   onPressed: pc.retryExhausted ? pc.retryNow : null,
                   icon: const Icon(Icons.refresh_rounded, size: 18),
-                  label: const Text('Retry stream'),
+                  label: const Text('إعادة محاولة البث'),
                 ),
                 OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(foregroundColor: Colors.white)
@@ -3417,19 +3671,19 @@ class _PlayerHostState extends State<PlayerHost> {
                     );
                     if (mounted) {
                       _flashHud(
-                        'Playback details copied',
+                        'تم نسخ تفاصيل التشغيل',
                         Icons.copy_all_rounded,
                       );
                     }
                   },
                   icon: const Icon(Icons.copy_all_rounded, size: 18),
-                  label: const Text('Copy details'),
+                  label: const Text('نسخ التفاصيل'),
                 ),
               ],
             ),
           ),
           if (events.isNotEmpty) ...[
-            _settingLabel('Recent recovery activity'),
+            _settingLabel('سجل محاولات الاستعادة الأخيرة'),
             for (final event in events)
               ListTile(
                 dense: true,
@@ -3509,7 +3763,7 @@ class _PlayerHostState extends State<PlayerHost> {
           child: Row(
             children: [
               const Text(
-                'Playback',
+                'التشغيل',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
               ),
               const Spacer(),
@@ -3522,7 +3776,7 @@ class _PlayerHostState extends State<PlayerHost> {
           ),
         ),
         if (_item.favRef != null) ...[
-          _settingLabel('My List'),
+          _settingLabel('قائمتي'),
           AnimatedBuilder(
             animation: Library.instance,
             builder: (_, _) {
@@ -3538,13 +3792,13 @@ class _PlayerHostState extends State<PlayerHost> {
                   color: saved ? accent : Colors.white70,
                 ),
                 title: Text(
-                  saved ? 'Remove from My List' : 'Add to My List',
+                  saved ? 'إزالة من قائمتي' : 'إضافة إلى قائمتي',
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 subtitle: Text(
                   saved
-                      ? 'This title is saved on this device.'
-                      : 'Keep this title or channel close.',
+                      ? 'تم حفظ هذا المحتوى على هذا الجهاز.'
+                      : 'أضف هذا المحتوى أو القناة إلى قائمتك للرجوع إليها بسهولة.',
                   style: const TextStyle(color: Colors.white54, fontSize: 12),
                 ),
               );
@@ -3555,13 +3809,13 @@ class _PlayerHostState extends State<PlayerHost> {
           if (activeClient != null)
             ListTile(
               leading: const Icon(Icons.splitscreen_rounded),
-              title: const Text('Split view'),
+              title: const Text('عرض منقسم'),
               onTap: _openSplitPicker,
             ),
           if (_isAndroid)
             ListTile(
               leading: const Icon(Icons.picture_in_picture_alt_rounded),
-              title: const Text('Picture-in-picture'),
+              title: const Text('صورة داخل صورة'),
               onTap: () {
                 _closePanel();
                 Pip.instance.enter();
@@ -3569,11 +3823,11 @@ class _PlayerHostState extends State<PlayerHost> {
             ),
           ListTile(
             leading: const Icon(Icons.info_outline_rounded),
-            title: const Text('Playback information'),
+            title: const Text('معلومات التشغيل'),
             onTap: _openDiagnostics,
           ),
         ],
-        _settingLabel('Volume'),
+        _settingLabel('مستوى الصوت'),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Row(
@@ -3625,30 +3879,30 @@ class _PlayerHostState extends State<PlayerHost> {
             ],
           ),
         ),
-        _settingLabel('Video fit'),
+        _settingLabel('ملاءمة الفيديو'),
         _chipRow([
           (
-            'Fit',
+            'ملاءمة',
             _fit == BoxFit.contain,
             () => setState(() => _fit = BoxFit.contain),
           ),
           (
-            'Fill',
+            'ملء الشاشة',
             _fit == BoxFit.cover,
             () => setState(() => _fit = BoxFit.cover),
           ),
           (
-            'Stretch',
+            'تمديد',
             _fit == BoxFit.fill,
             () => setState(() => _fit = BoxFit.fill),
           ),
         ]),
         if (!_isLive) ...[
-          _settingLabel('Speed'),
+          _settingLabel('السرعة'),
           _chipRow([
             for (final r in const [0.5, 1.0, 1.25, 1.5, 2.0])
               (
-                '${r}x',
+                '${r}×',
                 _rate == r,
                 () {
                   pc.player!.setRate(r);
@@ -3657,17 +3911,17 @@ class _PlayerHostState extends State<PlayerHost> {
               ),
           ]),
         ],
-        _settingLabel('Sleep timer'),
+        _settingLabel('مؤقت النوم'),
         _chipRow([
           for (final mn in const [0, 15, 30, 45, 60])
-            (mn == 0 ? 'Off' : '${mn}m', _sleepMin == mn, () => _setSleep(mn)),
+            (mn == 0 ? 'إيقاف' : '${mn} دقيقة', _sleepMin == mn, () => _setSleep(mn)),
         ]),
-        _settingLabel('Audio'),
+        _settingLabel('الصوت'),
         if (audio.isEmpty)
           const Padding(
             padding: EdgeInsets.fromLTRB(20, 2, 20, 4),
             child: Text(
-              'Only one audio track.',
+              'يتوفر مسار صوتي واحد فقط.',
               style: TextStyle(color: Colors.white54),
             ),
           )
@@ -3678,7 +3932,7 @@ class _PlayerHostState extends State<PlayerHost> {
               t.language,
             ].whereType<String>().where((e) => e.isNotEmpty).join(' · ');
             return _trackRow(
-              label.isEmpty ? 'Track ${t.id}' : label,
+              label.isEmpty ? 'مسار ${t.id}' : label,
               curAudio.id == t.id,
               () {
                 pc.player!.setAudioTrack(t);
@@ -3686,8 +3940,8 @@ class _PlayerHostState extends State<PlayerHost> {
               },
             );
           }),
-        _settingLabel('Subtitles'),
-        _trackRow('Off', _subtitlesDisabled || curSub.id == 'no', () {
+        _settingLabel('الترجمة'),
+        _trackRow('إيقاف', _subtitlesDisabled || curSub.id == 'no', () {
           unawaited(_disableSubtitles());
         }),
         ...subs.map((t) {
@@ -3696,45 +3950,87 @@ class _PlayerHostState extends State<PlayerHost> {
             t.language,
           ].whereType<String>().where((e) => e.isNotEmpty).join(' · ');
           return _trackRow(
-            label.isEmpty ? 'Track ${t.id}' : label,
+            label.isEmpty ? 'مسار ${t.id}' : label,
             !_subtitlesDisabled && curSub.id == t.id,
             () {
               unawaited(_selectSubtitle(t));
             },
           );
         }),
-        _settingLabel('Subtitle size'),
+        _settingLabel('نوع الخط العربي'),
+        _subtitleFontChoices(),
+        _settingLabel('لون الترجمة'),
         _chipRow([
-          ('S', _subScale == 0.8, () => setState(() => _subScale = 0.8)),
-          ('M', _subScale == 1.0, () => setState(() => _subScale = 1.0)),
-          ('L', _subScale == 1.25, () => setState(() => _subScale = 1.25)),
-          ('XL', _subScale == 1.6, () => setState(() => _subScale = 1.6)),
-          (
-            'Box ${_subBg ? 'on' : 'off'}',
-            _subBg,
-            () => setState(() => _subBg = !_subBg),
-          ),
+          for (var i = 0; i < _subtitleColorLabels.length; i++)
+            (
+              _subtitleColorLabels[i],
+              _subColorIndex == i,
+              () => _changeSubtitlePreferences(() => _subColorIndex = i),
+            ),
         ]),
-        _settingLabel('Subtitle sync'),
+        _settingLabel('خلفية الترجمة'),
+        _chipRow([
+          ('إيقاف', _subBackground == 0,
+              () => _changeSubtitlePreferences(() => _subBackground = 0)),
+          ('شفافة', _subBackground == 1,
+              () => _changeSubtitlePreferences(() => _subBackground = 1)),
+          ('سوداء', _subBackground == 2,
+              () => _changeSubtitlePreferences(() => _subBackground = 2)),
+        ]),
+        _settingLabel('حدود النص والظل'),
+        _chipRow([
+          ('بدون', _subOutline == 0,
+              () => _changeSubtitlePreferences(() => _subOutline = 0)),
+          ('ظل ناعم', _subOutline == 1,
+              () => _changeSubtitlePreferences(() => _subOutline = 1)),
+          ('حدود قوية', _subOutline == 2,
+              () => _changeSubtitlePreferences(() => _subOutline = 2)),
+        ]),
+        _settingLabel('موضع الترجمة'),
+        _chipRow([
+          ('أسفل', _subPosition == 0,
+              () => _changeSubtitlePreferences(() => _subPosition = 0)),
+          ('مرتفعة', _subPosition == 1,
+              () => _changeSubtitlePreferences(() => _subPosition = 1)),
+          ('منتصف الشاشة', _subPosition == 2,
+              () => _changeSubtitlePreferences(() => _subPosition = 2)),
+        ]),
+        _settingLabel('حجم الترجمة'),
+        _chipRow([
+          ('صغير', _subScale == 0.8,
+              () => _changeSubtitlePreferences(() => _subScale = 0.8)),
+          ('متوسط', _subScale == 1.0,
+              () => _changeSubtitlePreferences(() => _subScale = 1.0)),
+          ('كبير', _subScale == 1.25,
+              () => _changeSubtitlePreferences(() => _subScale = 1.25)),
+          ('كبير جدًا', _subScale == 1.6,
+              () => _changeSubtitlePreferences(() => _subScale = 1.6)),
+        ]),
+        _settingLabel('مزامنة الترجمة'),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
-              _stepBtn(
-                Icons.remove_rounded,
-                () => _setSubDelay(_subDelay - 0.5),
-              ),
+              _stepBtn(Icons.remove_rounded, () => _setSubDelay(_subDelay - 0.25)),
               Expanded(
                 child: Text(
                   _subDelay == 0
-                      ? 'In sync'
-                      : '${_subDelay > 0 ? '+' : ''}${_subDelay.toStringAsFixed(1)}s',
+                      ? 'متزامنة'
+                      : '${_subDelay > 0 ? '+' : ''}${_subDelay.toStringAsFixed(2)} ثانية',
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
-              _stepBtn(Icons.add_rounded, () => _setSubDelay(_subDelay + 0.5)),
+              _stepBtn(Icons.add_rounded, () => _setSubDelay(_subDelay + 0.25)),
             ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+          child: OutlinedButton.icon(
+            onPressed: _resetSubtitlePreferences,
+            icon: const Icon(Icons.restart_alt_rounded),
+            label: const Text('إعادة ضبط إعدادات الترجمة'),
           ),
         ),
         const SizedBox(height: 16),

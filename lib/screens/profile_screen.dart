@@ -19,17 +19,19 @@ import 'login_screen.dart';
 import 'device_pairing_screen.dart';
 import 'stats_screen.dart';
 import 'viewer_picker_screen.dart';
+import 'stremio_addons_screen.dart';
 
 typedef ProfileCredentialValidator =
     Future<void> Function(XtreamCredentials credentials);
 
 enum ProfilePage {
-  menu('Settings'),
-  accounts('Accounts & services'),
-  viewers('Viewing profiles'),
-  appearance('Appearance'),
-  playback('Playback'),
-  library('Library & downloads');
+  menu('الإعدادات'),
+  accounts('الحسابات والخدمات'),
+  viewers('ملفات المشاهدة'),
+  appearance('المظهر'),
+  playback('التشغيل'),
+  library('المكتبة والتنزيلات'),
+  stremioAddons('Addons');
 
   const ProfilePage(this.title);
   final String title;
@@ -71,20 +73,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   };
   final _pageScroll = ScrollController();
   final _entryFocus = FocusNode(debugLabel: 'Profile add account');
-  final _viewerManageFocus = FocusNode(debugLabel: 'Switch or manage viewers');
+  final _viewerManageFocus = FocusNode(debugLabel: 'التبديل بين المشاهدين أو إدارتهم');
   final _themeEntryFocus = FocusNode(debugLabel: 'Dark appearance');
   final _fontEntryFocus = FocusNode(debugLabel: 'Lumen font');
   final _cornerEntryFocus = FocusNode(debugLabel: 'Crisp corners');
   final _focusStyleEntryFocus = FocusNode(debugLabel: 'Outline focus');
   final _accentEntryFocus = FocusNode(debugLabel: 'Signal lime accent');
-  final _playbackModeFocus = FocusNode(debugLabel: 'Live playback mode');
+  final _playbackModeFocus = FocusNode(debugLabel: 'وضع البث المباشر');
   final _insightsFocus = FocusNode(debugLabel: 'Watch insights');
   final _downloadsFocus = FocusNode(debugLabel: 'Downloads');
-  final _refreshFocus = FocusNode(debugLabel: 'Refresh library');
+  final _refreshFocus = FocusNode(debugLabel: 'تحديث المكتبة');
   final _organizeFocus = FocusNode(debugLabel: 'Organize library');
-  final _guideSettingsFocus = FocusNode(debugLabel: 'TV guide setup');
-  final _pairingFocus = FocusNode(debugLabel: 'Set up a TV');
-  final _historyFocus = FocusNode(debugLabel: 'Clear watch history');
+  final _guideSettingsFocus = FocusNode(debugLabel: 'إعداد دليل التلفاز');
+  final _pairingFocus = FocusNode(debugLabel: 'إعداد التلفاز');
+  final _historyFocus = FocusNode(debugLabel: 'مسح سجل المشاهدة');
   final _signOutFocus = FocusNode(debugLabel: 'Sign out of Lumen');
   final _currentEditFocus = FocusNode(debugLabel: 'Edit current service');
   final Map<String, FocusNode> _profileSwitchFocus = {};
@@ -208,7 +210,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
     for (final profile in visible) {
       final key = _profileKey(profile);
-      final label = profile.isDemo ? 'Demo Mode' : profile.username;
+      final label = profile.isDemo ? 'الوضع التجريبي' : profile.username;
       _profileSwitchFocus.putIfAbsent(
         key,
         () => FocusNode(debugLabel: 'Switch account $label'),
@@ -430,7 +432,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ..hideCurrentSnackBar()
         ..showSnackBar(
           const SnackBar(
-            content: Text('Service address updated'),
+            content: Text('تم تحديث عنوان الخدمة'),
             duration: Duration(seconds: 2),
           ),
         );
@@ -480,15 +482,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: surface,
-        title: const Text('Clear watch history?'),
+        title: const Text('هل تريد مسح سجل المشاهدة؟'),
         content: const Text(
-          'This removes Continue watching and Recent channels. Your favourites and downloads are kept.',
+          'سيؤدي هذا إلى حذف «متابعة المشاهدة» والقنوات الأخيرة. ستبقى المفضلة والتنزيلات كما هي.',
         ),
         actions: [
           TextButton(
             autofocus: true,
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancel', style: TextStyle(color: muted)),
+            child: Text('إلغاء', style: TextStyle(color: muted)),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -496,7 +498,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               foregroundColor: onAccent,
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Clear'),
+            child: const Text('مسح'),
           ),
         ],
       ),
@@ -507,7 +509,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ..hideCurrentSnackBar()
         ..showSnackBar(
           const SnackBar(
-            content: Text('Watch history cleared'),
+            content: Text('تم مسح سجل المشاهدة'),
             duration: Duration(seconds: 2),
           ),
         );
@@ -520,16 +522,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: surface,
-        title: const Text('Sign out of Lumen?'),
+        title: const Text('تسجيل الخروج من Eagle X؟'),
         content: const Text(
-          'This account stays saved on this device, but playback and its '
-          'library will close now.',
+          'سيبقى هذا الحساب محفوظًا على هذا الجهاز، لكن سيتم إيقاف التشغيل '
+          'وإغلاق مكتبته الآن.',
         ),
         actions: [
           TextButton(
             autofocus: true,
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Stay signed in', style: TextStyle(color: muted)),
+            child: Text('البقاء مسجلًا', style: TextStyle(color: muted)),
           ),
           FilledButton.icon(
             style: FilledButton.styleFrom(
@@ -538,7 +540,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             onPressed: () => Navigator.pop(ctx, true),
             icon: const Icon(Icons.logout_rounded, size: 18),
-            label: const Text('Sign out'),
+            label: const Text('تسجيل الخروج'),
           ),
         ],
       ),
@@ -555,7 +557,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ..showSnackBar(
           const SnackBar(
             content: Text(
-              'Lumen could not finish signing out. Please try again.',
+              'تعذّر إكمال تسجيل الخروج. حاول مجددًا.',
             ),
             duration: Duration(seconds: 3),
           ),
@@ -564,10 +566,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   String _expiry() {
-    if (widget.client.creds.isDemo) return 'Not applicable';
-    if (_info == null) return _accountInfoLoading ? 'Checking' : '—';
+    if (widget.client.creds.isDemo) return 'لا ينطبق';
+    if (_info == null) return _accountInfoLoading ? 'جارٍ التحقق' : '—';
     final e = _info?['exp_date'];
-    if (e == null || '$e' == 'null') return 'Unlimited';
+    if (e == null || '$e' == 'null') return 'غير محدود';
     final secs = int.tryParse('$e');
     if (secs == null) return '—';
     final d = DateTime.fromMillisecondsSinceEpoch(secs * 1000);
@@ -651,6 +653,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ProfilePage.appearance => [_personalizationCard()],
                   ProfilePage.playback => [_playbackCard()],
                   ProfilePage.library => [_libraryCard()],
+                  ProfilePage.stremioAddons => [const StremioAddonsScreen()],
                 },
               ),
             ),
@@ -665,7 +668,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         leading: IconButton(
           focusNode: _backFocus,
           autofocus: true,
-          tooltip: 'Back to Settings',
+          tooltip: 'العودة إلى الإعدادات',
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
@@ -715,7 +718,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   List<Widget> _settingsMenu() => [
-    Text('Settings', style: kPageTitle()),
+    Text('الإعدادات', style: kPageTitle()),
+    const SizedBox(height: 12),
     const SizedBox(height: 20),
     AnimatedBuilder(
       animation: ViewingProfiles.instance,
@@ -731,7 +735,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   Text(viewer.name, style: kTitle()),
                   const SizedBox(height: 4),
-                  Text('Your space. Your way to watch.', style: kBody()),
+                  Text('مساحتك الخاصة وطريقتك في المشاهدة.', style: kBody()),
                 ],
               ),
             ),
@@ -741,37 +745,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ),
     for (final (heading, entries) in [
       (
-        'Your library',
+        'مكتبتك',
         [
           (
             ProfilePage.accounts,
             Icons.dns_outlined,
-            'Add, edit, switch, or combine services',
+            'إضافة الخدمات أو تعديلها أو التبديل بينها أو دمجها',
           ),
           (
             ProfilePage.viewers,
             Icons.people_outline_rounded,
-            'Separate lists and history for each viewer',
+            'قوائم وسجل منفصل لكل مشاهد',
           ),
         ],
       ),
       (
-        'Your experience',
+        'تجربتك',
         [
           (
             ProfilePage.appearance,
             Icons.palette_outlined,
-            'Theme, typeface, colors, and focus',
+            'السمة والخطوط والألوان والتركيز',
           ),
           (
             ProfilePage.playback,
             Icons.play_circle_outline_rounded,
-            'Choose how live streams connect',
+            'اختر طريقة الاتصال بالبث المباشر',
           ),
           (
             ProfilePage.library,
             Icons.video_library_outlined,
-            'Downloads, organization, and history',
+            'التنزيلات والتنظيم والسجل',
+          ),
+          (
+            ProfilePage.stremioAddons,
+            Icons.extension_outlined,
+            'Addons — سوق الإضافات وتثبيتها وإدارتها بشكل مستقل',
           ),
         ],
       ),
@@ -831,7 +840,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('VIEWING PROFILE', style: kSection()),
+            Text('ملف المشاهدة', style: kSection()),
             const SizedBox(height: 10),
             LumenAvatar(seed: viewer.id, size: 56),
             const SizedBox(height: 10),
@@ -841,7 +850,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Your own My List, history, and Continue Watching. Services are shared.',
+              'لديك قائمتي وسجل المشاهدة والمتابعة الخاصة بك. الخدمات مشتركة.',
               style: TextStyle(color: muted, fontSize: 12),
             ),
             const SizedBox(height: 14),
@@ -863,7 +872,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               icon: const Icon(Icons.switch_account_outlined),
-              label: const Text('Switch or manage viewers'),
+              label: const Text('التبديل بين المشاهدين أو إدارتهم'),
             ),
           ],
         ),
@@ -875,17 +884,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final c = widget.client.creds;
     final combinedCount = {..._enabledScopes, _profileKey(c)}.length;
     final status = c.isDemo
-        ? 'Ready'
+        ? 'جاهز'
         : _accountInfoLoading
-        ? 'Checking'
+        ? 'جارٍ التحقق'
         : _info == null
-        ? 'Unavailable'
+        ? 'غير متاح'
         : '${_info?['status'] ?? 'Unknown'}';
     final isActive =
-        status.toLowerCase() == 'active' || status.toLowerCase() == 'ready';
-    final accountName = c.isDemo ? 'Demo Mode' : c.username;
+        status.toLowerCase() == 'active' ||
+        status.toLowerCase() == 'ready' ||
+        status == 'جاهز';
+    final accountName = c.isDemo ? 'الوضع التجريبي' : c.username;
     final accountSubtitle = c.isDemo
-        ? 'Offline sample library'
+        ? 'مكتبة تجريبية دون اتصال'
         : c.baseUrl.replaceFirst(RegExp(r'^https?://'), '');
     return Glass(
       radius: 24,
@@ -893,7 +904,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('CURRENT ACCOUNT', style: kSection()),
+          Text('الحساب الحالي', style: kSection()),
           const SizedBox(height: 5),
           Text(
             '$combinedCount ${combinedCount == 1 ? 'service' : 'services'} in this combined library',
@@ -961,7 +972,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               Expanded(
                 child: _accountMetric(
-                  'STATUS',
+                  'الحالة',
                   status,
                   isActive ? accentInk : textHi,
                 ),
@@ -969,7 +980,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _metricDivider(),
               Expanded(
                 child: _accountMetric(
-                  c.isDemo ? 'CONTENT' : 'EXPIRES',
+                  c.isDemo ? 'المحتوى' : 'انتهاء الصلاحية',
                   c.isDemo ? 'Fictional' : _expiry(),
                   textHi,
                 ),
@@ -977,7 +988,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _metricDivider(),
               Expanded(
                 child: _accountMetric(
-                  c.isDemo ? 'NETWORK' : 'DEVICES',
+                  c.isDemo ? 'الشبكة' : 'الأجهزة',
                   c.isDemo
                       ? 'Offline'
                       : _info == null
@@ -1039,7 +1050,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 const Expanded(
                   child: Text(
-                    'IPTV services',
+                    'خدمات IPTV',
                     style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                   ),
                 ),
@@ -1109,14 +1120,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _personalizationCard() => _profileSection(
-    eyebrow: 'PERSONALIZATION',
-    title: 'Appearance',
-    subtitle: 'Choose a look that stays consistent on every screen.',
+    eyebrow: 'التخصيص',
+    title: 'المظهر',
+    subtitle: 'اختر مظهرًا موحدًا عبر جميع الشاشات.',
     icon: Icons.tune_rounded,
     body: [
       _controlHeading(
-        'Color mode',
-        'Use a dark, light, or device-matched interface.',
+        'وضع الألوان',
+        'اختر الواجهة الداكنة أو الفاتحة أو المطابقة لإعدادات الجهاز.',
       ),
       const SizedBox(height: 12),
       _ThemeSelector(
@@ -1126,7 +1137,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         leftExitFocusNode: widget.shellRailFocusNode,
       ),
       const SizedBox(height: 24),
-      _controlHeading('Typeface', 'Set the reading style across Lumen.'),
+      _controlHeading('نوع الخط', 'حدد نمط الخط في جميع أجزاء التطبيق.'),
       const SizedBox(height: 12),
       _FontSelector(
         entryFocusNode: _fontEntryFocus,
@@ -1135,7 +1146,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         leftExitFocusNode: widget.shellRailFocusNode,
       ),
       const SizedBox(height: 24),
-      _controlHeading('Shape', 'Control the roundness of cards and controls.'),
+      _controlHeading('الشكل', 'تحكم في استدارة البطاقات وعناصر التحكم.'),
       const SizedBox(height: 12),
       _PreferenceSelector<LumenCornerStyle>(
         entryFocusNode: _cornerEntryFocus,
@@ -1165,7 +1176,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       const SizedBox(height: 24),
       _controlHeading(
-        'Focus style',
+        'نمط التركيز',
         'Choose how the selected item stands out on TV and keyboard devices.',
       ),
       const SizedBox(height: 12),
@@ -1204,7 +1215,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         builder: (context, _) => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Focus preview', style: kBody()),
+            Text('معاينة التركيز', style: kBody()),
             const SizedBox(height: 6),
             Text(
               'This is how remote or keyboard focus looks. Touch selections stay calm.',
@@ -1269,7 +1280,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: surface,
-        title: const Text('Live playback mode'),
+        title: const Text('وضع البث المباشر'),
         content: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
           child: Column(
@@ -1297,7 +1308,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: const Text('إلغاء'),
           ),
         ],
       ),
@@ -1307,10 +1318,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _playbackCard() => _profileSection(
-    eyebrow: 'STREAMING',
+    eyebrow: 'البث',
     icon: Icons.play_circle_outline_rounded,
-    title: 'Playback preferences',
-    subtitle: 'Choose a balance between startup speed and buffering tolerance.',
+    title: 'تفضيلات التشغيل',
+    subtitle: 'اختر التوازن بين سرعة بدء التشغيل وتحمل التخزين المؤقت.',
     body: [
       ValueListenableBuilder<PlaybackMode>(
         valueListenable: PlaybackModeController.instance.mode,
@@ -1328,7 +1339,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   );
 
   Widget _libraryCard() => _profileSection(
-    eyebrow: 'YOUR COLLECTION',
+    eyebrow: 'مجموعتك',
     icon: Icons.video_library_outlined,
     title: 'Manage your library',
     subtitle: 'Offline items, category organization, and viewing activity.',
@@ -1370,7 +1381,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         onKeyEvent: (_, event) =>
             _moveVertically(event, up: _downloadsFocus, down: _organizeFocus),
         icon: Icons.refresh_rounded,
-        title: 'Refresh library',
+        title: 'تحديث المكتبة',
         subtitle: 'Reload channels, films and series',
         onTap: () {
           refreshContent();
@@ -1393,8 +1404,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           down: DeviceProfile.isMobileApp ? _pairingFocus : _guideSettingsFocus,
         ),
         icon: Icons.tune_rounded,
-        title: 'Organize library',
-        subtitle: 'Rename, hide, reorder, and combine provider categories',
+        title: 'تنظيم المكتبة',
+        subtitle: 'أعد تسمية تصنيفات المزوّد أو أخفها أو أعد ترتيبها أو ادمجها',
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => CatalogOrganizationScreen(client: widget.client),
@@ -1408,7 +1419,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           onKeyEvent: (_, event) =>
               _moveVertically(event, up: _organizeFocus, down: _historyFocus),
           icon: Icons.calendar_view_week_outlined,
-          title: 'TV guide setup',
+          title: 'إعداد دليل التلفاز',
           subtitle: 'Manage EPG source, timing, refresh and cache',
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(
@@ -1424,7 +1435,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           onKeyEvent: (_, event) =>
               _moveVertically(event, up: _organizeFocus, down: _historyFocus),
           icon: Icons.qr_code_scanner,
-          title: 'Set up a TV',
+          title: 'إعداد التلفاز',
           subtitle: 'Send one service securely over your home network',
           onTap: () => Navigator.of(
             context,
@@ -1440,7 +1451,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           down: _backFocus,
         ),
         icon: Icons.history_rounded,
-        title: 'Clear watch history',
+        title: 'مسح سجل المشاهدة',
         subtitle: 'Remove Continue watching and Recent channels',
         onTap: _clearHistory,
         danger: true,
@@ -1610,7 +1621,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     onKeyEvent: (_, event) =>
         _moveVertically(event, up: _lastProfileSwitchFocus ?? _entryFocusNode),
     onTap: _signingOut ? null : _requestLogout,
-    semanticLabel: 'Sign out of Lumen',
+    semanticLabel: 'تسجيل الخروج',
     focusRadius: 18,
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
@@ -1637,7 +1648,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(width: 11),
           Expanded(
             child: Text(
-              _signingOut ? 'Signing out…' : 'Sign out of Lumen',
+              _signingOut ? 'جارٍ تسجيل الخروج…' : 'تسجيل الخروج',
               style: TextStyle(color: dangerInk, fontWeight: FontWeight.w600),
             ),
           ),
@@ -1675,13 +1686,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ? _profileEditFocus[_profileKey(profiles[target])]
         : null;
     final host = p.isDemo
-        ? 'Offline sample library'
+        ? 'مكتبة تجريبية دون اتصال'
         : p.baseUrl.replaceFirst(RegExp(r'^https?://'), '');
     return RemoteTap(
       key: ValueKey('profile-switch-$key'),
       behavior: HitTestBehavior.opaque,
       focusNode: switchFocus,
-      semanticLabel: 'Switch to ${p.isDemo ? 'Demo Mode' : p.username}',
+      semanticLabel: 'Switch to ${p.isDemo ? 'الوضع التجريبي' : p.username}',
       onKeyEvent: (_, event) => _moveInFocusGraph(event, {
         LogicalKeyboardKey.arrowLeft: widget.shellRailFocusNode,
         LogicalKeyboardKey.arrowRight: p.isDemo ? deleteFocus : combineFocus,
@@ -1704,7 +1715,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    p.isDemo ? 'Demo Mode' : p.username,
+                    p.isDemo ? 'الوضع التجريبي' : p.username,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.w500),
@@ -1803,7 +1814,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               key: ValueKey('profile-remove-$key'),
               focusNode: deleteFocus,
               semanticLabel:
-                  'Remove ${p.isDemo ? 'Demo Mode' : p.username} account',
+                  'Remove ${p.isDemo ? 'الوضع التجريبي' : p.username} account',
               focusRadius: 10,
               onKeyEvent: (_, event) => _moveInFocusGraph(event, {
                 LogicalKeyboardKey.arrowLeft: p.isDemo
@@ -1852,9 +1863,9 @@ class _EditServiceDialog extends StatefulWidget {
 
 class _EditServiceDialogState extends State<_EditServiceDialog> {
   late final TextEditingController _address;
-  final _addressFocus = FocusNode(debugLabel: 'Service address');
+  final _addressFocus = FocusNode(debugLabel: 'عنوان الخدمة');
   final _cancelFocus = FocusNode(debugLabel: 'Cancel service edit');
-  final _saveFocus = FocusNode(debugLabel: 'Save service address');
+  final _saveFocus = FocusNode(debugLabel: 'حفظ عنوان الخدمة');
   bool _busy = false;
   String? _error;
 
@@ -1952,7 +1963,7 @@ class _EditServiceDialogState extends State<_EditServiceDialog> {
   @override
   Widget build(BuildContext context) => AlertDialog(
     backgroundColor: surface,
-    title: Text(widget.profile.isM3u ? 'Edit playlist' : 'Edit server'),
+    title: Text(widget.profile.isM3u ? 'تعديل قائمة التشغيل' : 'تعديل الخادم'),
     content: ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 480),
       child: Column(
@@ -1979,8 +1990,8 @@ class _EditServiceDialogState extends State<_EditServiceDialog> {
               enableSuggestions: false,
               decoration: InputDecoration(
                 labelText: widget.profile.isM3u
-                    ? 'Playlist URL'
-                    : 'Server address',
+                    ? 'رابط قائمة التشغيل'
+                    : 'عنوان الخادم',
                 hintText: 'https://provider.example',
                 errorText: _error,
               ),
@@ -2009,7 +2020,7 @@ class _EditServiceDialogState extends State<_EditServiceDialog> {
       TextButton(
         focusNode: _cancelFocus,
         onPressed: _busy ? null : () => Navigator.of(context).pop(),
-        child: const Text('Cancel'),
+        child: const Text('إلغاء'),
       ),
       FilledButton.icon(
         key: const ValueKey('save-service-address'),
@@ -2081,7 +2092,7 @@ class _AccountRemovalDialogState extends State<_AccountRemovalDialog> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
             child: Text(
-              'Cancel',
+              'إلغاء',
               style: TextStyle(color: muted, fontWeight: FontWeight.w500),
             ),
           ),
@@ -2100,7 +2111,7 @@ class _AccountRemovalDialogState extends State<_AccountRemovalDialog> {
               borderRadius: BorderRadius.circular(lumenCorner(12)),
             ),
             child: Text(
-              'Remove',
+              'إزالة',
               style: TextStyle(
                 color: foregroundFor(danger),
                 fontWeight: FontWeight.w600,
@@ -2496,12 +2507,12 @@ class _ThemeSelector extends StatefulWidget {
 
 class _ThemeSelectorState extends State<_ThemeSelector> {
   static const _opts = [
-    (mode: ThemeMode.dark, icon: Icons.dark_mode_rounded, label: 'Dark'),
-    (mode: ThemeMode.light, icon: Icons.light_mode_rounded, label: 'Light'),
+    (mode: ThemeMode.dark, icon: Icons.dark_mode_rounded, label: 'داكن'),
+    (mode: ThemeMode.light, icon: Icons.light_mode_rounded, label: 'فاتح'),
     (
       mode: ThemeMode.system,
       icon: Icons.brightness_auto_rounded,
-      label: 'System',
+      label: 'النظام',
     ),
   ];
 
@@ -2569,7 +2580,7 @@ class _ThemeSelectorState extends State<_ThemeSelector> {
                     focusNode: _focusNodes[index],
                     onKeyEvent: (_, event) => _route(index, event),
                     behavior: HitTestBehavior.opaque,
-                    semanticLabel: '${_opts[index].label} appearance',
+                    semanticLabel: switch (_opts[index].label) { 'فاتح' => 'المظهر الفاتح', 'داكن' => 'المظهر الداكن', _ => 'مظهر النظام' },
                     onTap: () =>
                         ThemeController.instance.set(_opts[index].mode),
                     child: AnimatedContainer(
@@ -2815,7 +2826,7 @@ class _AccentPickerState extends State<_AccentPicker> {
                     border: Border.all(color: line),
                   ),
                   child: Text(
-                    'Cancel',
+                    'إلغاء',
                     style: TextStyle(
                       color: textHi,
                       fontWeight: FontWeight.w500,
@@ -2839,7 +2850,7 @@ class _AccentPickerState extends State<_AccentPicker> {
                     borderRadius: BorderRadius.circular(lumenCorner(22)),
                   ),
                   child: Text(
-                    'Apply',
+                    'تطبيق',
                     style: TextStyle(
                       color: foregroundFor(picked),
                       fontWeight: FontWeight.w600,
@@ -3056,7 +3067,7 @@ class _AccentPickerState extends State<_AccentPicker> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Custom',
+                            'مخصص',
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(

@@ -54,7 +54,7 @@ class EpgGuideScreen extends StatefulWidget {
     required this.client,
     required this.repository,
     required this.channels,
-    this.title = 'TV Guide',
+    this.title = 'دليل التلفاز',
     this.initialGuide = const {},
     this.showBackButton = true,
     this.embedded = false,
@@ -560,7 +560,7 @@ class _EpgGuideScreenState extends State<EpgGuideScreen> {
               ),
               const SizedBox(height: 18),
               Text(
-                'No programme schedule available',
+                'لا يتوفر جدول للبرامج',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: textHi,
@@ -607,7 +607,7 @@ class _EpgGuideScreenState extends State<EpgGuideScreen> {
           _GuideAction(
             focusNode: _backFocus,
             icon: Icons.arrow_back_rounded,
-            label: 'Live',
+            label: 'مباشر',
             onTap: () => Navigator.of(context).maybePop(),
             onDown: () => _requestChannel(0),
           ),
@@ -655,7 +655,7 @@ class _EpgGuideScreenState extends State<EpgGuideScreen> {
         _GuideAction(
           focusNode: _refreshFocus,
           icon: Icons.refresh_rounded,
-          label: 'Refresh',
+          label: 'تحديث',
           compact: MediaQuery.sizeOf(context).width < 600,
           onTap: _refresh,
           onDown: () => _requestChannel(0),
@@ -665,7 +665,7 @@ class _EpgGuideScreenState extends State<EpgGuideScreen> {
           focusNode: _nowFocus,
           autofocus: _isTv && widget.showBackButton,
           icon: Icons.my_location_rounded,
-          label: 'Now',
+          label: 'الآن',
           compact: MediaQuery.sizeOf(context).width < 600,
           onTap: _goNow,
           onDown: () => _requestChannel(0),
@@ -752,7 +752,7 @@ class _EpgGuideScreenState extends State<EpgGuideScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 14),
           color: surfaceHi,
           child: Text(
-            'CHANNEL',
+            'القناة',
             style: TextStyle(
               color: muted,
               fontSize: 11,
@@ -972,7 +972,7 @@ class _EpgGuideScreenState extends State<EpgGuideScreen> {
                 Icon(Icons.info_outline_rounded, color: muted, size: 20),
                 const SizedBox(width: 10),
                 Text(
-                  'Focus a programme to see details.',
+                  'حدد برنامجًا لعرض التفاصيل.',
                   style: TextStyle(color: muted, fontWeight: FontWeight.w600),
                 ),
               ],

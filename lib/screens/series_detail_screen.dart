@@ -259,7 +259,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                         title: 'This season archive is unavailable',
                         message:
                             'The provider did not return episode information. Go back or refresh the catalog and try again.',
-                        actionLabel: 'Go back',
+                        actionLabel: 'رجوع',
                         onAction: () => Navigator.of(context).maybePop(),
                       ),
                     )
@@ -271,8 +271,8 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
                         padding: EdgeInsets.all(24),
                         child: LumenEmptyState(
                           icon: Icons.video_library_outlined,
-                          eyebrow: 'Empty archive',
-                          title: 'No episodes listed',
+                          eyebrow: 'الأرشيف فارغ',
+                          title: 'لا توجد حلقات مدرجة',
                           message:
                               'This provider returned the show details without an episode archive.',
                         ),
@@ -320,7 +320,7 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
       final favorite = Library.instance.isFav(reference.key);
       return _SeriesAction(
         icon: favorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-        label: favorite ? 'Saved' : 'My list',
+        label: favorite ? 'محفوظ' : 'قائمتي',
         selected: favorite,
         onTap: () => Library.instance.toggleFav(reference),
       );
@@ -519,7 +519,7 @@ class _SeriesHero extends StatelessWidget {
                               children: [
                                 Container(width: 30, height: 2, color: accent2),
                                 const SizedBox(width: 10),
-                                Text('SEASON ARCHIVE', style: kSection()),
+                                Text('أرشيف المواسم', style: kSection()),
                                 if (loading) ...[
                                   const SizedBox(width: 10),
                                   SizedBox(
@@ -605,7 +605,7 @@ class _SeriesHero extends StatelessWidget {
                                 if (hasTrailer)
                                   _SeriesAction(
                                     icon: Icons.smart_display_rounded,
-                                    label: 'Trailer',
+                                    label: 'الإعلان التشويقي',
                                     onTap: onTrailer,
                                   ),
                                 favorite,
@@ -781,7 +781,7 @@ class _SeasonNavigator extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('CHOOSE A CHAPTER', style: kSection()),
+                      Text('اختر حلقة', style: kSection()),
                       const SizedBox(height: 5),
                       Text(
                         'Season $active · $episodeCount episode${episodeCount == 1 ? '' : 's'}',
@@ -1136,7 +1136,7 @@ class _EpisodeLoading extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('OPENING THE SEASON ARCHIVE', style: kSection()),
+            Text('جارٍ فتح أرشيف الموسم', style: kSection()),
             const SizedBox(height: 15),
             for (var i = 0; i < 3; i++) ...[
               Container(
