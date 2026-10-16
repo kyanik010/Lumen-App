@@ -1750,7 +1750,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 focusRadius: 10,
                 onKeyEvent: (_, event) => _moveInFocusGraph(event, {
                   LogicalKeyboardKey.arrowLeft: switchFocus,
-                  LogicalKeyboardKey.arrowRight: editFocus,
+                  LogicalKeyboardKey.arrowRight: deleteFocus,
                   LogicalKeyboardKey.arrowUp: index == 0
                       ? _entryFocusNode
                       : combineAt(index - 1),
@@ -1780,35 +1780,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(width: 7),
-              RemoteTap(
-                key: ValueKey('profile-edit-$key'),
-                focusNode: editFocus,
-                semanticLabel: 'Edit ${p.username} service address',
-                focusRadius: 10,
-                onKeyEvent: (_, event) => _moveInFocusGraph(event, {
-                  LogicalKeyboardKey.arrowLeft: combineFocus,
-                  LogicalKeyboardKey.arrowRight: deleteFocus,
-                  LogicalKeyboardKey.arrowUp: index == 0
-                      ? _entryFocusNode
-                      : editAt(index - 1),
-                  LogicalKeyboardKey.arrowDown: index == profiles.length - 1
-                      ? _themeEntryFocus
-                      : editAt(index + 1),
-                }),
-                onTap: () => _edit(p),
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: surfaceHi,
-                    borderRadius: BorderRadius.circular(lumenCorner(10)),
-                    border: Border.all(color: line),
-                  ),
-                  child: Icon(Icons.edit_outlined, color: subtle, size: 19),
-                ),
-              ),
-              const SizedBox(width: 7),
             ],
             RemoteTap(
               key: ValueKey('profile-remove-$key'),
@@ -1819,7 +1790,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onKeyEvent: (_, event) => _moveInFocusGraph(event, {
                 LogicalKeyboardKey.arrowLeft: p.isDemo
                     ? switchFocus
-                    : editFocus,
+                    : combineFocus,
                 LogicalKeyboardKey.arrowUp: index == 0
                     ? _entryFocusNode
                     : deleteAt(index - 1),
