@@ -7,6 +7,7 @@ import '../device_profile.dart';
 import '../downloads.dart';
 import '../models.dart';
 import '../playback.dart';
+import 'player_host.dart';
 import '../refresh.dart';
 import '../split.dart';
 import '../updater.dart';
