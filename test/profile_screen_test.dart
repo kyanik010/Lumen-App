@@ -408,7 +408,7 @@ void main() {
     expect(find.text('https://provider.example'), findsNothing);
     expect(find.text('provider.example'), findsNothing);
     expect(find.text('Use this when your IPTV provider moves the same account to a new hostname. Your username and password will be kept.'), findsNothing);
-    expect((await Store.activeProfile())?.baseUrl, active.baseUrl);
+    expect((await Store.active())?.baseUrl, active.baseUrl);
     expect(tester.takeException(), isNull);
   });
 
