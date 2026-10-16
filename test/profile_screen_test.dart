@@ -260,19 +260,19 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final signal = tester.getRect(
-      find.byKey(const ValueKey('profile-accent-signal lime')),
+    final solar = tester.getRect(
+      find.byKey(const ValueKey('profile-accent-solar gold')),
     );
-    final electric = tester.getRect(
-      find.byKey(const ValueKey('profile-accent-electric blue')),
+    final tidal = tester.getRect(
+      find.byKey(const ValueKey('profile-accent-tidal teal')),
     );
     final custom = tester.getRect(
       find.byKey(const ValueKey('profile-accent-custom')),
     );
-    expect(signal.width, closeTo(electric.width, .1));
-    expect(signal.width, closeTo(custom.width, .1));
-    expect(signal.top, closeTo(electric.top, .1));
-    expect(custom.top, greaterThan(signal.bottom));
+    expect(solar.width, closeTo(tidal.width, .1));
+    expect(solar.width, closeTo(custom.width, .1));
+    expect(solar.top, closeTo(tidal.top, .1));
+    expect(custom.top, greaterThan(solar.bottom));
     expect(tester.takeException(), isNull);
   });
 
@@ -358,7 +358,7 @@ void main() {
       await tester.pump();
       expect(
         FocusManager.instance.primaryFocus?.debugLabel,
-        'Edit service Bedroom',
+        'Remove account Bedroom',
       );
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
       await tester.pump();
@@ -393,7 +393,7 @@ void main() {
     },
   );
 
-  testWidgets('current IPTV hostname can be edited without adding an account', (
+  testWidgets('account screen hides provider host and edit controls', (
     tester,
   ) async {
     const active = XtreamCredentials(
@@ -402,34 +402,13 @@ void main() {
       password: 'test-only',
     );
     await Store.setActive(active);
-    XtreamCredentials? validated;
-    XtreamCredentials? switchedTo;
+    await pumpProfile(tester, const Size(390, 844));
 
-    await pumpProfile(
-      tester,
-      const Size(390, 844),
-      onSwitch: (profile) => switchedTo = profile,
-      profileValidator: (profile) async => validated = profile,
-    );
-
-    await tester.tap(find.byKey(const ValueKey('edit-current-service')));
-    await tester.pumpAndSettle();
-    expect(find.text('تعديل الخادم'), findsOneWidget);
-
-    await tester.enterText(
-      find.byKey(const ValueKey('edit-service-address')),
-      'https://replacement.example',
-    );
-    await tester.tap(find.byKey(const ValueKey('save-service-address')));
-    await tester.pumpAndSettle();
-
-    expect(validated?.baseUrl, 'https://replacement.example');
-    expect(switchedTo?.baseUrl, 'https://replacement.example');
-    final profiles = await Store.savedProfiles();
-    expect(profiles, hasLength(1));
-    expect(profiles.single.baseUrl, 'https://replacement.example');
-    expect(profiles.single.username, active.username);
-    expect(profiles.single.password, active.password);
+    expect(find.byKey(const ValueKey('edit-current-service')), findsNothing);
+    expect(find.text('https://provider.example'), findsNothing);
+    expect(find.text('provider.example'), findsNothing);
+    expect(find.text('Use this when your IPTV provider moves the same account to a new hostname. Your username and password will be kept.'), findsNothing);
+    expect((await Store.activeProfile())?.baseUrl, active.baseUrl);
     expect(tester.takeException(), isNull);
   });
 
