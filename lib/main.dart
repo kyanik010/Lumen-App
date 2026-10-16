@@ -137,7 +137,7 @@ class LumenApp extends StatelessWidget {
         final mode = ThemeController.instance.mode.value;
         final accent = ThemeController.instance.accent.value;
         return MaterialApp(
-          title: 'Lumen',
+          title: 'EAGLE X',
           debugShowCheckedModeBanner: false,
           navigatorKey: rootNavKey,
           theme: buildTheme(lightPaletteFor(accent)),
