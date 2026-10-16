@@ -91,7 +91,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _currentEditFocus = FocusNode(debugLabel: 'Edit current service');
   final Map<String, FocusNode> _profileSwitchFocus = {};
   final Map<String, FocusNode> _profileCombineFocus = {};
-  final Map<String, FocusNode> _profileEditFocus = {};
   final Map<String, FocusNode> _profileDeleteFocus = {};
   Map<String, dynamic>? _info;
   List<XtreamCredentials> _profiles = [];
@@ -193,7 +192,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     for (final nodes in [
       _profileSwitchFocus,
       _profileCombineFocus,
-      _profileEditFocus,
       _profileDeleteFocus,
     ]) {
       final removed = nodes.keys
@@ -222,10 +220,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _profileCombineFocus.putIfAbsent(
         key,
         () => FocusNode(debugLabel: 'Combine service $label'),
-      );
-      _profileEditFocus.putIfAbsent(
-        key,
-        () => FocusNode(debugLabel: 'Edit service $label'),
       );
     }
   }
@@ -400,56 +394,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await widget.onServicesChanged?.call();
   }
 
-  // ignore: unused_element
-  Future<void> _edit(XtreamCredentials profile) async {
-    if (profile.isDemo) return;
-    final replacement = await showDialog<XtreamCredentials>(
-      context: context,
-      builder: (_) => _EditServiceDialog(
-        profile: profile,
-        validator: widget.profileValidator,
-      ),
-    );
-    if (replacement == null || !mounted) return;
-    try {
-      final wasEnabled = _enabledScopes.contains(_profileKey(profile));
-      final profiles = await Store.updateProfile(profile, replacement);
-      if (!mounted) return;
-      if (_isActive(profile)) {
-        widget.onSwitch(replacement);
-        return;
-      }
-      if (wasEnabled) {
-        setState(() {
-          _enabledScopes
-            ..remove(_profileKey(profile))
-            ..add(_profileKey(replacement));
-        });
-        await widget.onServicesChanged?.call();
-        if (!mounted) return;
-      }
-      _setProfiles(profiles, restoreFocus: _entryFocusNode);
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(
-            content: Text('تم تحديث عنوان الخدمة'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-    } on StateError catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text('${error.message}'),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-    }
-  }
-
   Future<void> _delete(XtreamCredentials p) async {
     final wasActive = _isActive(p);
     final wasEnabled = _enabledScopes.contains(_profileKey(p));
@@ -607,9 +551,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       node.dispose();
     }
     for (final node in _profileCombineFocus.values) {
-      node.dispose();
-    }
-    for (final node in _profileEditFocus.values) {
       node.dispose();
     }
     for (final node in _profileDeleteFocus.values) {
@@ -1650,7 +1591,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ? _profileCombineFocus[_profileKey(profiles[target])]
         : null;
     // ignore: unused_element
-    FocusNode? editAt(int target) => target >= 0 && target < profiles.length
+    FocusNode? deleteAt(int target) => target >= 0 && target < profiles.length
         ? _profileEditFocus[_profileKey(profiles[target])]
         : null;
     return RemoteTap(
