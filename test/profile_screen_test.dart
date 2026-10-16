@@ -393,7 +393,7 @@ void main() {
     },
   );
 
-  testWidgets('account screen hides provider host and edit controls', (
+  testWidgets('account screen hides provider host and exposes edit control', (
     tester,
   ) async {
     const active = XtreamCredentials(
@@ -404,7 +404,7 @@ void main() {
     await Store.setActive(active);
     await pumpProfile(tester, const Size(390, 844));
 
-    expect(find.byKey(const ValueKey('edit-current-service')), findsNothing);
+    expect(find.byKey(const ValueKey('edit-current-service')), findsOneWidget);
     expect(find.text('https://provider.example'), findsNothing);
     expect(find.text('provider.example'), findsNothing);
     expect(find.text('Use this when your IPTV provider moves the same account to a new hostname. Your username and password will be kept.'), findsNothing);
