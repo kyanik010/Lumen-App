@@ -229,13 +229,13 @@ void main() {
     DeviceProfile.isTelevision = true;
     addTearDown(() => DeviceProfile.isTelevision = false);
     await pumpProfile(tester, const Size(1280, 900));
-    final viewerManage = FocusManager.instance.rootScope.descendants.firstWhere(
-      (node) => node.debugLabel == 'التبديل بين المشاهدين أو إدارتهم',
+    final entry = FocusManager.instance.rootScope.descendants.firstWhere(
+      (node) => node.debugLabel == 'Profile add account',
     );
-    viewerManage.requestFocus();
+    entry.requestFocus();
     await tester.pump();
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(
       FocusManager.instance.primaryFocus?.debugLabel,
       'التبديل بين المشاهدين أو إدارتهم',
