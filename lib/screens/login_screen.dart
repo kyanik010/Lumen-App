@@ -694,7 +694,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Text(
           'لتفعيل التطبيق أو الحصول على اشتراك IPTV،',
           textAlign: TextAlign.center,
-          style: TextStyle(color: muted, fontSize: 13, height: 1.5),
+          style: TextStyle(color: muted, fontSize: 11.5, height: 1.4),
         ),
         Text(
           'تواصل مع الدعم عبر مسح رمز QR.',
