@@ -160,6 +160,43 @@ class _DeviceTrialGateState extends State<DeviceTrialGate> {
                           label: const Text('نسخ معرّف الجهاز'),
                         ),
                       ],
+                      if (blocked || expired) ...[
+                        const SizedBox(height: 18),
+                        Text(
+                          'امسح الرمز للتواصل مع الدعم',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 10),
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0xFFC8A45A),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.asset(
+                                'assets/eagle_x_qr.png',
+                                width: 112,
+                                height: 112,
+                                fit: BoxFit.contain,
+                                filterQuality: FilterQuality.high,
+                                errorBuilder: (_, __, ___) => const Icon(
+                                  Icons.qr_code_2_rounded,
+                                  size: 112,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                       if (_checking) ...[
                         const SizedBox(height: 20),
                         const Center(child: CircularProgressIndicator()),
