@@ -40,7 +40,7 @@ class Palette {
   });
 }
 
-const defaultAccent = Color(0xFFC7F36B); // signal lime
+const defaultAccent = Color(0xFFD7AD5A); // Eagle X solar gold
 
 // Shared geometry and motion keep the interface feeling designed as one
 // system. TV focus transitions stay short enough to remain responsive.
@@ -167,7 +167,7 @@ const accentSchemes = <AccentScheme>[
   AccentScheme('Tidal teal', Color(0xFF24C7B0)),
   AccentScheme('Electric blue', Color(0xFF4E7DFF)),
   AccentScheme('Ultraviolet', Color(0xFFA66BFF)),
-  AccentScheme('Solar gold', Color(0xFFFFB84D)),
+  AccentScheme('Solar gold', Color(0xFFD7AD5A)),
 ];
 
 /// Colour values remain public for persistence, contrast tests and custom
@@ -177,7 +177,7 @@ const accentPresets = <Color>[
   Color(0xFF24C7B0), // tidal teal
   Color(0xFF4E7DFF), // electric blue
   Color(0xFFA66BFF), // ultraviolet
-  Color(0xFFFFB84D), // solar gold
+  Color(0xFFD7AD5A), // solar gold
 ];
 
 Color _shade(Color c, double dl) {
@@ -224,13 +224,13 @@ Color _accessibleInk(Color brand, Color background) {
 
 /// Neutral cinema blacks keep wildly different provider artwork coherent.
 Palette darkPaletteFor(Color a) {
-  const neutralSurface = Color(0xFF101315);
-  const hardestNeutral = Color(0xFF181C1F);
+  const neutralSurface = Color(0xFF293E5E);
+  const hardestNeutral = Color(0xFF304667);
   return Palette(
-    bg: const Color(0xFF080A0B),
+    bg: const Color(0xFF243858),
     surface: neutralSurface,
-    surfaceHi: const Color(0xFF181C1F),
-    line: const Color(0x2EFFFFFF),
+    surfaceHi: hardestNeutral,
+    line: const Color(0x45FFFFFF),
     textHi: const Color(0xFFF4F1E8),
     muted: _accessibleInk(const Color(0xFFA2A6A3), hardestNeutral),
     subtle: _accessibleInk(const Color(0xFF686E6A), hardestNeutral),
