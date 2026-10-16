@@ -91,6 +91,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _currentEditFocus = FocusNode(debugLabel: 'Edit current service');
   final Map<String, FocusNode> _profileSwitchFocus = {};
   final Map<String, FocusNode> _profileCombineFocus = {};
+  final Map<String, FocusNode> _profileEditFocus = {};
   final Map<String, FocusNode> _profileDeleteFocus = {};
   Map<String, dynamic>? _info;
   List<XtreamCredentials> _profiles = [];
@@ -192,6 +193,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     for (final nodes in [
       _profileSwitchFocus,
       _profileCombineFocus,
+      _profileEditFocus,
       _profileDeleteFocus,
     ]) {
       final removed = nodes.keys
@@ -220,6 +222,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _profileCombineFocus.putIfAbsent(
         key,
         () => FocusNode(debugLabel: 'Combine service $label'),
+      );
+      _profileEditFocus.putIfAbsent(
+        key,
+        () => FocusNode(debugLabel: 'Edit service $label'),
       );
     }
   }
@@ -394,6 +400,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await widget.onServicesChanged?.call();
   }
 
+  Future<void> _edit(XtreamCredentials profile) async {
+    if (profile.isDemo) return;
+    final replacement = await showDialog<XtreamCredentials>(
+      context: context,
+      builder: (_) => _EditServiceDialog(
+        profile: profile,
+        validator: widget.profileValidator,
+      ),
+    );
+    if (replacement == null || !mounted) return;
+    try {
+      final wasEnabled = _enabledScopes.contains(_profileKey(profile));
+      final profiles = await Store.updateProfile(profile, replacement);
+      if (!mounted) return;
+      if (_isActive(profile)) {
+        widget.onSwitch(replacement);
+        return;
+      }
+      if (wasEnabled) {
+        setState(() {
+          _enabledScopes
+            ..remove(_profileKey(profile))
+            ..add(_profileKey(replacement));
+        });
+        await widget.onServicesChanged?.call();
+        if (!mounted) return;
+      }
+      _setProfiles(profiles, restoreFocus: _entryFocusNode);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('تم تحديث عنوان الخدمة'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+    } on StateError catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text('${error.message}'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+    }
+  }
+
   Future<void> _delete(XtreamCredentials p) async {
     final wasActive = _isActive(p);
     final wasEnabled = _enabledScopes.contains(_profileKey(p));
@@ -551,6 +606,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       node.dispose();
     }
     for (final node in _profileCombineFocus.values) {
+      node.dispose();
+    }
+    for (final node in _profileEditFocus.values) {
       node.dispose();
     }
     for (final node in _profileDeleteFocus.values) {
@@ -867,6 +925,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         fontSize: 18,
                       ),
                     ),
+                    if (!c.isDemo)
+                      TextButton.icon(
+                        key: const ValueKey('edit-current-service'),
+                        onPressed: () => _edit(c),
+                        icon: const Icon(Icons.edit_outlined, size: 16),
+                        label: const Text('تعديل الخدمة'),
+                      ),
                   ],
                 ),
               ),
@@ -1578,9 +1643,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final key = _profileKey(p);
     final switchFocus = _profileSwitchFocus[key]!;
     final combineFocus = _profileCombineFocus[key]!;
+    final editFocus = _profileEditFocus[key]!;
     final deleteFocus = _profileDeleteFocus[key]!;
     FocusNode? switchAt(int target) => target >= 0 && target < profiles.length
         ? _profileSwitchFocus[_profileKey(profiles[target])]
+        : null;
+    FocusNode? editAt(int target) => target >= 0 && target < profiles.length
+        ? _profileEditFocus[_profileKey(profiles[target])]
         : null;
     FocusNode? deleteAt(int target) => target >= 0 && target < profiles.length
         ? _profileDeleteFocus[_profileKey(profiles[target])]
@@ -1644,7 +1713,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 focusRadius: 10,
                 onKeyEvent: (_, event) => _moveInFocusGraph(event, {
                   LogicalKeyboardKey.arrowLeft: switchFocus,
-                  LogicalKeyboardKey.arrowRight: deleteFocus,
+                  LogicalKeyboardKey.arrowRight: editFocus,
                   LogicalKeyboardKey.arrowUp: index == 0
                       ? _entryFocusNode
                       : combineAt(index - 1),
@@ -1671,6 +1740,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     color: _enabledScopes.contains(key) ? accentInk : subtle,
                     size: 19,
                   ),
+                ),
+              ),
+              const SizedBox(width: 7),
+              RemoteTap(
+                key: ValueKey('profile-edit-$key'),
+                focusNode: editFocus,
+                semanticLabel: 'Edit ${p.username} service address',
+                focusRadius: 10,
+                onKeyEvent: (_, event) => _moveInFocusGraph(event, {
+                  LogicalKeyboardKey.arrowLeft: combineFocus,
+                  LogicalKeyboardKey.arrowRight: deleteFocus,
+                  LogicalKeyboardKey.arrowUp: index == 0 ? _entryFocusNode : editAt(index - 1),
+                  LogicalKeyboardKey.arrowDown: index == profiles.length - 1 ? _themeEntryFocus : editAt(index + 1),
+                }),
+                onTap: () => _edit(p),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: surfaceHi,
+                    borderRadius: BorderRadius.circular(lumenCorner(10)),
+                    border: Border.all(color: line),
+                  ),
+                  child: Icon(Icons.edit_outlined, color: subtle, size: 19),
                 ),
               ),
               const SizedBox(width: 7),
@@ -1725,6 +1819,193 @@ class _AccountRemovalDialog extends StatefulWidget {
   @override
   State<_AccountRemovalDialog> createState() => _AccountRemovalDialogState();
 }
+
+class _EditServiceDialog extends StatefulWidget {
+  const _EditServiceDialog({required this.profile, this.validator});
+
+  final XtreamCredentials profile;
+  final ProfileCredentialValidator? validator;
+
+  @override
+  State<_EditServiceDialog> createState() => _EditServiceDialogState();
+}
+
+class _EditServiceDialogState extends State<_EditServiceDialog> {
+  late final TextEditingController _address;
+  final _addressFocus = FocusNode(debugLabel: 'عنوان الخدمة');
+  final _cancelFocus = FocusNode(debugLabel: 'Cancel service edit');
+  final _saveFocus = FocusNode(debugLabel: 'حفظ عنوان الخدمة');
+  bool _busy = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _address = TextEditingController(
+      text: '',
+    );
+  }
+
+  XtreamCredentials? _replacement() {
+    var value = _address.text.trim();
+    if (value.isEmpty) return null;
+    if (!RegExp(r'^https?://', caseSensitive: false).hasMatch(value)) {
+      value = 'https://$value';
+    }
+    final uri = Uri.tryParse(value);
+    if (uri == null ||
+        !uri.hasAuthority ||
+        (uri.scheme != 'http' && uri.scheme != 'https')) {
+      return null;
+    }
+    final profile = widget.profile;
+    if (profile.isM3u) {
+      final port = uri.hasPort ? ':${uri.port}' : '';
+      return XtreamCredentials(
+        baseUrl: '${uri.scheme}://${uri.host}$port',
+        username: profile.username,
+        password: profile.password,
+        m3uUrl: uri.toString(),
+      );
+    }
+    return XtreamCredentials(
+      baseUrl: normalizeBaseUrl(value),
+      username: profile.username,
+      password: profile.password,
+    );
+  }
+
+  Future<void> _save() async {
+    if (_busy) return;
+    final replacement = _replacement();
+    if (replacement == null) {
+      setState(() => _error = 'Enter a complete HTTP or HTTPS address.');
+      return;
+    }
+    if (replacement.baseUrl == widget.profile.baseUrl &&
+        replacement.m3uUrl == widget.profile.m3uUrl) {
+      setState(() => _error = 'Enter the provider’s new address.');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    XtreamClient? validationClient;
+    try {
+      final validator = widget.validator;
+      if (validator != null) {
+        await validator(replacement);
+      } else {
+        validationClient = XtreamClient(replacement);
+        await validationClient.authenticate().timeout(
+          const Duration(seconds: 18),
+          onTimeout: () => throw XtreamException(
+            'The new server did not respond. Check the address and try again.',
+          ),
+        );
+      }
+      if (mounted) Navigator.of(context).pop(replacement);
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _error = safeProviderError(error);
+        });
+      }
+    } finally {
+      validationClient?.close();
+    }
+  }
+
+  @override
+  void dispose() {
+    _address.dispose();
+    _addressFocus.dispose();
+    _cancelFocus.dispose();
+    _saveFocus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    backgroundColor: surface,
+    title: Text(widget.profile.isM3u ? 'تعديل قائمة التشغيل' : 'تعديل الخادم'),
+    content: ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 480),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.profile.isM3u
+                ? 'Replace the playlist URL. Your saved library and settings will stay with this service.'
+                : 'Use this when your IPTV provider moves the same account to a new hostname. Your username and password will be kept.',
+            style: TextStyle(color: subtle, height: 1.4),
+          ),
+          const SizedBox(height: 16),
+          RemoteTextInput(
+            child: TextField(
+              key: const ValueKey('edit-service-address'),
+              controller: _address,
+              focusNode: _addressFocus,
+              autofocus: true,
+              enabled: !_busy,
+              keyboardType: TextInputType.url,
+              textInputAction: TextInputAction.done,
+              autocorrect: false,
+              enableSuggestions: false,
+              decoration: InputDecoration(
+                labelText: widget.profile.isM3u
+                    ? 'رابط قائمة التشغيل'
+                    : 'عنوان الخادم',
+                hintText: 'https://provider.example',
+                errorText: _error,
+              ),
+              onSubmitted: (_) => _save(),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(Icons.person_outline_rounded, size: 17, color: muted),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  widget.profile.username,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: muted, fontWeight: FontWeight.w500),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+    actions: [
+      TextButton(
+        focusNode: _cancelFocus,
+        onPressed: _busy ? null : () => Navigator.of(context).pop(),
+        child: const Text('إلغاء'),
+      ),
+      FilledButton.icon(
+        key: const ValueKey('save-service-address'),
+        focusNode: _saveFocus,
+        onPressed: _busy ? null : _save,
+        icon: _busy
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.check_rounded),
+        label: Text(_busy ? 'Checking…' : 'Save'),
+      ),
+    ],
+  );
+}
+
 
 class _AccountRemovalDialogState extends State<_AccountRemovalDialog> {
   final _cancelFocus = FocusNode(debugLabel: 'Cancel account removal');
