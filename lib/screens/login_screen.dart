@@ -713,7 +713,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: AnimatedContainer(
               key: const ValueKey('login-submit-surface'),
               duration: lumenMotionFast,
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
                 color: _busy ? accent.withValues(alpha: .58) : accent,
                 borderRadius: BorderRadius.circular(lumenCorner(14)),
