@@ -7,6 +7,7 @@ import '../device_profile.dart';
 import '../downloads.dart';
 import '../models.dart';
 import '../playback.dart';
+import 'player_host.dart';
 import '../refresh.dart';
 import '../split.dart';
 import '../responsive.dart';
@@ -612,7 +613,13 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   Future<void> _handleBack(bool didPop) async {
     if (didPop) return;
     final playback = PlaybackController.instance;
-    if (playback.hasMedia && !playback.minimized) return;
+    if (playback.hasMedia && !playback.minimized) {
+      // The player is a persistent overlay, not a Navigator route. Route-level
+      // back handling must delegate to it so panels close and playback returns
+      // to the mini-player instead of swallowing the system Back action.
+      PlayerHost.handleSystemBack();
+      return;
+    }
     if (homeBackActionFor(_index) == HomeBackAction.navigateBack) {
       final target = _navigationHistory.isEmpty
           ? 0
