@@ -624,7 +624,12 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   Future<void> _handleBack(bool didPop) async {
     if (didPop) return;
     final playback = PlaybackController.instance;
-    if (playback.hasMedia && !playback.minimized) return;
+    if (playback.hasMedia && !playback.minimized) {
+      // The player is a persistent overlay, not a Navigator route. Delegate
+      // system Back to it so panels close and playback returns to the mini-player.
+      PlayerHost.handleSystemBack();
+      return;
+    }
     if (homeBackActionFor(_index) == HomeBackAction.navigateBack) {
       final target = _navigationHistory.isEmpty
           ? 0
