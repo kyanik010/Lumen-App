@@ -229,10 +229,10 @@ void main() {
     DeviceProfile.isTelevision = true;
     addTearDown(() => DeviceProfile.isTelevision = false);
     await pumpProfile(tester, const Size(1280, 900));
-    final edit = FocusManager.instance.rootScope.descendants.firstWhere(
-      (node) => node.debugLabel == 'Edit current service',
+    final accountEntry = FocusManager.instance.rootScope.descendants.firstWhere(
+      (node) => node.debugLabel == 'Profile add account',
     );
-    edit.requestFocus();
+    accountEntry.requestFocus();
     await tester.pump();
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pump();
@@ -358,7 +358,7 @@ void main() {
       await tester.pump();
       expect(
         FocusManager.instance.primaryFocus?.debugLabel,
-        'Remove account Bedroom',
+        'Combine service Bedroom',
       );
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
       await tester.pump();
