@@ -58,7 +58,7 @@ android {
         resValue(
             "string",
             "app_name",
-            if (isDiagnosticBuild) "Lumen Test" else if (isCommunityBuild) "Lumen Community" else "Lumen",
+            if (isDiagnosticBuild) "EAGLE X Test" else "EAGLE X",
         )
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
