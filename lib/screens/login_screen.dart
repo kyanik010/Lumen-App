@@ -591,8 +591,8 @@ class _LoginScreenState extends State<LoginScreen> {
         Center(
           child: Image.asset(
             'assets/eagle_x_logo.png',
-            width: 184,
-            height: 112,
+            width: 132,
+            height: 78,
             fit: BoxFit.contain,
             errorBuilder: (_, __, ___) => const Icon(
               Icons.image_not_supported_outlined,
@@ -607,37 +607,40 @@ class _LoginScreenState extends State<LoginScreen> {
           style: kDisplay().copyWith(fontSize: 28, fontWeight: FontWeight.w800),
         ),
         if (!_showSubscriptionForm) ...[
-          const SizedBox(height: 18),
+          const SizedBox(height: 10),
           if (_deviceId != null)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-              decoration: BoxDecoration(
-                border: Border.all(color: line),
-                borderRadius: BorderRadius.circular(28),
-              ),
-              child: SelectableText(
-                'ID :  $_deviceId',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: muted,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.1,
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 320),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: line),
+                    borderRadius: BorderRadius.circular(14),
+                    color: surfaceHi.withValues(alpha: 0.45),
+                  ),
+                  child: SelectableText(
+                    'ID:  $_deviceId',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: muted, fontSize: 10.5, fontWeight: FontWeight.w600, letterSpacing: 0.2, height: 1.25),
+                  ),
                 ),
               ),
             ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 16),
           const Text(
             'مرحباً بك',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 27, fontWeight: FontWeight.w800),
+            style: TextStyle(fontSize: 23, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 22),
           Text(
             'لديك فترة تجريبية 30 يوم',
             textAlign: TextAlign.center,
-            style: TextStyle(color: muted, fontSize: 18, height: 1.6),
+            style: TextStyle(color: muted, fontSize: 15, height: 1.45),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
             child: RemoteTap(
@@ -654,7 +657,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: AnimatedContainer(
                 key: const ValueKey('login-submit-surface'),
                 duration: lumenMotionFast,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
                   color: accent,
                   borderRadius: BorderRadius.circular(lumenCorner(14)),
@@ -662,7 +665,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Text(
                   'اضغط هنا لتبدأ',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: onAccent, fontWeight: FontWeight.w800, fontSize: 18),
+                  style: TextStyle(color: onAccent, fontWeight: FontWeight.w700, fontSize: 16),
                 ),
               ),
             ),
@@ -678,7 +681,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Text(
             'أدخل بيانات اشتراك IPTV للمتابعة.',
             textAlign: TextAlign.right,
-            style: TextStyle(color: muted, fontSize: 13, height: 1.5),
+            style: TextStyle(color: muted, fontSize: 11.5, height: 1.4),
           ),
           const SizedBox(height: 18),
           _field(
@@ -775,9 +778,9 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Text('رجوع', style: TextStyle(color: muted)),
           ),
         ],
-        const SizedBox(height: 22),
+        const SizedBox(height: 14),
         Divider(color: line),
-        const SizedBox(height: 16),
+        const SizedBox(height: 10),
         Text(
           'لتفعيل التطبيق او الحصول على اشتراك IPTV',
           textAlign: TextAlign.center,
@@ -788,10 +791,10 @@ class _LoginScreenState extends State<LoginScreen> {
           textAlign: TextAlign.center,
           style: TextStyle(color: muted, fontSize: 13, height: 1.5),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 10),
         Center(
           child: Container(
-            padding: const EdgeInsets.all(6),
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
@@ -808,8 +811,8 @@ class _LoginScreenState extends State<LoginScreen> {
               borderRadius: BorderRadius.circular(10),
               child: Image.asset(
                 'assets/eagle_x_qr.png',
-                width: 112,
-                height: 112,
+                width: 88,
+                height: 88,
                 fit: BoxFit.contain,
                 filterQuality: FilterQuality.high,
                 errorBuilder: (_, __, ___) => const Icon(
@@ -825,7 +828,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Text(
           'امسح الرمز للتواصل مع الدعم',
           textAlign: TextAlign.center,
-          style: TextStyle(color: muted, fontSize: 12),
+          style: TextStyle(color: muted, fontSize: 10.5),
         ),
       ],
     ),
