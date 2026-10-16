@@ -565,8 +565,8 @@ class _LoginScreenState extends State<LoginScreen> {
         Center(
           child: Image.asset(
             'assets/eagle_x_logo.png',
-            width: 184,
-            height: 112,
+            width: 132,
+            height: 78,
             fit: BoxFit.contain,
             errorBuilder: (_, __, ___) => const Icon(
               Icons.image_not_supported_outlined,
@@ -602,7 +602,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Text(
           'أدخل بيانات حسابك للمتابعة إلى التطبيق.',
           textAlign: TextAlign.right,
-          style: TextStyle(color: muted, fontSize: 13, height: 1.5),
+          style: TextStyle(color: muted, fontSize: 11.5, height: 1.4),
         ),
         const SizedBox(height: 18),
         _field(
@@ -669,7 +669,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: AnimatedContainer(
               key: const ValueKey('login-submit-surface'),
               duration: lumenMotionFast,
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
                 color: accent,
                 borderRadius: BorderRadius.circular(lumenCorner(14)),
@@ -688,9 +688,9 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 22),
+        const SizedBox(height: 14),
         Divider(color: line),
-        const SizedBox(height: 16),
+        const SizedBox(height: 10),
         Text(
           'لتفعيل التطبيق أو الحصول على اشتراك IPTV،',
           textAlign: TextAlign.center,
@@ -701,10 +701,10 @@ class _LoginScreenState extends State<LoginScreen> {
           textAlign: TextAlign.center,
           style: TextStyle(color: muted, fontSize: 13, height: 1.5),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 10),
         Center(
           child: Container(
-            padding: const EdgeInsets.all(6),
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
@@ -721,8 +721,8 @@ class _LoginScreenState extends State<LoginScreen> {
               borderRadius: BorderRadius.circular(10),
               child: Image.asset(
                 'assets/eagle_x_qr.png',
-                width: 112,
-                height: 112,
+                width: 88,
+                height: 88,
                 fit: BoxFit.contain,
                 filterQuality: FilterQuality.high,
                 errorBuilder: (_, __, ___) => const Icon(
@@ -738,7 +738,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Text(
           'امسح الرمز للتواصل مع الدعم',
           textAlign: TextAlign.center,
-          style: TextStyle(color: muted, fontSize: 12),
+          style: TextStyle(color: muted, fontSize: 10.5),
         ),
       ],
     ),
