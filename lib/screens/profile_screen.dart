@@ -895,9 +895,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         status.toLowerCase() == 'ready' ||
         status == 'جاهز';
     final accountName = c.isDemo ? 'الوضع التجريبي' : c.username;
-    final accountSubtitle = c.isDemo
-        ? 'مكتبة تجريبية دون اتصال'
-        : c.baseUrl.replaceFirst(RegExp(r'^https?://'), '');
     return Glass(
       radius: 24,
       padding: const EdgeInsets.all(20),
@@ -928,41 +925,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         fontSize: 18,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      accountSubtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: subtle, fontSize: 12),
-                    ),
                   ],
                 ),
               ),
-              if (!c.isDemo) ...[
-                const SizedBox(width: 10),
-                RemoteTap(
-                  key: const ValueKey('edit-current-service'),
-                  focusNode: _currentEditFocus,
-                  semanticLabel: 'Edit current service address',
-                  focusRadius: 11,
-                  onTap: () => _edit(c),
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: surfaceHi,
-                      borderRadius: BorderRadius.circular(lumenCorner(11)),
-                      border: Border.all(color: line),
-                    ),
-                    child: Icon(
-                      Icons.edit_outlined,
-                      color: accentInk,
-                      size: 19,
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
           const SizedBox(height: 20),
@@ -1685,9 +1650,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     FocusNode? editAt(int target) => target >= 0 && target < profiles.length
         ? _profileEditFocus[_profileKey(profiles[target])]
         : null;
-    final host = p.isDemo
-        ? 'مكتبة تجريبية دون اتصال'
-        : p.baseUrl.replaceFirst(RegExp(r'^https?://'), '');
     return RemoteTap(
       key: ValueKey('profile-switch-$key'),
       behavior: HitTestBehavior.opaque,
@@ -1719,12 +1681,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.w500),
-                  ),
-                  Text(
-                    host,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: subtle, fontSize: 12),
                   ),
                   if (!p.isDemo && _enabledScopes.contains(key))
                     Text(
