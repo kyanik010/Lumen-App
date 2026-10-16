@@ -756,7 +756,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: AnimatedContainer(
                 key: const ValueKey('login-submit-surface'),
                 duration: lumenMotionFast,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
                   color: accent,
                   borderRadius: BorderRadius.circular(lumenCorner(14)),
@@ -784,7 +784,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Text(
           'لتفعيل التطبيق او الحصول على اشتراك IPTV',
           textAlign: TextAlign.center,
-          style: TextStyle(color: muted, fontSize: 13, height: 1.5),
+          style: TextStyle(color: muted, fontSize: 11.5, height: 1.4),
         ),
         Text(
           'تواصل مع الدعم عبر مسح رمز QR',
