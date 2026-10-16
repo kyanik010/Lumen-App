@@ -163,21 +163,21 @@ class AccentScheme {
 }
 
 const accentSchemes = <AccentScheme>[
+  AccentScheme('Solar gold', Color(0xFFD7AD5A)),
   AccentScheme('Signal lime', Color(0xFFC7F36B)),
   AccentScheme('Tidal teal', Color(0xFF24C7B0)),
   AccentScheme('Electric blue', Color(0xFF4E7DFF)),
   AccentScheme('Ultraviolet', Color(0xFFA66BFF)),
-  AccentScheme('Solar gold', Color(0xFFD7AD5A)),
 ];
 
 /// Colour values remain public for persistence, contrast tests and custom
 /// colour detection. The profile UI presents [accentSchemes] by name.
 const accentPresets = <Color>[
+  Color(0xFFD7AD5A), // solar gold — Eagle X default
   Color(0xFFC7F36B), // signal lime
   Color(0xFF24C7B0), // tidal teal
   Color(0xFF4E7DFF), // electric blue
   Color(0xFFA66BFF), // ultraviolet
-  Color(0xFFD7AD5A), // solar gold
 ];
 
 Color _shade(Color c, double dl) {
