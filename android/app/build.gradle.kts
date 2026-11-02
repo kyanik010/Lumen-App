@@ -64,13 +64,25 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = 36
-        // Restrict packaged native libraries to ARM64 for this test build.
-        // This does not change or replace any player or media dependency.
+        // Restrict native build targets to ARM64.
         ndk {
             abiFilters += listOf("arm64-v8a")
         }
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+    }
+
+    // media_kit bundles prebuilt native libraries for several ABIs inside
+    // dependency JARs. abiFilters alone does not remove those packaged files.
+    // Filter only the final APK contents; keep every player dependency intact.
+    packaging {
+        jniLibs {
+            excludes += setOf(
+                "lib/armeabi-v7a/**",
+                "lib/x86/**",
+                "lib/x86_64/**",
+            )
+        }
     }
 
     signingConfigs {
