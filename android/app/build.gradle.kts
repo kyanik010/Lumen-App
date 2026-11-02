@@ -64,6 +64,11 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = 36
+        // Restrict packaged native libraries to ARM64 for this test build.
+        // This does not change or replace any player or media dependency.
+        ndk {
+            abiFilters += listOf("arm64-v8a")
+        }
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
