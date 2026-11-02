@@ -43,6 +43,7 @@ jobs:
       - name: Configure Community APK signing
         shell: bash
         run: |
+          set -euo pipefail
           for value in ANDROID_KEYSTORE_BASE64 ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD ANDROID_STORE_PASSWORD; do
             if [ -z "${!value:-}" ]; then
               echo "Missing required GitHub Actions secret: $value"
@@ -51,11 +52,11 @@ jobs:
           done
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/community-release.p12
           {
-            printf 'storeFile=community-release.p12\\n'
-            printf 'storeType=PKCS12\\n'
-            printf 'keyAlias=%s\\n' "$ANDROID_KEY_ALIAS"
-            printf 'keyPassword=%s\\n' "$ANDROID_KEY_PASSWORD"
-            printf 'storePassword=%s\\n' "$ANDROID_STORE_PASSWORD"
+            printf '%s\n' 'storeFile=community-release.p12'
+            printf '%s\n' 'storeType=PKCS12'
+            printf 'keyAlias=%s\n' "$ANDROID_KEY_ALIAS"
+            printf 'keyPassword=%s\n' "$ANDROID_KEY_PASSWORD"
+            printf 'storePassword=%s\n' "$ANDROID_STORE_PASSWORD"
           } > android/key.properties
           chmod 600 android/app/community-release.p12 android/key.properties
       - name: Build ARM64-only APK
