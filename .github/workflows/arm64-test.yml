@@ -64,15 +64,24 @@ jobs:
       - name: Verify signed ARM64 APK
         shell: bash
         run: |
+          set -euo pipefail
           apk="build/app/outputs/flutter-apk/app-release.apk"
           apksigner="$(find "$ANDROID_SDK_ROOT/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
           test -n "$apksigner"
           "$apksigner" verify --verbose --print-certs "$apk"
-          unzip -l "$apk" | grep 'lib/arm64-v8a/'
-          if unzip -Z1 "$apk" | grep -Eq 'lib/(armeabi-v7a|x86|x86_64)/'; then
-            echo "Unexpected non-ARM64 native libraries found."
+          echo "Checking native libraries at the APK root..."
+          unzip -Z1 "$apk" | grep -E '^lib/arm64-v8a/.*\.so$'
+          if ! unzip -Z1 "$apk" | grep -qE '^lib/arm64-v8a/.*\.so$'; then
+            echo "No ARM64 native libraries found."
             exit 1
           fi
+          forbidden="$(unzip -Z1 "$apk" | grep -E '^lib/(armeabi-v7a|x86|x86_64)/.*\.so$' || true)"
+          if [ -n "$forbidden" ]; then
+            echo "Unexpected non-ARM64 native libraries found at APK root:"
+            printf '%s\n' "$forbidden"
+            exit 1
+          fi
+          echo "ARM64-only native library check passed."
           ls -lh "$apk"
       - uses: actions/upload-artifact@v4
         with:
