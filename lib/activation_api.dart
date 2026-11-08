@@ -13,8 +13,7 @@ class ActivationApiException implements Exception {
   String toString() => message;
 }
 
-/// Connects the Eagle X login form to the host registry used by the
-/// existing AerioTV Control host dashboard.
+/// Resolves username/password against the enabled host registry in Eagle X Control.
 class ActivationApi {
   ActivationApi._();
 
