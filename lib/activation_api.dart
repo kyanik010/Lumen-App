@@ -19,10 +19,10 @@ class ActivationApi {
   ActivationApi._();
 
   static const _endpoint =
-      'https://quaftlmuobshbnlhctmf.supabase.co/functions/v1/device-activation';
+      'https://rsiwnaelmahoofsxosjq.supabase.co/functions/v1/resolve-iptv-host';
   // This is the dashboard's public/publishable Supabase key, not a service key.
   static const _publishableKey =
-      'sb_publishable_6mdnO-ezptIZzRKNfEbzaA_e9B-ulL5';
+      'sb_publishable_ZgWToIcN18gJlOdwJme8QQ_H_moIvga';
 
   static Future<XtreamCredentials> activate(
     String username,
